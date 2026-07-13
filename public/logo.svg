@@ -1,0 +1,24 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="orangeTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF7A1A"/>
+      <stop offset="100%" stop-color="#F4511E"/>
+    </linearGradient>
+    <linearGradient id="orangeMid" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFB347"/>
+      <stop offset="100%" stop-color="#FF8C1A"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#223446"/>
+      <stop offset="100%" stop-color="#122131"/>
+    </linearGradient>
+  </defs>
+  <!-- Bottom -->
+  <polygon points="170,360 250,400 330,360 330,255 250,220 250,320 210,340 170,320" fill="url(#dark)"/>
+  <!-- Middle -->
+  <polygon points="250,220 330,255 330,180 250,145 250,220" fill="url(#orangeMid)"/>
+  <!-- Top -->
+  <polygon points="170,145 250,105 330,145 330,70 250,30 170,70" fill="url(#orangeTop)"/>
+  <!-- Left Arm -->
+  <polygon points="90,240 170,205 170,280 90,315" fill="url(#orangeMid)"/>
+</svg>
