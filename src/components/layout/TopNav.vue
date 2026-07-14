@@ -64,8 +64,8 @@
 
       <!-- Cash Movements Button -->
       <button 
-        v-if="userRole === 'CASHIER' && currentView === 'checkout'"
-        @click="$emit('openCashMovements')"
+        v-if="currentView === 'checkout'"
+        @click="router.push('/cash-movements')"
         class="hidden sm:flex items-center px-4 h-10 rounded-full bg-surface-container text-on-surface font-semibold text-xs hover:bg-surface-variant active:scale-95 transition-all cursor-pointer gap-2 border border-outline-variant"
       >
         <Coins class="w-4 h-4 text-primary" />
@@ -143,7 +143,6 @@ defineEmits<{
   (e: 'update:searchQuery', val: string): void;
   (e: 'mobileMenuToggle'): void;
   (e: 'logout'): void;
-  (e: 'openCashMovements'): void;
 }>();
 
 const router = useRouter();

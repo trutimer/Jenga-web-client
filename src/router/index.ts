@@ -62,6 +62,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/cash-movements',
+    name: 'cash-movements',
+    component: () => import('../views/CashMovementsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/',
     redirect: () => {
       return localStorage.getItem('cashierRole') === 'CASHIER' ? '/checkout' : '/dashboard';
@@ -97,8 +103,8 @@ router.beforeEach((to, from, next) => {
     next({ name: 'login' });
   } else if (to.meta.guestOnly && isAuthenticated) {
     next({ name: localStorage.getItem('cashierRole') === 'CASHIER' ? 'checkout' : 'dashboard' });
-  } else if (isAuthenticated && localStorage.getItem('cashierRole') === 'CASHIER' && to.name !== 'checkout' && to.name !== 'receipt') {
-    // Restrict CASHIER to only checkout and receipt pages
+  } else if (isAuthenticated && localStorage.getItem('cashierRole') === 'CASHIER' && to.name !== 'checkout' && to.name !== 'receipt' && to.name !== 'cash-movements') {
+    // Restrict CASHIER to only checkout, receipt, and cash movements pages
     next({ name: 'checkout' });
   } else {
     next();

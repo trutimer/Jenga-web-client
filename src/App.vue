@@ -82,7 +82,6 @@
         @update:searchQuery="val => searchQuery = val"
         @mobileMenuToggle="mobileMenuOpen = true"
         @logout="triggerLogoutConfirm"
-        @openCashMovements="showCashMovementsModal = true"
       />
 
       <main class="flex-1 overflow-y-auto p-6 md:p-8 pb-24 relative bg-surface">
@@ -184,9 +183,6 @@
     </template>
   </Modal>
 
-  <!-- Cash Movements Modal -->
-  <CashMovementsModal />
-
   <!-- Global Toast Notification -->
   <Toast 
     v-if="toastMessage"
@@ -205,7 +201,6 @@ import { useRouter, useRoute } from 'vue-router';
 import Sidebar from './components/layout/Sidebar.vue';
 import TopNav from './components/layout/TopNav.vue';
 import Modal from './components/common/Modal.vue';
-import CashMovementsModal from './components/cash/CashMovementsModal.vue';
 import { Store, LogOut, LayoutDashboard, CreditCard, Package, BarChart3, Settings as SettingsIcon, Truck, UserCog } from 'lucide-vue-next';
 
 const {
@@ -220,8 +215,7 @@ const {
   currentShift,
   handleLogout: performLogout,
   closeShift,
-  fetchCurrentShift,
-  showCashMovementsModal
+  fetchCurrentShift
 } = useAppViewModel();
 
 const router = useRouter();

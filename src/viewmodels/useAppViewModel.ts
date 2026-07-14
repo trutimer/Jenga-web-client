@@ -27,7 +27,6 @@ const lastTransaction = ref<Transaction | null>(null);
 const suppliers = ref<Supplier[]>(INITIAL_SUPPLIERS);
 const searchQuery = ref('');
 const currentShift = ref<CashierShift | null>(null);
-const showCashMovementsModal = ref(false);
 const cashMovementAnalytics = ref<any>(null);
 
 // Inactivity lockout timer
@@ -276,9 +275,33 @@ export function useAppViewModel() {
       await api.post('/api/cash-movements', { type, amount, reason });
       showToast('Cash movement recorded successfully', 'success');
       await fetchCashMovementAnalytics(); // Refresh analytics
-      return true;
+      return { success: true };
     } catch (err: any) {
       showToast(err.message || 'Failed to record cash movement', 'error');
+      return { success: false, error: err.message || 'Failed to record cash movement' };
+    }
+  };
+
+  const updateCashMovement = async (id: string, type: string, amount: number, reason: string) => {
+    try {
+      await api.put(`/api/cash-movements/${id}`, { type, amount, reason });
+      showToast('Cash movement updated successfully', 'success');
+      await fetchCashMovementAnalytics(); // Refresh analytics
+      return { success: true };
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update cash movement', 'error');
+      return { success: false, error: err.message || 'Failed to update cash movement' };
+    }
+  };
+
+  const deleteCashMovement = async (id: string) => {
+    try {
+      await api.delete(`/api/cash-movements/${id}`);
+      showToast('Cash movement deleted successfully', 'success');
+      await fetchCashMovementAnalytics(); // Refresh analytics
+      return true;
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete cash movement', 'error');
       return false;
     }
   };
@@ -425,9 +448,10 @@ export function useAppViewModel() {
     fetchCurrentShift,
     openShift,
     closeShift,
-    showCashMovementsModal,
     cashMovementAnalytics,
     fetchCashMovementAnalytics,
     createCashMovement,
+    updateCashMovement,
+    deleteCashMovement,
   };
 }
