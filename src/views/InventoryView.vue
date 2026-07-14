@@ -453,10 +453,9 @@
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-gray-500 uppercase tracking-widest">Barcode SKU Code *</label>
+              <label class="text-xs font-bold text-gray-500 uppercase tracking-widest">Barcode SKU Code</label>
               <input 
                 type="text"
-                required
                 v-model="newProdBarcode"
                 placeholder="Ex. 847291038472"
                 class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono outline-none text-gray-900 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
@@ -652,10 +651,9 @@
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-gray-500 uppercase tracking-widest">Barcode SKU Code *</label>
+          <label class="text-xs font-bold text-gray-500 uppercase tracking-widest">Barcode SKU Code</label>
           <input 
             type="text"
-            required
             v-model="editProdBarcode"
             placeholder="Ex. 847291038472"
             class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono outline-none text-gray-900 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
@@ -979,7 +977,7 @@ const paginatedProducts = computed(() => {
 });
 
 const handleAddProduct = async () => {
-  if (!newProdName.value || !newProdBarcode.value || !newProdCost.value || !newProdPrice.value) {
+  if (!newProdName.value || !newProdCost.value || !newProdPrice.value) {
     showToast('Please fill out all required fields', 'error');
     return;
   }
@@ -1132,7 +1130,7 @@ const openEditModal = (p: Product) => {
 
 const handleEditProduct = async () => {
   if (!editingProduct.value) return;
-  if (!editProdName.value || !editProdBarcode.value || !editProdCost.value || !editProdPrice.value) {
+  if (!editProdName.value || !editProdCost.value || !editProdPrice.value) {
     showToast('Please fill out all required fields', 'error');
     return;
   }

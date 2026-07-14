@@ -62,6 +62,16 @@
         <span>Quick Sale</span>
       </button>
 
+      <!-- Cash Movements Button -->
+      <button 
+        v-if="userRole === 'CASHIER' && currentView === 'checkout'"
+        @click="$emit('openCashMovements')"
+        class="hidden sm:flex items-center px-4 h-10 rounded-full bg-surface-container text-on-surface font-semibold text-xs hover:bg-surface-variant active:scale-95 transition-all cursor-pointer gap-2 border border-outline-variant"
+      >
+        <Coins class="w-4 h-4 text-primary" />
+        <span>Cash Movements</span>
+      </button>
+
       <!-- Status Actions -->
       <div class="flex items-center gap-1 text-on-surface-variant">
         <!-- Cloud Sync -->
@@ -118,7 +128,8 @@ import {
   AlertTriangle, 
   Zap,
   Menu,
-  LogOut
+  LogOut,
+  Coins
 } from 'lucide-vue-next';
 
 defineProps<{
@@ -132,6 +143,7 @@ defineEmits<{
   (e: 'update:searchQuery', val: string): void;
   (e: 'mobileMenuToggle'): void;
   (e: 'logout'): void;
+  (e: 'openCashMovements'): void;
 }>();
 
 const router = useRouter();

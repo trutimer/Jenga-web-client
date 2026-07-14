@@ -27,6 +27,8 @@ const lastTransaction = ref<Transaction | null>(null);
 const suppliers = ref<Supplier[]>(INITIAL_SUPPLIERS);
 const searchQuery = ref('');
 const currentShift = ref<CashierShift | null>(null);
+const showCashMovementsModal = ref(false);
+const cashMovementAnalytics = ref<any>(null);
 
 // Inactivity lockout timer
 let timeoutId: any = null;
@@ -258,6 +260,29 @@ export function useAppViewModel() {
     }
   };
 
+  const fetchCashMovementAnalytics = async (date?: string) => {
+    if (userRole.value !== 'CASHIER') return;
+    try {
+      const url = date ? `/api/cash-movements/analytics?date=${date}` : '/api/cash-movements/analytics';
+      const data = await api.get<any>(url);
+      cashMovementAnalytics.value = data;
+    } catch (err: any) {
+      console.error('Failed to fetch cash movement analytics:', err);
+    }
+  };
+
+  const createCashMovement = async (type: string, amount: number, reason: string) => {
+    try {
+      await api.post('/api/cash-movements', { type, amount, reason });
+      showToast('Cash movement recorded successfully', 'success');
+      await fetchCashMovementAnalytics(); // Refresh analytics
+      return true;
+    } catch (err: any) {
+      showToast(err.message || 'Failed to record cash movement', 'error');
+      return false;
+    }
+  };
+
   const handleLogin = (name: string, resolvedBranchId: string | null) => {
     activeBranchId.value = resolvedBranchId;
     user.value = name;
@@ -400,5 +425,9 @@ export function useAppViewModel() {
     fetchCurrentShift,
     openShift,
     closeShift,
+    showCashMovementsModal,
+    cashMovementAnalytics,
+    fetchCashMovementAnalytics,
+    createCashMovement,
   };
 }
