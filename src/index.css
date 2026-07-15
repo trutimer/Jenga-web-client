@@ -34,3 +34,11 @@ input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
   display: none;
 }
+
+/* Fix for Electron/Webkit desktop inputs being uneditable when inside select-none containers */
+input[type="number"],
+input[type="text"],
+input[type="password"],
+textarea {
+  user-select: auto !important;
+}
