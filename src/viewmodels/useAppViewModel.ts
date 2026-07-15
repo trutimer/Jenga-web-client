@@ -28,6 +28,7 @@ const suppliers = ref<Supplier[]>(INITIAL_SUPPLIERS);
 const searchQuery = ref('');
 const currentShift = ref<CashierShift | null>(null);
 const cashMovementAnalytics = ref<any>(null);
+const shiftSales = ref<any[]>([]);
 
 // Inactivity lockout timer
 let timeoutId: any = null;
@@ -306,6 +307,29 @@ export function useAppViewModel() {
     }
   };
 
+  const fetchShiftSales = async () => {
+    if (userRole.value !== 'CASHIER') return;
+    try {
+      const data = await api.get<any[]>('/api/cashier/sales');
+      shiftSales.value = data || [];
+    } catch (err: any) {
+      console.error('Failed to fetch shift sales:', err);
+    }
+  };
+
+  const reverseTransaction = async (id: string) => {
+    try {
+      const response = await api.post(`/api/cashier/sales/${id}/reverse`);
+      showToast(response.message || 'Transaction reversed successfully', 'success');
+      await fetchShiftSales(); // Refresh the list
+      await fetchCurrentShift(); // Refresh shift balances
+      return true;
+    } catch (err: any) {
+      showToast(err.message || 'Failed to reverse transaction', 'error');
+      return false;
+    }
+  };
+
   const handleLogin = (name: string, resolvedBranchId: string | null) => {
     activeBranchId.value = resolvedBranchId;
     user.value = name;
@@ -453,5 +477,8 @@ export function useAppViewModel() {
     createCashMovement,
     updateCashMovement,
     deleteCashMovement,
+    shiftSales,
+    fetchShiftSales,
+    reverseTransaction,
   };
 }

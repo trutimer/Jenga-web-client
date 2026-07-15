@@ -68,6 +68,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/shift-sales',
+    name: 'shift-sales',
+    component: () => import('../views/ShiftSalesView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/',
     redirect: () => {
       return localStorage.getItem('cashierRole') === 'CASHIER' ? '/checkout' : '/dashboard';
@@ -103,8 +109,8 @@ router.beforeEach((to, from, next) => {
     next({ name: 'login' });
   } else if (to.meta.guestOnly && isAuthenticated) {
     next({ name: localStorage.getItem('cashierRole') === 'CASHIER' ? 'checkout' : 'dashboard' });
-  } else if (isAuthenticated && localStorage.getItem('cashierRole') === 'CASHIER' && to.name !== 'checkout' && to.name !== 'receipt' && to.name !== 'cash-movements') {
-    // Restrict CASHIER to only checkout, receipt, and cash movements pages
+  } else if (isAuthenticated && localStorage.getItem('cashierRole') === 'CASHIER' && to.name !== 'checkout' && to.name !== 'receipt' && to.name !== 'cash-movements' && to.name !== 'shift-sales') {
+    // Restrict CASHIER to only checkout, receipt, cash movements, and shift sales pages
     next({ name: 'checkout' });
   } else {
     next();

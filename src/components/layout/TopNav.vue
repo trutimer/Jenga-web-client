@@ -52,19 +52,19 @@
         <span>Low Stock ({{ lowStockCount }})</span>
       </button>
 
-      <!-- Quick Sale Primary Button -->
+      <!-- Shift Sales Button -->
       <button 
-        v-if="userRole !== 'CASHIER'"
-        @click="router.push('/checkout')"
+        v-if="userRole === 'CASHIER'"
+        @click="router.push('/shift-sales')"
         class="hidden sm:flex items-center px-4 h-10 rounded-full bg-primary text-on-primary font-semibold text-xs hover:bg-opacity-90 active:scale-95 transition-all cursor-pointer gap-2 shadow-sm"
       >
-        <Zap class="w-4 h-4 text-on-primary-container fill-on-primary-container" />
-        <span>Quick Sale</span>
+        <List class="w-4 h-4" />
+        <span>Shift sales</span>
       </button>
 
       <!-- Cash Movements Button -->
       <button 
-        v-if="currentView === 'checkout'"
+        v-if="userRole === 'CASHIER' && currentView === 'checkout'"
         @click="router.push('/cash-movements')"
         class="hidden sm:flex items-center px-4 h-10 rounded-full bg-surface-container text-on-surface font-semibold text-xs hover:bg-surface-variant active:scale-95 transition-all cursor-pointer gap-2 border border-outline-variant"
       >
@@ -126,10 +126,10 @@ import {
   Key, 
   User, 
   AlertTriangle, 
-  Zap,
   Menu,
   LogOut,
-  Coins
+  Coins,
+  List
 } from 'lucide-vue-next';
 
 defineProps<{
