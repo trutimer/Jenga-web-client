@@ -54,7 +54,7 @@
                   <td class="px-4 py-3 font-semibold text-on-surface truncate max-w-[200px]" :title="item.productName">{{ item.productName }}</td>
                   <td class="px-4 py-3 text-right font-mono">{{ item.quantity }}</td>
                   <td class="px-4 py-3 text-right font-mono text-on-surface-variant">{{ formatCurrency(item.unitPrice, settings.currency) }}</td>
-                  <td class="px-4 py-3 text-right font-mono font-bold text-primary">{{ formatCurrency(item.subTotal, settings.currency) }}</td>
+                  <td class="px-4 py-3 text-right font-mono font-bold text-primary">{{ formatCurrency(item.subtotal, settings.currency) }}</td>
                 </tr>
               </tbody>
             </table>
