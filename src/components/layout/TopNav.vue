@@ -62,6 +62,16 @@
         <span>Shift sales</span>
       </button>
 
+      <!-- Download Desktop App (Web only) -->
+      <button 
+        v-if="!isElectron"
+        @click="showDownloadModal = true"
+        class="hidden sm:flex items-center px-4 h-10 rounded-full bg-surface-container text-on-surface font-semibold text-xs hover:bg-surface-variant active:scale-95 transition-all cursor-pointer gap-2 border border-outline-variant"
+      >
+        <Download class="w-4 h-4 text-primary" />
+        <span>Desktop App</span>
+      </button>
+
       <!-- Cash Movements Button -->
       <button 
         v-if="userRole === 'CASHIER' && currentView === 'checkout'"
@@ -114,12 +124,52 @@
         </button>
       </div>
     </div>
+
+    <!-- Download Desktop App Modal -->
+    <Modal 
+      :isOpen="showDownloadModal" 
+      title="Download Desktop App" 
+      :onClose="() => showDownloadModal = false"
+      maxWidth="max-w-md"
+    >
+      <div class="flex flex-col items-center text-center gap-4 py-4">
+        <div class="w-16 h-16 bg-primary-container/20 rounded-full flex items-center justify-center mb-2">
+          <Download class="w-8 h-8 text-primary" />
+        </div>
+        <h3 class="text-xl font-black text-on-surface">Experience the Full Power</h3>
+        <p class="text-sm text-on-surface-variant leading-relaxed">
+          Get the ultimate point-of-sale experience with our dedicated Desktop Application. Enjoy enhanced performance, hardware integration (barcode scanners, receipt printers), and offline resilience.
+        </p>
+        
+        <div class="bg-surface-container-low w-full rounded-xl p-4 mt-2 border border-outline-variant/50">
+          <div class="flex justify-between items-center text-sm font-mono">
+            <span class="text-on-surface-variant uppercase font-bold text-xs">Current Version</span>
+            <span class="text-primary font-bold">Latest Release</span>
+          </div>
+          <div class="flex justify-between items-center text-sm font-mono mt-2 pt-2 border-t border-outline-variant/30">
+            <span class="text-on-surface-variant uppercase font-bold text-xs">Platform</span>
+            <span class="text-on-surface font-bold">Windows (x64)</span>
+          </div>
+        </div>
+
+        <a 
+          href="/Jenga-Setup-Latest.exe"
+          download="Jenga-Setup-Latest.exe"
+          @click="showDownloadModal = false"
+          class="w-full mt-4 bg-primary text-on-primary py-3.5 rounded-xl font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
+        >
+          <Download class="w-5 h-5" />
+          <span>Download .exe Installer</span>
+        </a>
+      </div>
+    </Modal>
   </header>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import Modal from '../common/Modal.vue';
 import { 
   Search, 
   Cloud, 
@@ -129,7 +179,8 @@ import {
   Menu,
   LogOut,
   Coins,
-  List
+  List,
+  Download
 } from 'lucide-vue-next';
 
 defineProps<{
@@ -147,6 +198,13 @@ defineEmits<{
 
 const router = useRouter();
 const route = useRoute();
+
+const showDownloadModal = ref(false);
+
+const isElectron = computed(() => {
+  return typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes(' electron/');
+});
+
 
 const currentView = computed(() => {
   return route.path.substring(1) || 'dashboard';

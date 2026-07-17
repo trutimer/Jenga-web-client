@@ -133,7 +133,7 @@
           </div>
           <div class="w-1 h-1 rounded-full bg-outline-variant" />
           <div class="flex items-center gap-1.5">
-            <span>v1.0.0 (Build 100)</span>
+            <span>v1.0.5</span>
           </div>
         </footer>
         
@@ -259,6 +259,12 @@ const handleSubmit = async () => {
     const deviceFingerprint = await getDeviceFingerprint();
     const res = await api.post('/api/auth/login', { phone: phone.value, password: password.value, deviceFingerprint });
     
+    if (res.user && res.user.role === 'SUPER_ADMIN') {
+      isLoggingIn.value = false;
+      error.value = 'Super admins are not allowed to log into the terminal.';
+      return;
+    }
+
     // Temporarily save accessToken to localStorage so API requests can be authenticated
     localStorage.setItem('accessToken', res.accessToken);
 

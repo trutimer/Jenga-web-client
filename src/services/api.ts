@@ -1,6 +1,6 @@
 import { showToast } from './toastService';
 
-const BASE_URL = 'http://localhost:9090';
+const BASE_URL = 'https://jenga-api.sintax.tz';
 
 export async function apiRequest<T = any>(
   endpoint: string,
