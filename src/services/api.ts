@@ -2,9 +2,13 @@ import { showToast } from './toastService';
 
 const BASE_URL = 'http://localhost:9090';
 
+export interface ApiOptions extends RequestInit {
+  suppressToast?: boolean;
+}
+
 export async function apiRequest<T = any>(
   endpoint: string,
-  options: RequestInit = {}
+  options: ApiOptions = {}
 ): Promise<T> {
   const token = localStorage.getItem('accessToken');
   const headers = new Headers(options.headers);
@@ -37,8 +41,22 @@ export async function apiRequest<T = any>(
 
   if (!response.ok) {
     const errorText = await response.text();
-    const errorMessage = errorText || `Request failed with status ${response.status}`;
-    showToast(errorMessage, 'error');
+    let errorMessage = errorText;
+    try {
+      const parsed = JSON.parse(errorText);
+      if (parsed && typeof parsed.error === 'string') {
+        errorMessage = parsed.error;
+      } else if (parsed && typeof parsed.message === 'string') {
+        errorMessage = parsed.message;
+      }
+    } catch {
+      if (!errorMessage) {
+        errorMessage = `Request failed with status ${response.status}`;
+      }
+    }
+    if (!options.suppressToast) {
+      showToast(errorMessage, 'error');
+    }
     throw new Error(errorMessage);
   }
 
@@ -50,28 +68,30 @@ export async function apiRequest<T = any>(
 }
 
 export const api = {
-  get: <T = any>(endpoint: string, options?: RequestInit) =>
+  get: <T = any>(endpoint: string, options?: ApiOptions) =>
     apiRequest<T>(endpoint, { ...options, method: 'GET' }),
-  post: <T = any>(endpoint: string, body?: any, options?: RequestInit) =>
+  post: <T = any>(endpoint: string, body?: any, options?: ApiOptions) =>
     apiRequest<T>(endpoint, {
       ...options,
       method: 'POST',
       body: body ? JSON.stringify(body) : undefined,
     }),
-  postRaw: <T = any>(endpoint: string, body: string, contentType: string = 'text/plain') =>
+  postRaw: <T = any>(endpoint: string, body: string, contentType: string = 'text/plain', options?: ApiOptions) =>
     apiRequest<T>(endpoint, {
+      ...options,
       method: 'POST',
       body,
       headers: {
-        'Content-Type': contentType
+        'Content-Type': contentType,
+        ...(options?.headers || {})
       }
     }),
-  put: <T = any>(endpoint: string, body?: any, options?: RequestInit) =>
+  put: <T = any>(endpoint: string, body?: any, options?: ApiOptions) =>
     apiRequest<T>(endpoint, {
       ...options,
       method: 'PUT',
       body: body ? JSON.stringify(body) : undefined,
     }),
-  delete: <T = any>(endpoint: string, options?: RequestInit) =>
+  delete: <T = any>(endpoint: string, options?: ApiOptions) =>
     apiRequest<T>(endpoint, { ...options, method: 'DELETE' }),
 };

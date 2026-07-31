@@ -40,16 +40,19 @@
 
     <!-- Trailing Actions -->
     <div class="flex items-center gap-4 ml-auto">
-      <!-- Low Stock Warning Button -->
+      <!-- License Expiry Display Button (Replaces Low Stock) -->
       <button 
-        @click="router.push('/inventory')"
-        class="hidden lg:flex items-center px-4 h-10 rounded-full border border-outline text-on-surface font-semibold text-xs transition-colors cursor-pointer gap-2"
-        :class="lowStockCount > 0 
-          ? 'border-error text-error bg-error-container/10 hover:bg-error-container/20' 
-          : 'hover:bg-surface-container'"
+        @click="handleExpiryClick"
+        class="hidden lg:flex items-center px-4 h-10 rounded-full border text-xs font-semibold transition-all cursor-pointer gap-2 shadow-xs"
+        :class="isWithin3Months 
+          ? 'border-error text-error bg-error-container/20 hover:bg-error-container/30 animate-zoom-pulse shadow-error/10' 
+          : 'border-outline-variant text-on-surface hover:bg-surface-container'"
+        :title="isWithin1Month ? 'Urgent: License expiring soon! Click for renewal info.' : 'View license expiry & details'"
       >
-        <AlertTriangle class="w-4 h-4" :class="lowStockCount > 0 ? 'text-error' : 'text-on-surface-variant'" />
-        <span>Low Stock ({{ lowStockCount }})</span>
+        <Clock class="w-4 h-4" :class="isWithin3Months ? 'text-error' : 'text-primary'" />
+        <span>
+          {{ daysUntilExpiry !== null && daysUntilExpiry <= 30 ? `Expires in ${daysUntilExpiry} days` : `Expires: ${formattedExpiryDate}` }}
+        </span>
       </button>
 
       <!-- Shift Sales Button -->
@@ -77,7 +80,8 @@
       <button 
         v-if="!isElectron"
         @click="showDownloadModal = true"
-        class="hidden sm:flex items-center px-4 h-10 rounded-full bg-surface-container text-on-surface font-semibold text-xs hover:bg-surface-variant active:scale-95 transition-all cursor-pointer gap-2 border border-outline-variant"
+        class="hidden sm:flex items-center px-4 h-10 rounded-full bg-surface-container border border-outline-variant/60 text-on-surface font-bold text-xs hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer gap-2 shadow-xs"
+        title="Download Desktop Application"
       >
         <Download class="w-4 h-4 text-primary" />
         <span>Desktop App</span>
@@ -102,15 +106,6 @@
           title="System Synced (Active Cloud Run connection)"
         >
           <Cloud class="w-5 h-5 text-primary stroke-[2px]" />
-        </button>
-        
-        <!-- Key Simulation -->
-        <button 
-          @click="alertKey"
-          class="p-2 hover:bg-surface-container rounded-full transition-colors flex items-center justify-center cursor-pointer"
-          title="Licensing validation keys"
-        >
-          <Key class="w-5 h-5 text-on-surface-variant stroke-[2px]" />
         </button>
 
         <!-- Account/User profile -->
@@ -174,17 +169,35 @@
         </a>
       </div>
     </Modal>
+
+    <!-- License Information Modal -->
+    <LicenseModal 
+      :isOpen="showLicenseModal"
+      :onClose="() => showLicenseModal = false"
+    />
+
+    <!-- License Expiry Renewal Alert Modal Popup -->
+    <LicenseExpiryAlertModal 
+      :isOpen="showExpiryAlertModal"
+      :daysLeft="daysUntilExpiry || 0"
+      :expiresAt="licenseData?.expiresAt"
+      :onClose="closeExpiryAlertModal"
+      :onViewDetails="openFullLicenseFromAlert"
+    />
   </header>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import Modal from '../common/Modal.vue';
+import LicenseModal from '../common/LicenseModal.vue';
+import LicenseExpiryAlertModal from '../common/LicenseExpiryAlertModal.vue';
+import { api } from '../../services/api';
+import { useAppViewModel } from '../../viewmodels/useAppViewModel';
 import { 
   Search, 
   Cloud, 
-  Key, 
   User, 
   AlertTriangle, 
   Menu,
@@ -192,7 +205,8 @@ import {
   Coins,
   List,
   Download,
-  Building2
+  Building2,
+  Clock
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -210,8 +224,84 @@ defineEmits<{
 
 const router = useRouter();
 const route = useRoute();
+const { activeBranchId } = useAppViewModel();
 
 const showDownloadModal = ref(false);
+const showLicenseModal = ref(false);
+const showExpiryAlertModal = ref(false);
+
+const licenseData = ref<any>(null);
+
+const fetchLicenseInfo = async () => {
+  const branchId = activeBranchId.value || localStorage.getItem('branchId');
+  if (!branchId || branchId === 'null' || branchId === 'undefined') return;
+
+  try {
+    const res = await api.get(`/api/stores/branches/${branchId}/license`, { suppressToast: true });
+    if (res) {
+      licenseData.value = res;
+      if (daysUntilExpiry.value !== null && daysUntilExpiry.value <= 30 && !sessionStorage.getItem('license_alert_dismissed')) {
+        showExpiryAlertModal.value = true;
+      }
+    }
+  } catch (err) {
+    console.warn('License info fetch in TopNav failed:', err);
+  }
+};
+
+onMounted(() => {
+  fetchLicenseInfo();
+});
+
+watch(() => activeBranchId.value, () => {
+  fetchLicenseInfo();
+});
+
+const daysUntilExpiry = computed(() => {
+  if (!licenseData.value?.expiresAt) return null;
+  const exp = new Date(licenseData.value.expiresAt).getTime();
+  const now = new Date().getTime();
+  return Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+});
+
+const isWithin3Months = computed(() => {
+  if (daysUntilExpiry.value === null) return false;
+  return daysUntilExpiry.value <= 90;
+});
+
+const isWithin1Month = computed(() => {
+  if (daysUntilExpiry.value === null) return false;
+  return daysUntilExpiry.value <= 30;
+});
+
+const formattedExpiryDate = computed(() => {
+  if (!licenseData.value?.expiresAt) return 'Active';
+  try {
+    const d = new Date(licenseData.value.expiresAt);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch {
+    return licenseData.value.expiresAt;
+  }
+});
+
+const handleExpiryClick = () => {
+  if (isWithin1Month.value) {
+    showExpiryAlertModal.value = true;
+  } else {
+    showLicenseModal.value = true;
+  }
+};
+
+const closeExpiryAlertModal = () => {
+  showExpiryAlertModal.value = false;
+  sessionStorage.setItem('license_alert_dismissed', 'true');
+};
+
+const openFullLicenseFromAlert = () => {
+  showExpiryAlertModal.value = false;
+  sessionStorage.setItem('license_alert_dismissed', 'true');
+  showLicenseModal.value = true;
+};
 
 const isElectron = computed(() => {
   return typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes(' electron/');
@@ -221,7 +311,6 @@ const isAdmin = computed(() => {
   const role = props.userRole || localStorage.getItem('cashierRole');
   return role === 'ADMIN';
 });
-
 
 const currentView = computed(() => {
   return route.path.substring(1) || 'dashboard';
@@ -235,9 +324,5 @@ const searchPlaceholder = computed(() => {
 
 const alertSync = () => {
   alert("Terminal database is currently synchronized client-side with full persistence.");
-};
-
-const alertKey = () => {
-  alert("Enterprise Key validated. Build 8912 certified.");
 };
 </script>

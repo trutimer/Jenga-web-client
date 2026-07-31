@@ -42,3 +42,17 @@ input[type="password"],
 textarea {
   user-select: auto !important;
 }
+
+/* License Expiry Subtle Zoom Animation */
+@keyframes zoomPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.animate-zoom-pulse {
+  animation: zoomPulse 2.2s infinite ease-in-out;
+}

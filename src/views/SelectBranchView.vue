@@ -122,10 +122,19 @@
           <!-- Select Button Footer -->
           <div class="mt-6 pt-4 border-t border-outline-variant/40 flex items-center justify-between">
             <span class="text-xs font-bold text-primary group-hover:underline">
-              {{ activeBranchId === b.id ? 'Already Selected' : 'Select this Branch' }}
+              <template v-if="selectingBranchId === b.id">
+                Verifying License...
+              </template>
+              <template v-else-if="activeBranchId === b.id">
+                Already Selected
+              </template>
+              <template v-else>
+                Select this Branch
+              </template>
             </span>
             <div class="w-8 h-8 rounded-full bg-surface-container group-hover:bg-primary group-hover:text-on-primary flex items-center justify-center text-on-surface-variant transition-all group-hover:translate-x-1">
-              <ArrowRight class="w-4 h-4" />
+              <Loader2 v-if="selectingBranchId === b.id" class="w-4 h-4 animate-spin text-primary" />
+              <ArrowRight v-else class="w-4 h-4" />
             </div>
           </div>
         </div>
@@ -155,6 +164,13 @@
     <footer class="relative z-10 w-full py-4 text-center text-xs text-on-surface-variant/70 font-mono">
       Jenga POS Management • Admin Control Portal
     </footer>
+
+    <!-- License Information Modal Popup -->
+    <LicenseModal 
+      :isOpen="showLicenseModal"
+      :branchId="modalBranchId"
+      :onClose="() => showLicenseModal = false"
+    />
   </div>
 </template>
 
@@ -162,7 +178,9 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { api } from '../services/api';
+import { showToast } from '../services/toastService';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
+import LicenseModal from '../components/common/LicenseModal.vue';
 import type { StoreBranch } from '../models/types';
 import { 
   Store, 
@@ -173,7 +191,8 @@ import {
   ArrowRight, 
   LogOut, 
   Search,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -182,7 +201,11 @@ const { activeBranchId, setActiveBranch, handleLogout: performLogout } = useAppV
 const adminName = ref(localStorage.getItem('cashierName') || 'Admin');
 const branches = ref<StoreBranch[]>([]);
 const isLoading = ref(true);
+const selectingBranchId = ref<string | null>(null);
 const searchQuery = ref('');
+
+const showLicenseModal = ref(false);
+const modalBranchId = ref<string | null>(null);
 
 const filteredBranches = computed(() => {
   if (!searchQuery.value.trim()) return branches.value;
@@ -202,10 +225,8 @@ const loadBranches = async () => {
   }
 
   try {
-    // Try primary branch list endpoint
     let res = await api.get<StoreBranch[]>(`/api/stores/${storeId}/branches`);
     if (!res || !Array.isArray(res) || res.length === 0) {
-      // Fallback to fetching store object which includes branches array
       const storeObj = await api.get<any>(`/api/stores/${storeId}`);
       if (storeObj && storeObj.branches) {
         res = storeObj.branches;
@@ -221,8 +242,29 @@ const loadBranches = async () => {
 };
 
 const selectBranch = async (b: StoreBranch) => {
-  await setActiveBranch(b.id);
-  router.push('/dashboard');
+  if (selectingBranchId.value) return;
+  selectingBranchId.value = b.id;
+
+  try {
+    const license = await api.get(`/api/stores/branches/${b.id}/license`, { suppressToast: true });
+    const status = (license?.status || '').toUpperCase();
+
+    if (!license || status !== 'ACTIVE') {
+      modalBranchId.value = b.id;
+      showLicenseModal.value = true;
+      selectingBranchId.value = null;
+      return;
+    }
+
+    showToast(`Branch '${b.name}' verified with active license.`, 'success');
+    await setActiveBranch(b.id);
+    router.push('/dashboard');
+  } catch (err: any) {
+    modalBranchId.value = b.id;
+    showLicenseModal.value = true;
+  } finally {
+    selectingBranchId.value = null;
+  }
 };
 
 const handleLogout = () => {
