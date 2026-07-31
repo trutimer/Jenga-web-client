@@ -133,7 +133,7 @@
           </div>
           <div class="w-1 h-1 rounded-full bg-outline-variant" />
           <div class="flex items-center gap-1.5">
-            <span>v1.0.5</span>
+            <span>v1.0.6</span>
           </div>
         </footer>
         
@@ -268,11 +268,29 @@ const handleSubmit = async () => {
     // Temporarily save accessToken to localStorage so API requests can be authenticated
     localStorage.setItem('accessToken', res.accessToken);
 
+    if (res.user.role === 'ADMIN') {
+      localStorage.setItem('cashierId', res.user.id);
+      localStorage.setItem('storeId', res.user.storeId || '');
+      localStorage.setItem('cashierName', res.user.fullName);
+      localStorage.setItem('cashierRole', res.user.role || 'ADMIN');
+      localStorage.removeItem('branchId');
+
+      if (remember.value) {
+        localStorage.setItem('lastPhone', phone.value);
+      } else {
+        localStorage.removeItem('lastPhone');
+      }
+
+      isLoggingIn.value = false;
+      vm.handleLogin(res.user.fullName, null);
+      return;
+    }
+
     let storeId = res.user.storeId;
     let branchId = res.user.branchId;
 
     if (!storeId) {
-      // Fetch all stores (for SUPER_ADMIN)
+      // Fetch all stores (for SUPER_ADMIN fallback)
       try {
         const stores = await api.get('/api/stores');
         if (stores && stores.length > 0) {
@@ -283,17 +301,16 @@ const handleSubmit = async () => {
           }
         }
       } catch (err) {
-        console.error('Failed to resolve store/branch for super admin:', err);
+        console.error('Failed to resolve store/branch:', err);
       }
     } else if (!branchId) {
-      // Fetch store's branches (for ADMIN with missing branchId)
       try {
         const storeData = await api.get(`/api/stores/${storeId}`);
         if (storeData && storeData.branches && storeData.branches.length > 0) {
           branchId = storeData.branches[0].id;
         }
       } catch (err) {
-        console.error('Failed to resolve branch for admin:', err);
+        console.error('Failed to resolve branch:', err);
       }
     }
 

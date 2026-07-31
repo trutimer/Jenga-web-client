@@ -13,6 +13,7 @@ export interface Product {
   sku?: string;
   wholesalePrice?: number;
   unitOfMeasure?: 'PCS' | 'KG' | 'LTR';
+  expiryDate?: string;
 }
 
 export interface CartItem {
@@ -58,7 +59,7 @@ export interface StoreSettings {
   timezone: string;
 }
 
-export type ViewType = 'login' | 'dashboard' | 'checkout' | 'inventory' | 'reports' | 'settings' | 'receipt' | 'stock-in' | 'suppliers' | 'users';
+export type ViewType = 'login' | 'select-branch' | 'dashboard' | 'checkout' | 'inventory' | 'reports' | 'settings' | 'receipt' | 'stock-in' | 'suppliers' | 'users';
 
 export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'CASHIER';
 
@@ -80,8 +81,10 @@ export interface AppUser {
   phone: string;
   role: UserRole;
   active: boolean;
+  email?: string;
   lastLoginAt: string;
   createdAt: string;
+  shifts?: CashierShift[];
 }
 
 export interface UserCreateRequest {
@@ -89,6 +92,7 @@ export interface UserCreateRequest {
   branchId?: string;
   fullName: string;
   phone: string;
+  email?: string;
   role: UserRole;
 }
 
@@ -106,4 +110,44 @@ export interface CashierShift {
   discrepancy?: number;
   totalSales: number;
   notes?: string;
+}
+
+export interface CashMovement {
+  id: string;
+  storeId?: string;
+  branchId?: string;
+  shiftId?: string;
+  type: 'CASH_IN' | 'CASH_OUT';
+  amount: number;
+  reason: string;
+  performedById?: string;
+  createdAt: string;
+}
+
+export interface ShiftSummary {
+  shiftId: string;
+  cashierId: string;
+  cashierName: string;
+  branchId: string;
+  branchName: string;
+  status: string;
+  openedAt: string;
+  closedAt?: string;
+  openingCash: number;
+  expectedCash: number;
+  actualCash?: number;
+  totalSales: number;
+  totalCostOfGoodsSold: number;
+  grossProfit: number;
+  totalDiscrepancy: number;
+  netProfitLoss: number;
+  profitLossMarginPercentage: number;
+  totalTransactions: number;
+}
+
+export interface ShiftDetail {
+  shift: CashierShift;
+  summary: ShiftSummary;
+  sales: any[];
+  cashMovements: CashMovement[];
 }

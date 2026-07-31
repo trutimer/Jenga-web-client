@@ -1,6 +1,6 @@
 import { showToast } from './toastService';
 
-const BASE_URL = 'https://jenga-api.sintax.tz';
+const BASE_URL = 'http://localhost:9090';
 
 export async function apiRequest<T = any>(
   endpoint: string,
@@ -18,7 +18,19 @@ export async function apiRequest<T = any>(
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  let finalEndpoint = endpoint;
+  const branchId = localStorage.getItem('branchId');
+  if (branchId && branchId !== 'null' && branchId !== 'undefined' && branchId.trim() !== '') {
+    if (!finalEndpoint.includes('storeBranchId=')) {
+      // Exclude auth routes and store list endpoints
+      if (!finalEndpoint.startsWith('/api/auth') && !finalEndpoint.endsWith('/branches')) {
+        const separator = finalEndpoint.includes('?') ? '&' : '?';
+        finalEndpoint += `${separator}storeBranchId=${encodeURIComponent(branchId)}`;
+      }
+    }
+  }
+
+  const response = await fetch(`${BASE_URL}${finalEndpoint}`, {
     ...options,
     headers,
   });

@@ -131,6 +131,7 @@ export function useAppViewModel() {
             sku: p.sku || '',
             wholesalePrice: p.wholesalePrice ? Number(p.wholesalePrice) : undefined,
             unitOfMeasure: p.unitOfMeasure || p.UnitOfMeasure || undefined,
+            expiryDate: p.expiryDate || undefined,
           };
         });
         products.value = mappedProducts;
@@ -330,6 +331,13 @@ export function useAppViewModel() {
     }
   };
 
+  const setActiveBranch = async (branchId: string) => {
+    localStorage.setItem('branchId', branchId);
+    activeBranchId.value = branchId;
+    await fetchSettings();
+    await fetchProducts();
+  };
+
   const handleLogin = (name: string, resolvedBranchId: string | null) => {
     activeBranchId.value = resolvedBranchId;
     user.value = name;
@@ -339,7 +347,9 @@ export function useAppViewModel() {
       fetchCurrentShift();
     }
     nextTick(() => {
-      if (userRole.value === 'CASHIER') {
+      if (userRole.value === 'ADMIN' && (!resolvedBranchId || resolvedBranchId === '')) {
+        router.push('/select-branch');
+      } else if (userRole.value === 'CASHIER') {
         router.push('/checkout');
       } else {
         router.push('/dashboard');
@@ -461,6 +471,7 @@ export function useAppViewModel() {
     searchQuery,
     lowStockCount,
     currentShift,
+    setActiveBranch,
     handleLogin,
     handleLogout,
     updateSettings: handleUpdateSettings,

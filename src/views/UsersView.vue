@@ -123,6 +123,15 @@
           />
         </div>
         <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Email (Optional)</label>
+          <input 
+            v-model="newUser.email"
+            type="email" 
+            placeholder="johndoe@example.com"
+            class="w-full h-11 px-4 bg-surface-container-lowest border border-outline-variant rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+          />
+        </div>
+        <div class="flex flex-col gap-1.5">
           <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Role</label>
           <select 
             v-model="newUser.role"
@@ -246,6 +255,7 @@ const selectedUser = ref<AppUser | null>(null);
 const newUser = reactive<UserCreateRequest>({
   fullName: '',
   phone: '',
+  email: '',
   role: 'CASHIER' as UserRole,
   branchId: '',
   storeId: localStorage.getItem('storeId') || undefined
@@ -268,6 +278,7 @@ const handleCreateUser = async () => {
     // reset form
     newUser.fullName = '';
     newUser.phone = '';
+    newUser.email = '';
     newUser.role = 'CASHIER';
     newUser.branchId = '';
   }

@@ -83,7 +83,7 @@
     </div>
 
     <!-- Inventory alerts -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <!-- Low Stock alert banner -->
       <button 
         @click="router.push('/inventory')"
@@ -116,6 +116,23 @@
           </div>
         </div>
         <ChevronRight class="text-outline-variant group-hover:text-error transition-colors w-5 h-5" />
+      </button>
+
+      <!-- Expiring Soon banner -->
+      <button 
+        @click="router.push('/inventory')"
+        class="bg-[#f3e8ff] rounded-xl p-4 border border-[#e9d5ff] shadow-sm flex items-center justify-between hover:border-[#a855f7] hover:bg-[#faf5ff] transition-all duration-200 cursor-pointer group text-left w-full"
+      >
+        <div class="flex items-center">
+          <div class="w-12 h-12 rounded-full bg-[#d8b4fe] text-[#7e22ce] flex items-center justify-center mr-4 shadow-inner">
+            <Clock class="w-6 h-6 animate-pulse" />
+          </div>
+          <div>
+            <div class="text-xs font-mono font-bold text-on-surface-variant tracking-wider uppercase mb-0.5">Expiring Soon</div>
+            <div class="text-2xl font-black text-on-surface group-hover:text-[#7e22ce] transition-colors leading-none">{{ soonToExpireCount }}</div>
+          </div>
+        </div>
+        <ChevronRight class="text-outline-variant group-hover:text-on-surface transition-colors w-5 h-5" />
       </button>
     </div>
 
@@ -429,7 +446,8 @@ import {
   Users,
   Coffee,
   GlassWater,
-  Sparkles
+  Sparkles,
+  Clock
 } from 'lucide-vue-next';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { formatCurrency } from '../models/mockData';
@@ -446,6 +464,7 @@ const stats = ref<{
   grossProfit: number;
   lowStockCount: number;
   outOfStockCount: number;
+  soonToExpireCount: number;
   paymentBreakdown: {
     Cash: number;
     Card: number;
@@ -469,8 +488,22 @@ onMounted(() => {
 });
 
 const fetchStats = async () => {
+  const branchId = vm.activeBranchId.value || localStorage.getItem('branchId');
+  
+  if (!branchId || branchId === 'null' || branchId === 'undefined' || branchId.trim() === '') {
+    const role = vm.userRole.value || localStorage.getItem('cashierRole');
+    if (role === 'ADMIN') {
+      router.push('/select-branch');
+      return;
+    }
+    console.warn('No active branchId found for analytics summary request.');
+    return;
+  }
+
+  const endpoint = `/api/analytics/summary?storeBranchId=${encodeURIComponent(branchId)}`;
+
   try {
-    const data = await api.get<any>('/api/analytics/summary');
+    const data = await api.get<any>(endpoint);
     if (data) {
       stats.value = {
         todaySales: Number(data.todaySales) || 0,
@@ -479,6 +512,7 @@ const fetchStats = async () => {
         grossProfit: Number(data.grossProfit) || 0,
         lowStockCount: Number(data.lowStockCount) || 0,
         outOfStockCount: Number(data.outOfStockCount) || 0,
+        soonToExpireCount: Number(data.soonToExpireCount) || 0,
         paymentBreakdown: {
           Cash: Number(data.paymentBreakdown?.Cash) || 0,
           Card: Number(data.paymentBreakdown?.Card) || 0,
@@ -501,8 +535,22 @@ const fetchTrends = async () => {
   if (trendPeriod.value === 'This Month') periodParam = 'weekly';
   else if (trendPeriod.value === 'This Year') periodParam = 'yearly';
   
+  const branchId = vm.activeBranchId.value || localStorage.getItem('branchId');
+
+  if (!branchId || branchId === 'null' || branchId === 'undefined' || branchId.trim() === '') {
+    const role = vm.userRole.value || localStorage.getItem('cashierRole');
+    if (role === 'ADMIN') {
+      router.push('/select-branch');
+      return;
+    }
+    console.warn('No active branchId found for analytics trends request.');
+    return;
+  }
+
+  const endpoint = `/api/analytics/trends?period=${periodParam}&storeBranchId=${encodeURIComponent(branchId)}`;
+
   try {
-    const data = await api.get<Array<{ label: string; revenue: any }>>(`/api/analytics/trends?period=${periodParam}`);
+    const data = await api.get<Array<{ label: string; revenue: any }>>(endpoint);
     if (data) {
       trendsData.value = data.map(item => ({
         label: item.label || '',
@@ -518,6 +566,11 @@ watch(trendPeriod, () => {
   fetchTrends();
 });
 
+watch(() => vm.activeBranchId.value, () => {
+  fetchStats();
+  fetchTrends();
+});
+
 const todaySales = computed(() => stats.value ? stats.value.todaySales : 0);
 const todayTransactionsCount = computed(() => stats.value ? stats.value.todayTransactions : 0);
 const avgTicket = computed(() => todayTransactionsCount.value > 0 ? todaySales.value / todayTransactionsCount.value : 0);
@@ -526,6 +579,7 @@ const weeklyGrossProfit = computed(() => stats.value ? stats.value.grossProfit :
 const weeklyMarginPercent = computed(() => weeklyRevenue.value > 0 ? Math.round((weeklyGrossProfit.value / weeklyRevenue.value) * 100) : 0);
 const lowStockCount = computed(() => stats.value ? stats.value.lowStockCount : 0);
 const outOfStockCount = computed(() => stats.value ? stats.value.outOfStockCount : 0);
+const soonToExpireCount = computed(() => stats.value ? stats.value.soonToExpireCount : 0);
 const topSellingProducts = computed(() => stats.value ? stats.value.topSellingProducts : []);
 
 const paymentPercentages = computed(() => {

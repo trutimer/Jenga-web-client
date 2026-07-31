@@ -62,6 +62,18 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/users/:id/shifts',
+    name: 'cashier-shifts',
+    component: () => import('../views/CashierShiftsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/shifts/:id',
+    name: 'shift-details',
+    component: () => import('../views/ShiftDetailsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/cash-movements',
     name: 'cash-movements',
     component: () => import('../views/CashMovementsView.vue'),
@@ -74,15 +86,31 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/select-branch',
+    name: 'select-branch',
+    component: () => import('../views/SelectBranchView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/',
     redirect: () => {
-      return localStorage.getItem('cashierRole') === 'CASHIER' ? '/checkout' : '/dashboard';
+      const role = localStorage.getItem('cashierRole');
+      const branchId = localStorage.getItem('branchId');
+      if (role === 'ADMIN' && (!branchId || branchId === 'null' || branchId === 'undefined')) {
+        return '/select-branch';
+      }
+      return role === 'CASHIER' ? '/checkout' : '/dashboard';
     }
   },
   {
     path: '/:pathMatch(.*)*',
     redirect: () => {
-      return localStorage.getItem('cashierRole') === 'CASHIER' ? '/checkout' : '/dashboard';
+      const role = localStorage.getItem('cashierRole');
+      const branchId = localStorage.getItem('branchId');
+      if (role === 'ADMIN' && (!branchId || branchId === 'null' || branchId === 'undefined')) {
+        return '/select-branch';
+      }
+      return role === 'CASHIER' ? '/checkout' : '/dashboard';
     }
   }
 ];
@@ -97,6 +125,7 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('accessToken');
   const branchId = localStorage.getItem('branchId');
   const storeId = localStorage.getItem('storeId');
+  const role = localStorage.getItem('cashierRole');
   
   const isAuthenticated = !!token && 
                           !!storeId && storeId !== 'null' && storeId !== 'undefined';
@@ -107,10 +136,19 @@ router.beforeEach((to, from, next) => {
       sessionStorage.clear();
     }
     next({ name: 'login' });
+  } else if (to.name === 'select-branch' && role !== 'ADMIN') {
+    // Branch selection is strictly restricted to ADMIN role only
+    next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
   } else if (to.meta.guestOnly && isAuthenticated) {
-    next({ name: localStorage.getItem('cashierRole') === 'CASHIER' ? 'checkout' : 'dashboard' });
-  } else if (isAuthenticated && localStorage.getItem('cashierRole') === 'CASHIER' && to.name !== 'checkout' && to.name !== 'receipt' && to.name !== 'cash-movements' && to.name !== 'shift-sales') {
-    // Restrict CASHIER to only checkout, receipt, cash movements, and shift sales pages
+    if (role === 'ADMIN' && (!branchId || branchId === 'null' || branchId === 'undefined')) {
+      next({ name: 'select-branch' });
+    } else {
+      next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
+    }
+  } else if (isAuthenticated && role === 'ADMIN' && (!branchId || branchId === 'null' || branchId === 'undefined') && to.name !== 'select-branch') {
+    next({ name: 'select-branch' });
+  } else if (isAuthenticated && role === 'CASHIER' && to.name !== 'checkout' && to.name !== 'receipt' && to.name !== 'cash-movements' && to.name !== 'shift-sales' && to.name !== 'shift-details' && to.name !== 'cashier-shifts') {
+    // Restrict CASHIER to checkout, receipt, cash movements, shift sales, and shift details pages
     next({ name: 'checkout' });
   } else {
     next();

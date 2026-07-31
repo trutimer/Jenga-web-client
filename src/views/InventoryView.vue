@@ -269,6 +269,7 @@
                 <th class="p-4 text-center font-bold">Cost ({{ currency }})</th>
                 <th class="p-4 text-center font-bold">Price ({{ currency }})</th>
                 <th class="p-4 text-center font-bold">Wholesale ({{ currency }})</th>
+                <th class="p-4 text-center font-bold">Expiry Date</th>
                 <th class="p-4 text-center font-bold">Actions</th>
               </tr>
             </thead>
@@ -332,6 +333,13 @@
                   </span>
                 </td>
 
+                <!-- Expiry Date -->
+                <td class="p-4 text-center font-mono select-all">
+                  <span class="text-[13px] text-on-surface-variant block font-semibold">
+                    {{ p.expiryDate ? new Date(p.expiryDate).toLocaleDateString() : 'N/A' }}
+                  </span>
+                </td>
+
                 <!-- Actions -->
                 <td class="p-4 text-center select-none whitespace-nowrap">
                   <div class="flex items-center justify-center gap-2">
@@ -354,7 +362,7 @@
               </tr>
 
               <tr v-if="filteredProducts.length === 0">
-                <td colSpan="8" class="py-20 text-center select-none text-outline">
+                <td colSpan="9" class="py-20 text-center select-none text-outline">
                   <ImageOff class="w-10 h-10 mx-auto text-outline-variant mb-2 stroke-[1.5px]" />
                   <p class="font-medium">No inventory rows match chosen conditions</p>
                   <button 
@@ -526,6 +534,15 @@
                 <option value="KG">KG (Kilograms)</option>
                 <option value="LTR">LTR (Liters)</option>
               </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Expiry Date</label>
+              <input 
+                type="date"
+                v-model="newProdExpiryDate"
+                class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20"
+              />
             </div>
 
             <div class="flex flex-col gap-1.5 col-span-2">
@@ -716,6 +733,15 @@
         </div>
 
         <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Expiry Date</label>
+          <input 
+            type="date"
+            v-model="editProdExpiryDate"
+            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20"
+          />
+        </div>
+
+        <div class="flex flex-col gap-1.5">
           <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Assigned Supplier</label>
           <input 
             type="text"
@@ -859,6 +885,7 @@ const newProdUnitOfMeasure = ref<'PCS' | 'KG' | 'LTR'>('PCS');
 const newProdStock = ref('20');
 const newProdMinStock = ref('10');
 const newProdSupplier = ref('');
+const newProdExpiryDate = ref('');
 
 // Import Modal States
 const showImportModal = ref(false);
@@ -992,7 +1019,8 @@ const handleAddProduct = async () => {
       reorderLevel: minStockNum,
       stock: stockNum,
       isActive: true,
-      UnitOfMeasure: newProdUnitOfMeasure.value
+      UnitOfMeasure: newProdUnitOfMeasure.value,
+      expiryDate: newProdExpiryDate.value || undefined
     };
 
     if (newProdWholesalePrice.value !== null && newProdWholesalePrice.value !== undefined && String(newProdWholesalePrice.value).trim() !== '') {
@@ -1012,7 +1040,8 @@ const handleAddProduct = async () => {
       minStock: createdVm.reorderLevel || 10,
       status: createdVm.stock === 0 ? 'Out of Stock' : (createdVm.stock <= createdVm.reorderLevel ? 'Low Stock' : 'In Stock'),
       supplier: newProdSupplier.value || 'Bakhresa Group',
-      unitOfMeasure: createdVm.unitOfMeasure || createdVm.UnitOfMeasure || newProdUnitOfMeasure.value
+      unitOfMeasure: createdVm.unitOfMeasure || createdVm.UnitOfMeasure || newProdUnitOfMeasure.value,
+      expiryDate: createdVm.expiryDate || newProdExpiryDate.value
     };
 
     vm.products.value = [newProduct, ...vm.products.value];
@@ -1029,6 +1058,7 @@ const handleAddProduct = async () => {
     newProdStock.value = '20';
     newProdMinStock.value = '10';
     newProdSupplier.value = '';
+    newProdExpiryDate.value = '';
   } catch (err: any) {
     showToast('Failed to add product: ' + (err.message || err), 'error');
   }
@@ -1087,6 +1117,7 @@ const editProdWholesalePrice = ref('');
 const editProdUnitOfMeasure = ref<'PCS' | 'KG' | 'LTR'>('PCS');
 const editProdMinStock = ref('10');
 const editProdSupplier = ref('');
+const editProdExpiryDate = ref('');
 
 // Restock Modal States
 const showRestockModal = ref(false);
@@ -1106,6 +1137,7 @@ const openEditModal = (p: Product) => {
   editProdUnitOfMeasure.value = p.unitOfMeasure || 'PCS';
   editProdMinStock.value = p.minStock.toString();
   editProdSupplier.value = p.supplier;
+  editProdExpiryDate.value = p.expiryDate || '';
   showEditModal.value = true;
 };
 
@@ -1138,7 +1170,8 @@ const handleEditProduct = async () => {
       reorderLevel: minStockNum,
       stock: editingProduct.value.stock, // Preserve current stock
       isActive: true,
-      UnitOfMeasure: editProdUnitOfMeasure.value
+      UnitOfMeasure: editProdUnitOfMeasure.value,
+      expiryDate: editProdExpiryDate.value || undefined
     };
 
     if (editProdWholesalePrice.value !== null && editProdWholesalePrice.value !== undefined && String(editProdWholesalePrice.value).trim() !== '') {
@@ -1163,7 +1196,8 @@ const handleEditProduct = async () => {
         supplier: editProdSupplier.value || 'Bakhresa Group',
         sku: updatedVm.sku || '',
         wholesalePrice: updatedVm.wholesalePrice ? Number(updatedVm.wholesalePrice) : undefined,
-        unitOfMeasure: updatedVm.unitOfMeasure || updatedVm.UnitOfMeasure || editProdUnitOfMeasure.value
+        unitOfMeasure: updatedVm.unitOfMeasure || updatedVm.UnitOfMeasure || editProdUnitOfMeasure.value,
+        expiryDate: updatedVm.expiryDate || editProdExpiryDate.value
       };
     }
 

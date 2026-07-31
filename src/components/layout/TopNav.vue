@@ -62,6 +62,17 @@
         <span>Shift sales</span>
       </button>
 
+      <!-- Switch Branch Button (ADMIN only) -->
+      <button 
+        v-if="isAdmin"
+        @click="router.push('/select-branch')"
+        class="hidden sm:flex items-center px-4 h-10 rounded-full bg-primary-container/30 border border-primary/30 text-primary font-bold text-xs hover:bg-primary-container/50 active:scale-95 transition-all cursor-pointer gap-2 shadow-sm"
+        title="Switch Active Branch"
+      >
+        <Building2 class="w-4 h-4" />
+        <span>Switch Branch</span>
+      </button>
+
       <!-- Download Desktop App (Web only) -->
       <button 
         v-if="!isElectron"
@@ -180,10 +191,11 @@ import {
   LogOut,
   Coins,
   List,
-  Download
+  Download,
+  Building2
 } from 'lucide-vue-next';
 
-defineProps<{
+const props = defineProps<{
   brandName: string;
   lowStockCount: number;
   searchQuery: string;
@@ -203,6 +215,11 @@ const showDownloadModal = ref(false);
 
 const isElectron = computed(() => {
   return typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes(' electron/');
+});
+
+const isAdmin = computed(() => {
+  const role = props.userRole || localStorage.getItem('cashierRole');
+  return role === 'ADMIN';
 });
 
 

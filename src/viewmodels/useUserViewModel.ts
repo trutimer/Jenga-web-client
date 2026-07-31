@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { api } from '../services/api';
 import { showToast } from '../services/toastService';
-import type { AppUser, UserCreateRequest, StoreBranch } from '../models/types';
+import type { AppUser, UserCreateRequest, StoreBranch, CashierShift, ShiftDetail } from '../models/types';
 
 export function useUserViewModel() {
   const users = ref<AppUser[]>([]);
@@ -30,6 +30,34 @@ export function useUserViewModel() {
     } catch (err: any) {
       console.error('Failed to fetch user details:', err);
       showToast('Failed to load user details.', 'error');
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const fetchShiftsByCashier = async (cashierId: string): Promise<CashierShift[]> => {
+    isLoading.value = true;
+    try {
+      const response = await api.get<CashierShift[]>(`/api/shifts/cashier/${cashierId}`);
+      return response || [];
+    } catch (err: any) {
+      console.error('Failed to fetch cashier shifts:', err);
+      showToast('Failed to load cashier shifts: ' + (err.message || 'Server error'), 'error');
+      return [];
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const fetchShiftDetails = async (shiftId: string): Promise<ShiftDetail | null> => {
+    isLoading.value = true;
+    try {
+      const response = await api.get<ShiftDetail>(`/api/shifts/${shiftId}`);
+      return response || null;
+    } catch (err: any) {
+      console.error('Failed to fetch shift details:', err);
+      showToast('Failed to load shift details: ' + (err.message || 'Server error'), 'error');
       return null;
     } finally {
       isLoading.value = false;
@@ -107,6 +135,8 @@ export function useUserViewModel() {
     isLoading,
     fetchUsers,
     fetchUserById,
+    fetchShiftsByCashier,
+    fetchShiftDetails,
     fetchBranches,
     createUser,
     blockUser,

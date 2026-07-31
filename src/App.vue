@@ -1,6 +1,6 @@
 <template>
-  <!-- Guest Layout (Login Screen) -->
-  <div v-if="!user" class="min-h-screen w-full bg-surface-container-high">
+  <!-- Guest Layout & Select Branch Screen -->
+  <div v-if="!user || route.path === '/select-branch'" class="min-h-screen w-full bg-surface-container-high">
     <router-view />
   </div>
 
