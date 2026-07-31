@@ -335,9 +335,23 @@
 
                 <!-- Expiry Date -->
                 <td class="p-4 text-center font-mono select-all">
-                  <span class="text-[13px] text-on-surface-variant block font-semibold">
-                    {{ p.expiryDate ? new Date(p.expiryDate).toLocaleDateString() : 'N/A' }}
-                  </span>
+                  <div class="flex flex-col items-center gap-1">
+                    <span class="text-[13px] text-on-surface-variant block font-semibold">
+                      {{ p.expiryDate ? new Date(p.expiryDate).toLocaleDateString() : 'N/A' }}
+                    </span>
+                    <span 
+                      v-if="getProductStatus(p) === 'Expired'"
+                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-error-container text-error uppercase"
+                    >
+                      Expired
+                    </span>
+                    <span 
+                      v-else-if="getProductStatus(p) === 'Soon to expire'"
+                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 uppercase"
+                    >
+                      Soon to expire
+                    </span>
+                  </div>
                 </td>
 
                 <!-- Actions -->
@@ -835,7 +849,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { showToast } from '../services/toastService';
 import type { Product } from '../models/types';
@@ -857,6 +872,7 @@ import {
   PlusCircle
 } from 'lucide-vue-next';
 
+const route = useRoute();
 const vm = useAppViewModel();
 
 const brandGreen = '#004d40';
@@ -895,6 +911,9 @@ const products = computed(() => vm.products.value);
 const currency = computed(() => vm.settings.value.currency);
 
 onMounted(async () => {
+  if (route.query.status && typeof route.query.status === 'string') {
+    stockStatus.value = route.query.status;
+  }
   try {
     const catsData = await api.get('/api/product-categories');
     categories.value = catsData || [];
@@ -903,6 +922,12 @@ onMounted(async () => {
   }
   vm.fetchProducts();
   vm.fetchSuppliers();
+});
+
+watch(() => route.query.status, (newStatus) => {
+  if (newStatus && typeof newStatus === 'string') {
+    stockStatus.value = newStatus;
+  }
 });
 
 const countByCategory = computed(() => {
@@ -958,17 +983,38 @@ const handleResetFilters = () => {
   currentPage.value = 1;
 };
 
+const getProductStatus = (p: Product): string => {
+  if (p.expiryDate) {
+    const exp = new Date(p.expiryDate);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const diffMs = exp.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays <= 0) return 'Expired';
+    if (diffDays <= 90) return 'Soon to expire';
+  }
+  if (p.stock === 0) return 'Out of Stock';
+  if (p.stock <= p.minStock) return 'Low Stock';
+  return 'In Stock';
+};
+
 const filteredProducts = computed(() => {
   return products.value.filter(p => {
     const matchesCategory = selectedCategories.value.length === 0 || selectedCategories.value.includes(p.category);
     
     let matchesStock = true;
+    const currentStatus = getProductStatus(p);
+
     if (stockStatus.value === 'In Stock') {
-      matchesStock = p.stock > p.minStock;
+      matchesStock = p.stock > p.minStock && currentStatus !== 'Expired';
     } else if (stockStatus.value === 'Low Stock') {
-      matchesStock = p.stock > 0 && p.stock <= p.minStock;
+      matchesStock = p.stock > 0 && p.stock <= p.minStock && currentStatus !== 'Expired';
     } else if (stockStatus.value === 'Out of Stock') {
       matchesStock = p.stock === 0;
+    } else if (stockStatus.value === 'Soon to expire') {
+      matchesStock = currentStatus === 'Soon to expire';
+    } else if (stockStatus.value === 'Expired') {
+      matchesStock = currentStatus === 'Expired';
     }
 
     const matchesSupplier = selectedSuppliers.value.length === 0 || selectedSuppliers.value.includes(p.supplier || '');
@@ -1103,7 +1149,9 @@ const stockStatuses = [
   { label: 'All Statuses', value: 'All' },
   { label: 'In Stock', value: 'In Stock' },
   { label: 'Low Stock', value: 'Low Stock', highlight: true },
-  { label: 'Out of Stock', value: 'Out of Stock' }
+  { label: 'Out of Stock', value: 'Out of Stock' },
+  { label: 'Soon to expire', value: 'Soon to expire', highlight: true },
+  { label: 'Expired', value: 'Expired', highlight: true }
 ];
 // Edit Modal States
 const showEditModal = ref(false);

@@ -44,10 +44,17 @@ export async function apiRequest<T = any>(
     let errorMessage = errorText;
     try {
       const parsed = JSON.parse(errorText);
-      if (parsed && typeof parsed.error === 'string') {
-        errorMessage = parsed.error;
-      } else if (parsed && typeof parsed.message === 'string') {
-        errorMessage = parsed.message;
+      if (parsed) {
+        if (typeof parsed.error === 'string' && parsed.error.trim() !== '' && parsed.error !== 'Bad Request' && parsed.error !== 'Internal Server Error') {
+          errorMessage = parsed.error;
+        } else if (typeof parsed.message === 'string' && parsed.message.trim() !== '') {
+          errorMessage = parsed.message;
+        } else if (parsed.errors && Array.isArray(parsed.errors) && parsed.errors.length > 0) {
+          const firstErr = parsed.errors[0];
+          errorMessage = typeof firstErr === 'string' ? firstErr : (firstErr.defaultMessage || firstErr.message || JSON.stringify(firstErr));
+        } else if (typeof parsed.error === 'string') {
+          errorMessage = parsed.error;
+        }
       }
     } catch {
       if (!errorMessage) {

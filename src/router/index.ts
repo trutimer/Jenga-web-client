@@ -92,6 +92,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('../views/ProfileView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/',
     redirect: () => {
       const role = localStorage.getItem('cashierRole');
@@ -147,8 +153,8 @@ router.beforeEach((to, from, next) => {
     }
   } else if (isAuthenticated && role === 'ADMIN' && (!branchId || branchId === 'null' || branchId === 'undefined') && to.name !== 'select-branch') {
     next({ name: 'select-branch' });
-  } else if (isAuthenticated && role === 'CASHIER' && to.name !== 'checkout' && to.name !== 'receipt' && to.name !== 'cash-movements' && to.name !== 'shift-sales' && to.name !== 'shift-details' && to.name !== 'cashier-shifts') {
-    // Restrict CASHIER to checkout, receipt, cash movements, shift sales, and shift details pages
+  } else if (isAuthenticated && role === 'CASHIER' && to.name !== 'checkout' && to.name !== 'receipt' && to.name !== 'cash-movements' && to.name !== 'shift-sales' && to.name !== 'shift-details' && to.name !== 'cashier-shifts' && to.name !== 'profile') {
+    // Restrict CASHIER to checkout, receipt, cash movements, shift sales, shift details, and profile pages
     next({ name: 'checkout' });
   } else {
     next();

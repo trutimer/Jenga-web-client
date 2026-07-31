@@ -8,7 +8,7 @@ export interface Product {
   stock: number;
   minStock: number;
   image?: string;
-  status: 'In Stock' | 'Low Stock' | 'Out of Stock';
+  status: 'In Stock' | 'Low Stock' | 'Out of Stock' | 'Soon to expire' | 'Expired';
   supplier: string;
   sku?: string;
   wholesalePrice?: number;
@@ -59,7 +59,7 @@ export interface StoreSettings {
   timezone: string;
 }
 
-export type ViewType = 'login' | 'select-branch' | 'dashboard' | 'checkout' | 'inventory' | 'reports' | 'settings' | 'receipt' | 'stock-in' | 'suppliers' | 'users';
+export type ViewType = 'login' | 'select-branch' | 'dashboard' | 'checkout' | 'inventory' | 'reports' | 'settings' | 'receipt' | 'stock-in' | 'suppliers' | 'users' | 'profile';
 
 export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'CASHIER';
 

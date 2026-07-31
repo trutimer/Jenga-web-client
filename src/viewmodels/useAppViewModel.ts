@@ -110,12 +110,26 @@ export function useAppViewModel() {
       const productsData = await api.get<any[]>(`/api/products?storeBranchId=${branchId}`);
       if (productsData) {
         const mappedProducts: Product[] = productsData.map((p) => {
-          let statusType: 'In Stock' | 'Low Stock' | 'Out of Stock' = 'In Stock';
+          let statusType: 'In Stock' | 'Low Stock' | 'Out of Stock' | 'Soon to expire' | 'Expired' = 'In Stock';
           const stockNum = Number(p.stock) || 0;
-          if (stockNum === 0) {
-            statusType = 'Out of Stock';
-          } else if (stockNum <= p.reorderLevel) {
-            statusType = 'Low Stock';
+          if (p.expiryDate) {
+            const exp = new Date(p.expiryDate);
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const diffMs = exp.getTime() - now.getTime();
+            const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+            if (diffDays <= 0) {
+              statusType = 'Expired';
+            } else if (diffDays <= 90) {
+              statusType = 'Soon to expire';
+            }
+          }
+          if (statusType === 'In Stock') {
+            if (stockNum === 0) {
+              statusType = 'Out of Stock';
+            } else if (stockNum <= (p.reorderLevel || 10)) {
+              statusType = 'Low Stock';
+            }
           }
           return {
             id: p.id,

@@ -86,7 +86,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <!-- Low Stock alert banner -->
       <button 
-        @click="router.push('/inventory')"
+        @click="router.push({ path: '/inventory', query: { status: 'Low Stock' } })"
         class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant shadow-sm flex items-center justify-between hover:border-[#f59e0b] hover:bg-[#fffbeb] transition-all duration-200 cursor-pointer group text-left w-full"
       >
         <div class="flex items-center">
@@ -103,7 +103,7 @@
 
       <!-- Out of Stock banner -->
       <button 
-        @click="router.push('/inventory')"
+        @click="router.push({ path: '/inventory', query: { status: 'Out of Stock' } })"
         class="bg-error-container/20 rounded-xl p-4 border border-error-container shadow-sm flex items-center justify-between hover:border-error hover:bg-error-container/30 transition-all duration-200 cursor-pointer group text-left w-full"
       >
         <div class="flex items-center">
@@ -120,7 +120,7 @@
 
       <!-- Expiring Soon banner -->
       <button 
-        @click="router.push('/inventory')"
+        @click="router.push({ path: '/inventory', query: { status: 'Soon to expire' } })"
         class="bg-[#f3e8ff] rounded-xl p-4 border border-[#e9d5ff] shadow-sm flex items-center justify-between hover:border-[#a855f7] hover:bg-[#faf5ff] transition-all duration-200 cursor-pointer group text-left w-full"
       >
         <div class="flex items-center">

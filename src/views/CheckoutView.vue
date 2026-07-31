@@ -149,26 +149,26 @@
       </div>
 
       <!-- RIGHT PANEL: Summary and checkout actions -->
-      <aside class="w-1/3 bg-surface-container-low flex flex-col shrink-0 font-sans border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+      <aside class="w-1/3 bg-surface-container-lowest flex flex-col shrink-0 font-sans border border-outline-variant rounded-xl overflow-hidden shadow-sm">
       <div class="flex-1 p-6 flex flex-col gap-6 overflow-y-auto">
         
         <!-- Subtotal metadata details -->
-        <div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/60 flex flex-col gap-3.5 shadow-sm">
+        <div class="flex flex-col gap-2 pb-4 border-b border-outline-variant/60">
           <div class="flex justify-between items-center text-sm font-semibold text-on-surface-variant">
             <span>Subtotal ({{ cartItemsCount }} items)</span>
-            <span class="font-mono text-on-surface">{{ formatCurrency(subtotal, currency) }}</span>
+            <span class="font-mono text-on-surface font-bold">{{ formatCurrency(subtotal, currency) }}</span>
           </div>
           <div class="flex justify-between items-center text-sm font-semibold text-tertiary">
             <span>Discounts</span>
-            <span class="font-mono">-{{ formatCurrency(discount, currency) }}</span>
+            <span class="font-mono font-bold">-{{ formatCurrency(discount, currency) }}</span>
           </div>
-          <div class="flex justify-between items-center text-sm font-semibold text-on-surface-variant pb-3.5 border-b border-outline-variant">
+          <div class="flex justify-between items-center text-sm font-semibold text-on-surface-variant">
             <span>Tax (18% VAT Incl.)</span>
-            <span class="font-mono text-on-surface">{{ formatCurrency(tax, currency) }}</span>
+            <span class="font-mono text-on-surface font-bold">{{ formatCurrency(tax, currency) }}</span>
           </div>
-          <div class="flex justify-between items-end pt-1">
-            <span class="text-base font-black text-on-surface uppercase tracking-tight">Total Invoice</span>
-            <span class="text-3xl font-black text-primary font-mono tracking-tight">
+          <div class="flex justify-between items-end pt-2 mt-1 border-t border-outline-variant/40">
+            <span class="text-base font-black uppercase tracking-tight text-on-surface">Total Invoice</span>
+            <span class="text-xl font-black text-primary font-mono tracking-tight">
               {{ formatCurrency(total, currency) }}
             </span>
           </div>
@@ -182,12 +182,11 @@
             <button 
               type="button"
               @click="selectPaymentMethod('Cash')"
-              class="rounded-xl p-3.5 flex flex-col items-center justify-center gap-1.5 transition-all text-center h-20 cursor-pointer border-2"
+              class="rounded-xl p-3.5 flex flex-col items-center justify-center gap-1.5 transition-all text-center h-10 cursor-pointer border-2"
               :class="paymentMethod === 'Cash' 
                 ? 'bg-primary text-on-primary border-primary shadow-md shadow-primary/10' 
                 : 'bg-surface-container-lowest text-on-surface border-outline-variant hover:border-primary/50'"
             >
-              <Coins class="w-6 h-6 stroke-[2px]" />
               <span class="text-xs font-bold">Cash</span>
             </button>
 
@@ -195,25 +194,23 @@
             <button 
               type="button"
               @click="selectPaymentMethod('Card')"
-              class="rounded-xl p-3.5 flex flex-col items-center justify-center gap-1.5 transition-all text-center h-20 cursor-pointer border-2"
+              class="rounded-xl p-3.5 flex flex-col items-center justify-center gap-1.5 transition-all text-center h-10 cursor-pointer border-2"
               :class="paymentMethod === 'Card' 
                 ? 'bg-primary text-on-primary border-primary shadow-md shadow-primary/10' 
                 : 'bg-surface-container-lowest text-on-surface border-outline-variant hover:border-primary/50'"
             >
-              <CardIcon class="w-6 h-6 stroke-[2px]" />
-              <span class="text-xs font-bold">Card (POS)</span>
+              <span class="text-xs font-bold">Card</span>
             </button>
 
             <!-- M-Pesa mobile money button -->
             <button 
               type="button"
               @click="selectPaymentMethod('M-Pesa')"
-              class="rounded-xl p-3.5 flex flex-col items-center justify-center gap-1.5 transition-all text-center h-20 cursor-pointer border-2"
+              class="rounded-xl p-3.5 flex flex-col items-center justify-center gap-1.5 transition-all text-center h-10 cursor-pointer border-2"
               :class="paymentMethod === 'M-Pesa' 
                 ? 'bg-primary text-on-primary border-primary shadow-md shadow-primary/10' 
                 : 'bg-surface-container-lowest text-on-surface border-outline-variant hover:border-primary/50'"
             >
-              <Smartphone class="w-6 h-6 stroke-[2px]" />
               <span class="text-xs font-bold">M-Pesa</span>
             </button>
           </div>
@@ -240,26 +237,6 @@
             </div>
           </div>
 
-          <!-- Quick selectors -->
-          <div v-if="paymentMethod === 'Cash'" class="grid grid-cols-4 gap-2">
-            <button 
-              v-for="opt in quickCashOptions"
-              :key="opt"
-              type="button"
-              @click="customCashInput = opt.toString()"
-              class="bg-surface-container text-on-surface font-semibold text-xs py-2.5 rounded-lg hover:bg-surface-variant active:bg-surface-dim transition-colors cursor-pointer"
-            >
-              {{ opt }}
-            </button>
-            <button 
-              type="button"
-              @click="customCashInput = formatCurrencyWithoutSymbol(total, currency)"
-              class="bg-primary/10 text-primary font-bold text-xs py-2.5 rounded-lg hover:bg-primary/20 transition-colors cursor-pointer col-span-4"
-            >
-              Received Exact Invoice Total
-            </button>
-          </div>
-
           <!-- Change Due summary -->
           <div class="mt-1 p-3.5 bg-primary-container/15 rounded-lg flex justify-between items-center border border-primary-container/20">
             <span class="text-sm font-semibold text-primary">Change Due</span>
@@ -271,42 +248,28 @@
       </div>
 
       <!-- Action controls footer -->
-      <div class="p-6 bg-surface border-t border-outline-variant flex flex-col gap-2.5 shrink-0">
-        <button 
-          type="button"
-          @click="handleCompleteSale"
-          class="w-full bg-primary text-on-primary py-4 rounded-xl text-md font-bold hover:bg-opacity-95 active:scale-[0.98] transition-all flex justify-center items-center gap-2.5 shadow-lg shadow-primary/10 cursor-pointer"
-        >
-          <CheckCircle class="w-6 h-6 stroke-[2px]" />
-          <span>Complete Sale & Print</span>
-        </button>
-
-        <div class="grid grid-cols-3 gap-2">
+      <div class="p-4 sm:p-5 bg-surface border-t border-outline-variant shrink-0">
+        <div class="flex items-center gap-3">
+          <!-- Hold Button -->
           <button 
             type="button" 
             @click="handleHold"
             :disabled="cart.length === 0"
-            class="bg-surface-container text-on-surface font-semibold text-xs py-2.5 rounded-lg hover:bg-surface-variant transition-colors flex justify-center items-center gap-1.5 cursor-pointer disabled:opacity-40"
+            class="h-12 px-4 bg-surface-container text-on-surface font-bold text-xs rounded-xl hover:bg-surface-variant transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 shrink-0 border border-outline-variant/60"
           >
-            <Pause class="w-3.5 h-3.5" />
+            <Pause class="w-4 h-4 stroke-[2.5px]" />
             <span>Hold</span>
           </button>
+
+          <!-- Complete Sale & Print Button -->
           <button 
             type="button"
-            @click="alertReceiptGuide"
-            class="bg-surface-container text-on-surface font-semibold text-xs py-2.5 rounded-lg hover:bg-surface-variant transition-colors flex justify-center items-center gap-1.5 cursor-pointer"
-          >
-            <Printer class="w-3.5 h-3.5" />
-            <span>Print Guide</span>
-          </button>
-          <button 
-            type="button"
-            @click="clearCart"
+            @click="handleCompleteSale"
             :disabled="cart.length === 0"
-            class="bg-error-container text-on-error-container font-semibold text-xs py-2.5 rounded-lg hover:bg-opacity-80 transition-colors flex justify-center items-center gap-1.5 cursor-pointer disabled:opacity-40"
+            class="flex-1 h-12 bg-primary text-on-primary rounded-xl text-sm font-bold hover:bg-primary/95 active:scale-[0.99] transition-all flex items-center justify-center gap-2.5 shadow-md shadow-primary/15 cursor-pointer disabled:opacity-50"
           >
-            <X class="w-3.5 h-3.5" />
-            <span>Cancel</span>
+            <CheckCircle class="w-5 h-5 stroke-[2.5px]" />
+            <span>Complete Sale & Print</span>
           </button>
         </div>
       </div>

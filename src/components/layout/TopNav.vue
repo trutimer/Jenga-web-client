@@ -18,26 +18,6 @@
       </div>
     </div>
 
-    <!-- Global Search Bar (Visible except on login page) -->
-    <div class="flex-1 max-w-sm ml-8 hidden sm:flex items-center bg-surface-container-high rounded-full px-4 h-10 border border-transparent focus-within:border-primary transition-colors">
-      <Search class="w-4 h-4 text-on-surface-variant mr-2" />
-      <input 
-        type="text"
-        :value="searchQuery"
-        @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
-        :placeholder="searchPlaceholder"
-        class="bg-transparent border-none outline-none w-full text-sm text-on-surface placeholder:text-on-surface-variant/70 focus:ring-0 px-0 h-full"
-      />
-      <button 
-        v-if="searchQuery"
-        type="button" 
-        @click="$emit('update:searchQuery', '')"
-        class="text-xs text-on-surface-variant hover:text-on-surface cursor-pointer font-bold px-1"
-      >
-        Clear
-      </button>
-    </div>
-
     <!-- Trailing Actions -->
     <div class="flex items-center gap-4 ml-auto">
       <!-- License Expiry Display Button (Replaces Low Stock) -->
@@ -110,11 +90,10 @@
 
         <!-- Account/User profile -->
         <button 
-          v-if="userRole !== 'CASHIER'"
-          @click="router.push('/settings')"
+          @click="router.push('/profile')"
           class="p-2 hover:bg-surface-container rounded-full transition-colors flex items-center justify-center cursor-pointer"
-          :class="currentView === 'settings' ? 'text-primary bg-primary-container/30' : ''"
-          title="Settings & Profile"
+          :class="currentView === 'profile' ? 'text-primary bg-primary-container/30' : ''"
+          title="My Account Profile & Password"
         >
           <User class="w-5 h-5 stroke-[2px]" />
         </button>
