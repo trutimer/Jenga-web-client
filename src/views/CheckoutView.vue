@@ -348,6 +348,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { showToast } from '../services/toastService';
+import { useBarcodeScanner, playPOSSound } from '../composables/useBarcodeScanner';
 import type { Product, CartItem, Transaction } from '../models/types';
 import { formatCurrency, formatCurrencyWithoutSymbol } from '../models/mockData';
 import Modal from '../components/common/Modal.vue';
@@ -417,6 +418,31 @@ const handleOpenShift = async () => {
 
 onMounted(() => {
   vm.fetchProducts();
+});
+
+const handleBarcodeScan = (scannedCode: string) => {
+  const code = scannedCode.trim();
+  if (!code) return;
+
+  const matched = products.value.find(
+    p => p.barcode === code || p.id === code || p.barcode?.toLowerCase() === code.toLowerCase()
+  );
+
+  if (matched) {
+    addProductToCart(matched);
+    showToast(`Scanned: ${matched.name}`, 'success');
+  } else {
+    playPOSSound('error');
+    showToast(`No product found for barcode: "${code}"`, 'error');
+  }
+};
+
+// Global 2D Barcode Scanner integration (Model X11 / Siyuanchuang Electronics)
+useBarcodeScanner({
+  onScan: (scannedCode) => {
+    handleBarcodeScan(scannedCode);
+  },
+  enableAudioFeedback: true,
 });
 
 const handleQuerySearch = () => {

@@ -853,6 +853,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { showToast } from '../services/toastService';
+import { useBarcodeScanner } from '../composables/useBarcodeScanner';
 import type { Product } from '../models/types';
 import { formatCurrencyWithoutSymbol } from '../models/mockData';
 import { api } from '../services/api';
@@ -1172,6 +1173,22 @@ const showRestockModal = ref(false);
 const restockingProduct = ref<Product | null>(null);
 const restockQty = ref('10');
 const restockType = ref<'PURCHASE' | 'SALE' | 'ADJUSTMENT' | 'RETURN'>('PURCHASE');
+
+// Global 2D Barcode Scanner integration (Model X11 / Siyuanchuang Electronics)
+useBarcodeScanner({
+  onScan: (scannedCode) => {
+    if (showAddModal.value) {
+      newProdBarcode.value = scannedCode;
+      showToast(`Barcode scanned into field: "${scannedCode}"`, 'success');
+    } else if (showEditModal.value) {
+      editProdBarcode.value = scannedCode;
+      showToast(`Barcode scanned into field: "${scannedCode}"`, 'success');
+    } else {
+      showToast(`Scanned product barcode: "${scannedCode}"`, 'success');
+    }
+  },
+  enableAudioFeedback: true,
+});
 
 // Edit Modal Actions
 const openEditModal = (p: Product) => {

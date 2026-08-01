@@ -48,6 +48,18 @@
           <Key className="w-4.5 h-4.5" />
           <span>API & Device Keys</span>
         </button>
+
+        <button 
+          type="button"
+          @click="activeSection = 'hardware'"
+          class="text-left text-xs px-4 py-3 h-11 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-semibold border-0"
+          :class="activeSection === 'hardware' 
+            ? 'bg-primary-container text-on-primary-container font-extrabold translate-x-1' 
+            : 'text-on-surface-variant hover:bg-surface-container bg-transparent'"
+        >
+          <QrCode className="w-4.5 h-4.5" />
+          <span>Hardware & Barcode</span>
+        </button>
       </div>
 
       <!-- Right column Form Panel (3 columns) -->
@@ -60,11 +72,13 @@
               <span v-if="activeSection === 'profile'">Corporate Store Profile</span>
               <span v-else-if="activeSection === 'defaults'">Base Regional Settings</span>
               <span v-else-if="activeSection === 'keys'">Developer Integrations & Key Management</span>
+              <span v-else-if="activeSection === 'hardware'">Hardware Peripherals & 2D Barcode Scanner</span>
             </h3>
             <p class="text-xs text-on-surface-variant font-semibold mt-1">
               <span v-if="activeSection === 'profile'">Configure custom storefront descriptors rendering on physical thermal invoices.</span>
               <span v-else-if="activeSection === 'defaults'">Choose global currency types and temporal zones for data tracking.</span>
               <span v-else-if="activeSection === 'keys'">Verify and generate secure webhook keys to integrate local POS printers.</span>
+              <span v-else-if="activeSection === 'hardware'">Monitor connected USB hardware, test Model X11 2D Barcode scanner inputs, and manage POS sound alerts.</span>
             </p>
           </div>
 
@@ -204,8 +218,139 @@
             </div>
           </div>
 
+          <!-- SECTION 4: HARDWARE & BARCODE SCANNER -->
+          <div v-else-if="activeSection === 'hardware'" class="space-y-6">
+            <!-- Hardware scanner overview card -->
+            <div class="p-5 bg-surface-container border border-outline-variant rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                  <QrCode class="w-6 h-6" />
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h4 class="text-base font-bold text-on-surface">2D Barcode Scanner (USB HID Engine)</h4>
+                    <span 
+                      v-if="lastScannedBarcode"
+                      class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                    >
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      ACTIVE & VERIFIED
+                    </span>
+                    <span 
+                      v-else
+                      class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                    >
+                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      LISTENING (USB WEDGE)
+                    </span>
+                  </div>
+                  <p class="text-xs text-on-surface-variant font-medium mt-1">
+                    Mode: <span class="font-mono font-bold text-on-surface">USB HID Keyboard Emulation</span> • 
+                    Status: <span class="font-mono font-bold" :class="lastScannedBarcode ? 'text-emerald-600' : 'text-amber-600'">{{ lastScannedBarcode ? `Last Scanned: ${lastScannedBarcode}` : 'Scan any item with X11 to verify' }}</span>
+                  </p>
+                </div>
+              </div>
+              <div class="flex gap-2 shrink-0">
+                <button 
+                  type="button" 
+                  @click="playPOSSound('success')"
+                  class="px-3.5 py-2 bg-surface-container-high hover:bg-surface-container-highest text-xs font-bold rounded-lg border border-outline-variant transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Volume2 class="w-3.5 h-3.5 text-primary" />
+                  <span>Test Beep</span>
+                </button>
+                <button 
+                  type="button" 
+                  @click="playPOSSound('error')"
+                  class="px-3.5 py-2 bg-surface-container-high hover:bg-surface-container-highest text-xs font-bold rounded-lg border border-outline-variant transition-colors flex items-center gap-1.5 cursor-pointer text-error"
+                >
+                  <VolumeX class="w-3.5 h-3.5 text-error" />
+                  <span>Test Error</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Live Barcode Scanner Test Bench -->
+            <div class="p-5 bg-surface-container-low border border-outline-variant rounded-xl flex flex-col gap-4">
+              <div class="flex justify-between items-center pb-3 border-b border-outline-variant/60">
+                <div>
+                  <h4 class="text-sm font-bold text-on-surface uppercase tracking-tight flex items-center gap-2">
+                    <Activity class="w-4 h-4 text-primary" />
+                    <span>Interactive Scanner Diagnostic Bench</span>
+                  </h4>
+                  <p class="text-xs text-on-surface-variant font-medium mt-0.5">Scan any physical 1D or 2D barcode with your X11 scanner to test communication latency.</p>
+                </div>
+                <span class="text-xs font-mono font-bold text-primary px-3 py-1 bg-primary/10 rounded-md border border-primary/20">
+                  Ready to scan...
+                </span>
+              </div>
+
+              <!-- Scanner result indicator box -->
+              <div class="p-4 bg-surface rounded-xl border border-outline-variant/80 flex flex-col md:flex-row justify-between items-center gap-4 min-h-[72px]">
+                <div>
+                  <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider block mb-0.5">Last Scanned Value</span>
+                  <p class="text-lg font-mono font-black text-primary tracking-wide">
+                    {{ lastScannedBarcode || '--- Scan barcode using X11 scanner ---' }}
+                  </p>
+                </div>
+
+                <div v-if="scanStats.lastScanDuration > 0" class="flex gap-4 shrink-0 text-right">
+                  <div>
+                    <span class="text-[10px] font-mono text-on-surface-variant block uppercase">Latency</span>
+                    <span class="text-xs font-mono font-bold text-emerald-600">{{ scanStats.lastScanDuration }} ms</span>
+                  </div>
+                  <div>
+                    <span class="text-[10px] font-mono text-on-surface-variant block uppercase">Length</span>
+                    <span class="text-xs font-mono font-bold text-on-surface">{{ scanStats.characterCount }} chars</span>
+                  </div>
+                  <div>
+                    <span class="text-[10px] font-mono text-on-surface-variant block uppercase">Device Type</span>
+                    <span class="text-xs font-mono font-bold text-primary">Hardware HID</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recent Scan History Log Table -->
+              <div v-if="scanHistory.length > 0" class="mt-2">
+                <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider block mb-2">Scan Session Log</span>
+                <div class="max-h-40 overflow-y-auto border border-outline-variant/60 rounded-lg divide-y divide-outline-variant/40 bg-surface">
+                  <div 
+                    v-for="(item, idx) in scanHistory" 
+                    :key="idx"
+                    class="p-2.5 px-4 flex justify-between items-center text-xs hover:bg-surface-container/30 transition-colors"
+                  >
+                    <span class="font-mono font-bold text-on-surface">{{ item.barcode }}</span>
+                    <div class="flex items-center gap-4 text-on-surface-variant font-medium text-[11px]">
+                      <span>{{ item.speedMs }} ms burst</span>
+                      <span>{{ new Date(item.timestamp).toLocaleTimeString() }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Hardware behavior options -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="p-4 bg-surface-container-low border border-outline-variant rounded-xl flex items-center justify-between">
+                <div>
+                  <h5 class="text-xs font-bold text-on-surface">Auto-Add to Cart on Scan</h5>
+                  <p class="text-[11px] text-on-surface-variant font-medium mt-0.5">Automatically add item to cart on Checkout screen without clicking.</p>
+                </div>
+                <input type="checkbox" checked class="w-4 h-4 accent-primary cursor-pointer" />
+              </div>
+
+              <div class="p-4 bg-surface-container-low border border-outline-variant rounded-xl flex items-center justify-between">
+                <div>
+                  <h5 class="text-xs font-bold text-on-surface">Audio Scan Feedback</h5>
+                  <p class="text-[11px] text-on-surface-variant font-medium mt-0.5">Play high-pitch tone on successful lookup, warning buzz on missing item.</p>
+                </div>
+                <input type="checkbox" checked class="w-4 h-4 accent-primary cursor-pointer" />
+              </div>
+            </div>
+          </div>
+
           <!-- Form actions footer -->
-          <div v-if="activeSection !== 'keys'" class="flex justify-end gap-3.5 pt-6 border-t border-outline-variant mt-2">
+          <div v-if="activeSection !== 'keys' && activeSection !== 'hardware'" class="flex justify-end gap-3.5 pt-6 border-t border-outline-variant mt-2">
             <button 
               type="submit"
               class="px-6 py-3 bg-primary hover:bg-opacity-95 text-on-primary font-bold text-sm rounded-lg shadow-sm shadow-primary/10 transition-colors flex items-center justify-center gap-1.5 cursor-pointer border-0"
@@ -225,21 +370,29 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
+import { useBarcodeScanner, playPOSSound } from '../composables/useBarcodeScanner';
 import { 
   Sliders, 
   Store, 
   Key, 
   CheckCircle,
-  MapPin,
-  Phone,
-  Mail,
-  Coins,
-  Globe
+  QrCode,
+  Volume2,
+  VolumeX,
+  Activity
 } from 'lucide-vue-next';
 
 const vm = useAppViewModel();
 
-const activeSection = ref<'profile' | 'defaults' | 'keys'>('profile');
+const activeSection = ref<'profile' | 'defaults' | 'keys' | 'hardware'>('profile');
+
+// Hardware Barcode Scanner integration
+const { lastScannedBarcode, scanHistory, scanStats } = useBarcodeScanner({
+  onScan: (scannedCode) => {
+    console.log('[Settings Hardware Test] Scanned code:', scannedCode);
+  },
+  enableAudioFeedback: true,
+});
 
 // Input states
 const storeName = ref('');
