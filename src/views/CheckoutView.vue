@@ -626,9 +626,16 @@ const alertReceiptGuide = () => {
 
 const filteredProducts = computed(() => {
   const q = searchQuery.value.trim().toLowerCase();
-  if (!q) return products.value;
-  return products.value.filter(
-    p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
-  );
+  const list = !q 
+    ? [...products.value] 
+    : products.value.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+
+  return list.sort((a, b) => {
+    const aHasNoBarcode = !a.barcode || !a.barcode.trim();
+    const bHasNoBarcode = !b.barcode || !b.barcode.trim();
+    if (aHasNoBarcode && !bHasNoBarcode) return -1;
+    if (!aHasNoBarcode && bHasNoBarcode) return 1;
+    return 0;
+  });
 });
 </script>

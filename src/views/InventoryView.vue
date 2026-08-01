@@ -1057,7 +1057,7 @@ const handleAddProduct = async () => {
 
     const payload: any = {
       name: newProdName.value,
-      barcode: newProdBarcode.value,
+      barcode: newProdBarcode.value && newProdBarcode.value.trim() ? newProdBarcode.value.trim() : null,
       sku: `SKU-${Date.now().toString().slice(-6)}`,
       categoryId: cat.id,
       storeBranchId: branchId,
@@ -1227,7 +1227,7 @@ const handleEditProduct = async () => {
     const payload: any = {
       id: editingProduct.value.id,
       name: editProdName.value,
-      barcode: editProdBarcode.value,
+      barcode: editProdBarcode.value && editProdBarcode.value.trim() ? editProdBarcode.value.trim() : null,
       sku: editingProduct.value.sku || `SKU-${Date.now().toString().slice(-6)}`,
       categoryId: cat.id,
       costPrice: costNum,
