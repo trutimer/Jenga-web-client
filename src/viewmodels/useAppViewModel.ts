@@ -5,6 +5,19 @@ import { api } from '../services/api';
 import { showToast } from '../services/toastService';
 import router from '../router';
 
+const formatDateForInput = (dateStr?: string | null): string => {
+  if (!dateStr) return '';
+  const str = String(dateStr).trim();
+  if (!str) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const d = new Date(str);
+  if (isNaN(d.getTime())) return str.slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Global shared reactive states
 const user = ref<string | null>(
   localStorage.getItem('accessToken') && localStorage.getItem('storeId')
@@ -112,8 +125,9 @@ export function useAppViewModel() {
         const mappedProducts: Product[] = productsData.map((p) => {
           let statusType: 'In Stock' | 'Low Stock' | 'Out of Stock' | 'Soon to expire' | 'Expired' = 'In Stock';
           const stockNum = Number(p.stock) || 0;
-          if (p.expiryDate) {
-            const exp = new Date(p.expiryDate);
+          const formattedExpiry = formatDateForInput(p.expiryDate);
+          if (formattedExpiry) {
+            const exp = new Date(formattedExpiry);
             const now = new Date();
             now.setHours(0, 0, 0, 0);
             const diffMs = exp.getTime() - now.getTime();
@@ -141,11 +155,11 @@ export function useAppViewModel() {
             stock: stockNum,
             minStock: p.reorderLevel || 10,
             status: statusType,
-            supplier: 'Bakhresa Group',
+            supplier: p.supplierName || p.supplier || '',
             sku: p.sku || '',
             wholesalePrice: p.wholesalePrice ? Number(p.wholesalePrice) : undefined,
             unitOfMeasure: p.unitOfMeasure || p.UnitOfMeasure || undefined,
-            expiryDate: p.expiryDate || undefined,
+            expiryDate: formattedExpiry || undefined,
           };
         });
         products.value = mappedProducts;

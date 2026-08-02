@@ -1128,9 +1128,9 @@ const handleAddProduct = async () => {
       stock: Number(createdVm.stock) || 0,
       minStock: createdVm.reorderLevel || 10,
       status: createdVm.stock === 0 ? 'Out of Stock' : (createdVm.stock <= createdVm.reorderLevel ? 'Low Stock' : 'In Stock'),
-      supplier: newProdSupplier.value || 'Bakhresa Group',
+      supplier: newProdSupplier.value || '',
       unitOfMeasure: createdVm.unitOfMeasure || createdVm.UnitOfMeasure || newProdUnitOfMeasure.value,
-      expiryDate: createdVm.expiryDate || newProdExpiryDate.value
+      expiryDate: formatDateForInput(createdVm.expiryDate || newProdExpiryDate.value) || undefined
     };
 
     vm.products.value = [newProduct, ...vm.products.value];
@@ -1168,7 +1168,7 @@ const handleBulkImport = async () => {
       stock: Number(vm.stock) || 0,
       minStock: vm.reorderLevel || 10,
       status: vm.stock === 0 ? 'Out of Stock' : (vm.stock <= vm.reorderLevel ? 'Low Stock' : 'In Stock'),
-      supplier: 'Bakhresa Group'
+      supplier: vm.supplierName || vm.supplier || ''
     }));
 
     if (addedProducts.length > 0) {
@@ -1232,6 +1232,19 @@ useBarcodeScanner({
   enableAudioFeedback: true,
 });
 
+const formatDateForInput = (dateStr?: string | null): string => {
+  if (!dateStr) return '';
+  const str = String(dateStr).trim();
+  if (!str) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const d = new Date(str);
+  if (isNaN(d.getTime())) return str.slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Edit Modal Actions
 const openEditModal = (p: Product) => {
   editingProduct.value = p;
@@ -1244,7 +1257,7 @@ const openEditModal = (p: Product) => {
   editProdUnitOfMeasure.value = p.unitOfMeasure || 'PCS';
   editProdMinStock.value = p.minStock.toString();
   editProdSupplier.value = p.supplier;
-  editProdExpiryDate.value = p.expiryDate || '';
+  editProdExpiryDate.value = formatDateForInput(p.expiryDate);
   showEditModal.value = true;
 };
 
@@ -1300,11 +1313,11 @@ const handleEditProduct = async () => {
         price: Number(updatedVm.sellingPrice) || 0,
         minStock: updatedVm.reorderLevel || 10,
         status: updatedVm.stock === 0 ? 'Out of Stock' : (updatedVm.stock <= updatedVm.reorderLevel ? 'Low Stock' : 'In Stock'),
-        supplier: editProdSupplier.value || 'Bakhresa Group',
+        supplier: editProdSupplier.value || '',
         sku: updatedVm.sku || '',
         wholesalePrice: updatedVm.wholesalePrice ? Number(updatedVm.wholesalePrice) : undefined,
         unitOfMeasure: updatedVm.unitOfMeasure || updatedVm.UnitOfMeasure || editProdUnitOfMeasure.value,
-        expiryDate: updatedVm.expiryDate || editProdExpiryDate.value
+        expiryDate: formatDateForInput(updatedVm.expiryDate || editProdExpiryDate.value) || undefined
       };
     }
 
