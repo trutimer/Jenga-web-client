@@ -50,6 +50,31 @@
           </button>
         </div>
 
+        <!-- FILTER: PRODUCT NAME SEARCH -->
+        <div class="space-y-3.5">
+          <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">Search Product</span>
+          <div class="relative">
+            <Search class="w-4 h-4 text-outline absolute left-3 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text"
+              v-model="productNameSearch"
+              @input="currentPage = 1"
+              placeholder="Search product name..."
+              class="w-full bg-surface-container-low pl-9 pr-8 py-2 border border-outline-variant rounded-lg text-xs outline-none focus:border-primary transition-all font-semibold placeholder:text-outline text-on-surface"
+            />
+            <button 
+              v-if="productNameSearch"
+              type="button"
+              @click="productNameSearch = ''; currentPage = 1"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface cursor-pointer bg-transparent border-0"
+            >
+              <X class="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <hr class="border-outline-variant/65" />
+
         <!-- FILTER: CATEGORY -->
         <div class="space-y-3.5">
           <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">Category</span>
@@ -206,6 +231,19 @@
           
           <div class="flex flex-wrap gap-2">
             <div 
+              v-if="productNameSearch.trim()" 
+              class="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/50"
+            >
+              <span>Search: "{{ productNameSearch }}"</span>
+              <button 
+                @click="productNameSearch = ''; currentPage = 1"
+                class="text-outline hover:text-on-surface-variant cursor-pointer ml-0.5 bg-transparent border-0"
+              >
+                <X class="w-3 h-3 stroke-[2.5px]" />
+              </button>
+            </div>
+
+            <div 
               v-for="cat in selectedCategories" 
               :key="cat" 
               class="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/50"
@@ -247,7 +285,7 @@
             </div>
 
             <span 
-              v-if="selectedCategories.length === 0 && stockStatus === 'All' && selectedSuppliers.length === 0" 
+              v-if="!productNameSearch.trim() && selectedCategories.length === 0 && stockStatus === 'All' && selectedSuppliers.length === 0" 
               class="text-xs text-outline font-medium italic"
             >
               No active filter overlays
@@ -880,6 +918,7 @@ const brandGreen = '#004d40';
 const categories = ref<any[]>([]);
 
 // Filter States
+const productNameSearch = ref('');
 const selectedCategories = ref<string[]>([]);
 const stockStatus = ref<string>('All');
 const supplierSearch = ref('');
@@ -977,6 +1016,7 @@ const selectStockStatus = (status: string) => {
 };
 
 const handleResetFilters = () => {
+  productNameSearch.value = '';
   selectedCategories.value = [];
   stockStatus.value = 'All';
   selectedSuppliers.value = [];
@@ -1000,7 +1040,9 @@ const getProductStatus = (p: Product): string => {
 };
 
 const filteredProducts = computed(() => {
+  const search = productNameSearch.value.trim().toLowerCase();
   return products.value.filter(p => {
+    const matchesName = !search || p.name.toLowerCase().includes(search);
     const matchesCategory = selectedCategories.value.length === 0 || selectedCategories.value.includes(p.category);
     
     let matchesStock = true;
@@ -1020,7 +1062,7 @@ const filteredProducts = computed(() => {
 
     const matchesSupplier = selectedSuppliers.value.length === 0 || selectedSuppliers.value.includes(p.supplier || '');
 
-    return matchesCategory && matchesStock && matchesSupplier;
+    return matchesName && matchesCategory && matchesStock && matchesSupplier;
   });
 });
 
