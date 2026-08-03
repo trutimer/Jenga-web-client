@@ -30,10 +30,12 @@ export interface Transaction {
   discount: number;
   tax: number;
   total: number;
-  paymentMethod: 'Cash' | 'Card' | 'M-Pesa';
+  paymentMethod: 'Cash' | 'Card' | 'M-Pesa' | 'On Credit' | 'CREDIT';
   amountReceived: number;
   changeDue: number;
   refCode?: string;
+  customerId?: string;
+  customerName?: string;
 }
 
 export interface Supplier {
@@ -59,7 +61,127 @@ export interface StoreSettings {
   timezone: string;
 }
 
-export type ViewType = 'login' | 'select-branch' | 'dashboard' | 'checkout' | 'inventory' | 'reports' | 'settings' | 'receipt' | 'stock-in' | 'suppliers' | 'users' | 'profile';
+export type ViewType = 'login' | 'select-branch' | 'dashboard' | 'checkout' | 'inventory' | 'reports' | 'settings' | 'receipt' | 'stock-in' | 'suppliers' | 'users' | 'profile' | 'customers';
+
+export type CustomerType = 'PERSON' | 'COMPANY';
+export type CustomerStatus = 'ACTIVE' | 'INACTIVE';
+export type InvoiceStatus = 'DRAFT' | 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED' | 'OVERDUE';
+export type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER' | 'CHEQUE';
+
+export interface CustomerContactPerson {
+  id?: string;
+  customerId?: string;
+  fullName: string;
+  designation?: string;
+  phone?: string;
+  email?: string;
+  primary: boolean;
+  createdAt?: string;
+}
+
+export interface Customer {
+  id?: string;
+  storeId?: string;
+  storeName?: string;
+  registeredBranchId?: string;
+  registeredBranchName?: string;
+  customerType: CustomerType;
+  code?: string;
+  firstName?: string;
+  lastName?: string;
+  companyName?: string;
+  displayName?: string;
+  tinNumber?: string;
+  vrnNumber?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  creditLimit?: number;
+  outstandingBalance?: number;
+  arAccountId?: string;
+  status: CustomerStatus;
+  createdById?: string;
+  createdByName?: string;
+  contactPersons?: CustomerContactPerson[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CustomerPayment {
+  id?: string;
+  paymentNumber?: string;
+  customerId: string;
+  customerName?: string;
+  customerCode?: string;
+  invoiceId?: string;
+  invoiceNumber?: string;
+  branchId?: string;
+  branchName?: string;
+  receivedById?: string;
+  receivedByName?: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  referenceNumber?: string;
+  postedToGl?: boolean;
+  postedAt?: string;
+  financialPeriodId?: string;
+  notes?: string;
+  paymentDate?: string;
+}
+
+export interface RecordPaymentRequest {
+  customerId: string;
+  invoiceId?: string;
+  branchId?: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  referenceNumber?: string;
+  notes?: string;
+}
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  saleId?: string;
+  customerId: string;
+  customerName?: string;
+  customerCode?: string;
+  storeId?: string;
+  storeName?: string;
+  branchId?: string;
+  branchName?: string;
+  totalAmount: number;
+  paidAmount: number;
+  dueAmount: number;
+  dueDate?: string;
+  status: InvoiceStatus;
+  postedToGl?: boolean;
+  postedAt?: string;
+  financialPeriodId?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CustomerStatement {
+  customer: Customer;
+  totalBilled: number;
+  totalPaid: number;
+  outstandingBalance: number;
+  invoices: Invoice[];
+  payments: CustomerPayment[];
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
 
 export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'CASHIER';
 

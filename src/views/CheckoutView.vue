@@ -190,16 +190,16 @@
               <span class="text-xs font-bold">Cash</span>
             </button>
 
-            <!-- Card button -->
+            <!-- On Credit button -->
             <button 
               type="button"
-              @click="selectPaymentMethod('Card')"
+              @click="selectPaymentMethod('On Credit')"
               class="rounded-xl p-3.5 flex flex-col items-center justify-center gap-1.5 transition-all text-center h-10 cursor-pointer border-2"
-              :class="paymentMethod === 'Card' 
+              :class="paymentMethod === 'On Credit' 
                 ? 'bg-primary text-on-primary border-primary shadow-md shadow-primary/10' 
                 : 'bg-surface-container-lowest text-on-surface border-outline-variant hover:border-primary/50'"
             >
-              <span class="text-xs font-bold">Card</span>
+              <span class="text-xs font-bold">On Credit</span>
             </button>
 
             <!-- M-Pesa mobile money button -->
@@ -213,6 +213,43 @@
             >
               <span class="text-xs font-bold">M-Pesa</span>
             </button>
+          </div>
+
+          <!-- Customer Banner for On Credit -->
+          <div v-if="paymentMethod === 'On Credit'" class="mt-2 p-3 rounded-xl bg-surface-container border border-primary/30 flex flex-col gap-2">
+            <div v-if="selectedCustomer" class="flex justify-between items-start">
+              <div>
+                <div class="flex items-center gap-2">
+                  <UserCheck class="w-4 h-4 text-primary shrink-0" />
+                  <span class="text-xs font-bold text-on-surface">{{ selectedCustomer.displayName || selectedCustomer.companyName || `${selectedCustomer.firstName || ''} ${selectedCustomer.lastName || ''}`.trim() }}</span>
+                  <span class="text-[10px] font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">{{ selectedCustomer.code || 'CUST' }}</span>
+                </div>
+                <div class="text-[11px] text-on-surface-variant font-mono mt-1 space-y-0.5">
+                  <div>Credit Limit: <span class="font-bold text-on-surface">{{ formatCurrency(selectedCustomer.creditLimit || 0, currency) }}</span></div>
+                  <div>Outstanding: <span class="font-bold text-amber-600">{{ formatCurrency(selectedCustomer.outstandingBalance || 0, currency) }}</span></div>
+                  <div>Available Credit: <span class="font-bold" :class="((selectedCustomer.creditLimit || 0) - (selectedCustomer.outstandingBalance || 0)) >= total ? 'text-success' : 'text-error'">{{ formatCurrency((selectedCustomer.creditLimit || 0) - (selectedCustomer.outstandingBalance || 0), currency) }}</span></div>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                @click="openCustomerPicker" 
+                class="px-2.5 py-1 text-[11px] font-bold text-primary bg-surface hover:bg-surface-container-high rounded-lg border border-primary/30 transition-all cursor-pointer"
+              >
+                Change
+              </button>
+            </div>
+            <div v-else class="flex justify-between items-center py-1">
+              <span class="text-xs font-semibold text-error flex items-center gap-1.5">
+                <AlertCircle class="w-4 h-4" /> No customer selected
+              </span>
+              <button 
+                type="button" 
+                @click="openCustomerPicker" 
+                class="px-3 py-1.5 text-xs font-bold text-on-primary bg-primary hover:bg-primary/95 rounded-lg transition-all cursor-pointer shadow-xs"
+              >
+                Select Customer
+              </button>
+            </div>
           </div>
         </div>
 
@@ -342,14 +379,88 @@
       </button>
     </template>
   </Modal>
+
+  <!-- Customer Selection Modal for Credit Sales -->
+  <Modal 
+    :isOpen="showCustomerPickerModal" 
+    title="Select Customer for Credit Sale" 
+    :onClose="() => showCustomerPickerModal = false"
+    maxWidth="max-w-xl"
+  >
+    <div class="flex flex-col gap-4">
+      <div class="relative">
+        <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/50 w-4 h-4" />
+        <input 
+          type="text" 
+          v-model="customerSearchQuery"
+          placeholder="Search customer by name, code, phone, or TIN..."
+          class="w-full pl-10 pr-4 py-2.5 bg-surface rounded-xl border border-outline-variant text-xs font-medium focus:border-primary focus:outline-none text-on-surface"
+        />
+      </div>
+
+      <div class="flex justify-between items-center text-xs text-on-surface-variant px-1 font-mono">
+        <span>Required Amount: <strong class="text-primary font-bold">{{ formatCurrency(total, currency) }}</strong></span>
+        <span>Available Customers: {{ filteredCustomers.length }}</span>
+      </div>
+
+      <div class="max-h-80 overflow-y-auto space-y-2 pr-1">
+        <div v-if="isLoadingCustomers" class="p-8 text-center text-xs text-on-surface-variant">
+          Loading customers...
+        </div>
+        <div v-else-if="filteredCustomers.length === 0" class="p-8 text-center text-xs text-on-surface-variant">
+          No active customers found matching "{{ customerSearchQuery }}".
+        </div>
+        <div 
+          v-else
+          v-for="c in filteredCustomers" 
+          :key="c.id"
+          class="p-3.5 rounded-xl border transition-all flex justify-between items-center gap-3"
+          :class="((c.creditLimit || 0) - (c.outstandingBalance || 0)) >= total
+            ? 'border-outline-variant hover:border-primary/60 bg-surface'
+            : 'border-error/30 bg-error/5 opacity-80'"
+        >
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-on-surface truncate">
+                {{ c.displayName || c.companyName || `${c.firstName || ''} ${c.lastName || ''}`.trim() }}
+              </span>
+              <span class="text-[10px] font-mono bg-surface-container-high px-1.5 py-0.5 rounded font-bold text-on-surface-variant">
+                {{ c.code || 'CUST' }}
+              </span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" :class="c.customerType === 'COMPANY' ? 'bg-secondary/10 text-secondary' : 'bg-primary/10 text-primary'">
+                {{ c.customerType }}
+              </span>
+            </div>
+            <div class="text-[11px] text-on-surface-variant font-mono mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
+              <span>Phone: {{ c.phone || 'N/A' }}</span>
+              <span>Limit: {{ formatCurrency(c.creditLimit || 0, currency) }}</span>
+              <span>Available: <strong :class="((c.creditLimit || 0) - (c.outstandingBalance || 0)) >= total ? 'text-success' : 'text-error'">{{ formatCurrency((c.creditLimit || 0) - (c.outstandingBalance || 0), currency) }}</strong></span>
+            </div>
+          </div>
+
+          <button 
+            type="button"
+            @click="selectCustomerForCredit(c)"
+            class="px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all shrink-0"
+            :class="((c.creditLimit || 0) - (c.outstandingBalance || 0)) >= total
+              ? 'bg-primary text-on-primary hover:bg-primary/95 shadow-xs'
+              : 'bg-error/20 text-error hover:bg-error/30'"
+          >
+            {{ ((c.creditLimit || 0) - (c.outstandingBalance || 0)) >= total ? 'Select' : 'Exceeded' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Modal>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { showToast } from '../services/toastService';
+import { customerService } from '../services/customerService';
 import { useBarcodeScanner, playPOSSound } from '../composables/useBarcodeScanner';
-import type { Product, CartItem, Transaction } from '../models/types';
+import type { Product, CartItem, Transaction, Customer } from '../models/types';
 import { formatCurrency, formatCurrencyWithoutSymbol } from '../models/mockData';
 import Modal from '../components/common/Modal.vue';
 import { 
@@ -358,14 +469,15 @@ import {
   Plus, 
   QrCode, 
   CheckCircle, 
-  CreditCard as CardIcon, 
   Smartphone, 
   Coins, 
   X, 
   Pause, 
   Printer, 
   AlertCircle,
-  Grid
+  Grid,
+  UserCheck,
+  Search
 } from 'lucide-vue-next';
 
 const vm = useAppViewModel();
@@ -393,8 +505,54 @@ const triggerStockWarning = (title: string, message: string) => {
 };
 const searchQuery = ref('');
 const showBrowse = ref(true);
-const paymentMethod = ref<'Cash' | 'Card' | 'M-Pesa'>('Cash');
+const paymentMethod = ref<'Cash' | 'On Credit' | 'M-Pesa'>('Cash');
 const customCashInput = ref('');
+
+// Customer Selection State for Credit Sales
+const selectedCustomer = ref<Customer | null>(null);
+const showCustomerPickerModal = ref<boolean>(false);
+const customerSearchQuery = ref<string>('');
+const availableCustomers = ref<Customer[]>([]);
+const isLoadingCustomers = ref<boolean>(false);
+
+const openCustomerPicker = async () => {
+  showCustomerPickerModal.value = true;
+  isLoadingCustomers.value = true;
+  try {
+    const res = await customerService.getAllCustomers({ size: 100 });
+    availableCustomers.value = (res.content || []).filter(c => c.status === 'ACTIVE');
+  } catch (err: any) {
+    showToast(err.message || 'Failed to fetch customers', 'error');
+  } finally {
+    isLoadingCustomers.value = false;
+  }
+};
+
+const filteredCustomers = computed(() => {
+  const q = customerSearchQuery.value.trim().toLowerCase();
+  if (!q) return availableCustomers.value;
+  return availableCustomers.value.filter(c => 
+    (c.displayName && c.displayName.toLowerCase().includes(q)) ||
+    (c.companyName && c.companyName.toLowerCase().includes(q)) ||
+    (c.firstName && c.firstName.toLowerCase().includes(q)) ||
+    (c.lastName && c.lastName.toLowerCase().includes(q)) ||
+    (c.code && c.code.toLowerCase().includes(q)) ||
+    (c.phone && c.phone.includes(q)) ||
+    (c.tinNumber && c.tinNumber.includes(q))
+  );
+});
+
+const selectCustomerForCredit = (customer: Customer) => {
+  const avail = (customer.creditLimit || 0) - (customer.outstandingBalance || 0);
+  if (total.value > avail) {
+    showToast(`Credit limit exceeded! Available credit: ${formatCurrency(avail, currency.value)}, Sale total: ${formatCurrency(total.value, currency.value)}.`, 'error');
+    return;
+  }
+
+  selectedCustomer.value = customer;
+  showCustomerPickerModal.value = false;
+  showToast(`Selected customer: ${customer.displayName || customer.companyName || customer.firstName}`, 'success');
+};
 
 const products = computed(() => vm.products.value);
 const currency = computed(() => vm.settings.value.currency);
@@ -512,6 +670,7 @@ const clearCart = () => {
   if (cart.value.length > 0 && window.confirm("Are you sure you want to cancel and clear the active cart?")) {
     cart.value = [];
     customCashInput.value = '';
+    selectedCustomer.value = null;
   }
 };
 
@@ -561,10 +720,15 @@ const changeDue = computed(() => {
   return Math.max(0, cashReceivedValueTransformed.value - total.value);
 });
 
-const selectPaymentMethod = (method: 'Cash' | 'Card' | 'M-Pesa') => {
+const selectPaymentMethod = (method: 'Cash' | 'On Credit' | 'M-Pesa') => {
   paymentMethod.value = method;
   if (method === 'Cash') {
     customCashInput.value = '';
+  } else if (method === 'On Credit') {
+    customCashInput.value = '0';
+    if (!selectedCustomer.value) {
+      openCustomerPicker();
+    }
   } else {
     customCashInput.value = formatCurrencyWithoutSymbol(total.value, currency.value);
   }
@@ -574,6 +738,19 @@ const handleCompleteSale = () => {
   if (cart.value.length === 0) {
     showToast("Active cart is empty! Please scan or select products to continue.", 'error');
     return;
+  }
+
+  if (paymentMethod.value === 'On Credit') {
+    if (!selectedCustomer.value) {
+      showToast("Please select a customer for On Credit sale.", 'error');
+      openCustomerPicker();
+      return;
+    }
+    const avail = (selectedCustomer.value.creditLimit || 0) - (selectedCustomer.value.outstandingBalance || 0);
+    if (total.value > avail) {
+      showToast(`Sale total (${formatCurrency(total.value, currency.value)}) exceeds customer available credit limit (${formatCurrency(avail, currency.value)}).`, 'error');
+      return;
+    }
   }
 
   if (paymentMethod.value === 'Cash' && cashReceivedValueTransformed.value < total.value) {
@@ -602,12 +779,14 @@ const handleCompleteSale = () => {
     tax: tax.value,
     total: total.value,
     paymentMethod: paymentMethod.value,
-    amountReceived: cashReceivedValueTransformed.value,
-    changeDue: changeDue.value,
+    amountReceived: paymentMethod.value === 'On Credit' ? 0 : cashReceivedValueTransformed.value,
+    changeDue: paymentMethod.value === 'On Credit' ? 0 : changeDue.value,
+    customerId: paymentMethod.value === 'On Credit' ? selectedCustomer.value?.id : undefined,
+    customerName: paymentMethod.value === 'On Credit' ? (selectedCustomer.value?.displayName || selectedCustomer.value?.companyName || selectedCustomer.value?.firstName) : undefined,
     refCode: paymentMethod.value === 'M-Pesa' 
       ? `RK${Math.floor(10 + Math.random() * 89)}ZLQ${Math.floor(10 + Math.random() * 89)}M`
-      : paymentMethod.value === 'Card'
-        ? `TXN-${Math.floor(100000 + Math.random() * 900000)}`
+      : paymentMethod.value === 'On Credit'
+        ? `CR-${Math.floor(100000 + Math.random() * 900000)}`
         : undefined
   };
 

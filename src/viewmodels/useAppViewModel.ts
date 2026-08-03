@@ -430,9 +430,10 @@ export function useAppViewModel() {
       return;
     }
 
-    let pm: 'CASH' | 'CARD' | 'MOBILE' = 'CASH';
+    let pm: 'CASH' | 'CARD' | 'MOBILE' | 'CREDIT' = 'CASH';
     if (txn.paymentMethod === 'Card') pm = 'CARD';
     else if (txn.paymentMethod === 'M-Pesa') pm = 'MOBILE';
+    else if (txn.paymentMethod === 'On Credit' || txn.paymentMethod === 'CREDIT') pm = 'CREDIT';
 
     const items = txn.items.map((item) => {
       const discountPercent =
@@ -446,10 +447,11 @@ export function useAppViewModel() {
     });
 
     try {
-      const createdSale = await api.post('/api/sales', {
+      const createdSale = await api.post<any>('/api/sales', {
         storeBranchId: branchId,
         cashierId,
         paymentMethod: pm,
+        customerId: txn.customerId || undefined,
         items,
       });
 
