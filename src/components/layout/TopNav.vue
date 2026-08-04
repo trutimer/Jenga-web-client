@@ -79,14 +79,9 @@
 
       <!-- Status Actions -->
       <div class="flex items-center gap-1 text-on-surface-variant">
-        <!-- Cloud Sync -->
-        <button 
-          @click="alertSync"
-          class="p-2 hover:bg-surface-container rounded-full transition-colors flex items-center justify-center cursor-pointer"
-          title="System Synced (Active Cloud Run connection)"
-        >
-          <Cloud class="w-5 h-5 text-primary stroke-[2px]" />
-        </button>
+        <!-- Cloud Sync & Offline Status -->
+        <SyncStatusBadge />
+
 
         <!-- Account/User profile -->
         <button 
@@ -172,6 +167,8 @@ import { useRouter, useRoute } from 'vue-router';
 import Modal from '../common/Modal.vue';
 import LicenseModal from '../common/LicenseModal.vue';
 import LicenseExpiryAlertModal from '../common/LicenseExpiryAlertModal.vue';
+import SyncStatusBadge from '../SyncStatusBadge.vue';
+
 import { api } from '../../services/api';
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
 import { 
