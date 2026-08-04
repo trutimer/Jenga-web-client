@@ -13,12 +13,20 @@ export default defineConfig({
     process.env.ELECTRON === 'true' && electron({
       main: {
         entry: 'electron/main.ts',
+        vite: {
+          build: {
+            rollupOptions: {
+              external: ['better-sqlite3']
+            }
+          }
+        }
       },
       preload: {
         input: 'electron/preload.ts',
       },
       renderer: process.env.NODE_ENV === 'test' ? undefined : {},
     }),
+
   ],
   resolve: {
     alias: {

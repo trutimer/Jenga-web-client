@@ -3,8 +3,18 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { exec } from 'node:child_process'
 import { promisify } from 'node:util'
+import { createRequire } from 'node:module'
+
+const require = createRequire(import.meta.url)
+// @ts-ignore
+if (typeof globalThis.require === 'undefined') {
+  // @ts-ignore
+  globalThis.require = require
+}
+
 import * as db from './db'
 import { startSyncEngine, setApiBaseUrl, processSyncQueue, broadcastSyncStatus, setSyncAuthToken } from './syncEngine'
+
 
 const execAsync = promisify(exec)
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -145,10 +155,17 @@ app.whenReady().then(() => {
     return { success: true }
   })
 
+  ipcMain.handle('db:clear-active-shifts', (_, { branchId, cashierId }) => {
+    if (!branchId || !cashierId) return
+    db.clearActiveShifts(branchId, cashierId)
+    return { success: true }
+  })
+
   ipcMain.handle('db:get-active-shift', (_, { branchId, cashierId }) => {
     if (!branchId || !cashierId) return null
     return db.getActiveShift(branchId, cashierId)
   })
+
 
   ipcMain.handle('db:record-money-movement', (_, { movement }) => {
     if (!movement) return

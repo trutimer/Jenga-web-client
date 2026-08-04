@@ -71,6 +71,10 @@
       "dist",
       "dist-electron"
     ],
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**"
+    ],
+
     "mac": {
       "target": [
         "dmg"

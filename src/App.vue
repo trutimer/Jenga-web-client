@@ -251,6 +251,10 @@ const isClosingShift = ref(false);
 
 const triggerLogoutConfirm = async () => {
   if (userRole.value === 'CASHIER') {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      showToast('Internet connection is required to close register shift and log out. Please connect to the internet.', 'error');
+      return;
+    }
     await fetchCurrentShift();
     if (currentShift.value !== null) {
       showCloseShiftModal.value = true;
@@ -261,6 +265,7 @@ const triggerLogoutConfirm = async () => {
     showLogoutModal.value = true;
   }
 };
+
 
 const handleCloseShift = async () => {
   const amount = parseFloat(actualCashInput.value);

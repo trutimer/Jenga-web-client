@@ -5,7 +5,8 @@ let isOnline = false
 let isSyncing = false
 let syncTimer: NodeJS.Timeout | null = null
 let healthCheckTimer: NodeJS.Timeout | null = null
-let apiBaseUrl = 'http://localhost:9090'
+// let apiBaseUrl = 'http://localhost:9090'
+let apiBaseUrl = 'https://jenga-api.sintax.tz';
 
 export function setApiBaseUrl(url: string) {
   if (url && url.trim() !== '') {
@@ -43,19 +44,10 @@ export async function checkHealth(windowsGetter?: () => BrowserWindow[]) {
 
     clearTimeout(timeout)
 
-    // Fallback check to main branches endpoint if /api/auth/health is not available
-    let reachable = false
-    if (res && (res.ok || res.status === 401 || res.status === 403)) {
-      reachable = true
-    } else {
-      const fallbackRes = await fetch(`${apiBaseUrl}/api/branches`, {
-        method: 'GET',
-        signal: controller.signal
-      }).catch(() => null)
-      if (fallbackRes && (fallbackRes.ok || fallbackRes.status === 401 || fallbackRes.status === 403)) {
-        reachable = true
-      }
-    }
+    // Consider online if server responds (200, 401 Unauthorized, or 403 Forbidden means server is online)
+    const reachable = Boolean(res && (res.ok || res.status === 401 || res.status === 403))
+
+
 
     const previousOnline = isOnline
     isOnline = reachable
@@ -124,11 +116,12 @@ export async function processSyncQueue(windowsGetter: () => BrowserWindow[]) {
         console.log(`[Sync Engine] Successfully synced outbox item ${item.id} (${item.action_type})`)
         updateOutboxItemStatus(item.id, 'COMPLETED')
       } else if (res.status >= 400 && res.status < 500 && res.status !== 429) {
-        // Non-retryable client validation error
+        // Non-retryable client validation error - mark as failed and do not retry
         const errText = await res.text().catch(() => 'Client Error')
-        console.error(`[Sync Engine] Client Error ${res.status} for item ${item.id}:`, errText)
+        console.error(`[Sync Engine] Non-retryable Client Error ${res.status} for item ${item.id}:`, errText)
         updateOutboxItemStatus(item.id, 'FAILED', `Client Error ${res.status}: ${errText}`)
       } else {
+
         // 5xx Server Error or Rate Limit
         const errText = await res.text().catch(() => 'Server Error')
         console.warn(`[Sync Engine] Server Error ${res.status} for item ${item.id}:`, errText)

@@ -308,7 +308,16 @@ export function saveActiveShift(shift: any) {
   )
 }
 
+export function clearActiveShifts(branchId: string, cashierId: string) {
+  const db = getDB()
+  db.prepare(`
+    DELETE FROM active_shifts
+    WHERE branch_id = ? AND cashier_id = ?
+  `).run(branchId, cashierId)
+}
+
 export function getActiveShift(branchId: string, cashierId: string): any | null {
+
   const db = getDB()
   const row = db.prepare(`
     SELECT raw_json FROM active_shifts
@@ -399,12 +408,14 @@ export function updateOutboxItemStatus(id: string, status: 'PENDING' | 'SYNCING'
   const db = getDB()
   const now = Date.now()
   if (status === 'FAILED') {
+    const isClientError = errorMsg && errorMsg.startsWith('Client Error')
     db.prepare(`
       UPDATE sync_outbox
-      SET status = ?, attempts = attempts + 1, last_error = ?, updated_at = ?
+      SET status = ?, attempts = ?, last_error = ?, updated_at = ?
       WHERE id = ?
-    `).run(status, errorMsg || 'Unknown sync error', now, id)
+    `).run(status, isClientError ? 10 : db.prepare('SELECT attempts FROM sync_outbox WHERE id = ?').get(id)?.attempts + 1 || 1, errorMsg || 'Unknown sync error', now, id)
   } else {
+
     db.prepare(`
       UPDATE sync_outbox
       SET status = ?, last_error = ?, updated_at = ?

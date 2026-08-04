@@ -3,7 +3,9 @@ import type { Product, StoreSettings, Transaction, Supplier, CashierShift } from
 import { INITIAL_PRODUCTS, INITIAL_STORE_SETTINGS, INITIAL_SUPPLIERS } from '../models/mockData';
 import { api } from '../services/api';
 import { showToast } from '../services/toastService';
+import { isElectron } from '../services/offlineSalesService';
 import router from '../router';
+
 
 const formatDateForInput = (dateStr?: string | null): string => {
   if (!dateStr) return '';
@@ -119,10 +121,14 @@ export function useAppViewModel() {
   const fetchProducts = async () => {
     const branchId = localStorage.getItem('branchId');
     if (!branchId || branchId === 'null' || branchId === 'undefined') return;
+
     try {
-      const productsData = await api.get<any[]>(`/api/products?storeBranchId=${branchId}`);
-      if (productsData) {
-        const mappedProducts: Product[] = productsData.map((p) => {
+      const productsData = await api.get<any>(`/api/products?storeBranchId=${branchId}`);
+      const productsList: any[] = Array.isArray(productsData) ? productsData : (productsData?.content || []);
+
+      if (productsList && Array.isArray(productsList)) {
+        const mappedProducts: Product[] = productsList.map((p) => {
+
           let statusType: 'In Stock' | 'Low Stock' | 'Out of Stock' | 'Soon to expire' | 'Expired' = 'In Stock';
           const stockNum = Number(p.stock) || 0;
           const formattedExpiry = formatDateForInput(p.expiryDate);
@@ -149,9 +155,9 @@ export function useAppViewModel() {
             id: p.id,
             name: p.name,
             barcode: p.barcode || '',
-            category: p.categoryName || 'General',
-            cost: Number(p.costPrice) || 0,
-            price: Number(p.sellingPrice) || 0,
+            category: p.categoryName || p.category || 'General',
+            cost: Number(p.costPrice || p.cost) || 0,
+            price: Number(p.sellingPrice || p.price) || 0,
             stock: stockNum,
             minStock: p.reorderLevel || 10,
             status: statusType,
@@ -169,17 +175,19 @@ export function useAppViewModel() {
     }
   };
 
+
   const fetchSuppliers = async () => {
     const storeId = localStorage.getItem('storeId');
     if (!storeId || storeId === 'null' || storeId === 'undefined') return;
     try {
-      const suppliersData = await api.get<any[]>(`/api/suppliers?storeId=${storeId}`);
-      if (suppliersData) {
-        const mappedSuppliers: Supplier[] = suppliersData.map((s) => ({
+      const suppliersData = await api.get<any>(`/api/suppliers?storeId=${storeId}&size=1000`);
+      const suppliersList: any[] = Array.isArray(suppliersData) ? suppliersData : (suppliersData?.content || []);
+      if (suppliersList && Array.isArray(suppliersList)) {
+        const mappedSuppliers: Supplier[] = suppliersList.map((s) => ({
           id: s.id,
-          code: s.code,
+          code: s.code || (s.id ? s.id.slice(0, 6).toUpperCase() : 'SUP'),
           name: s.name,
-          contactPerson: s.contactPerson || '',
+          contactPerson: s.contactPerson || s.contact_person || '',
           phone: s.phone || '',
           email: s.email || '',
           category: s.category || 'Wholesale',
@@ -192,6 +200,7 @@ export function useAppViewModel() {
       console.error('Failed to fetch suppliers:', err);
     }
   };
+
 
   const fetchSalesHistory = async (startDate?: string, endDate?: string) => {
     try {
@@ -256,12 +265,26 @@ export function useAppViewModel() {
 
   const fetchCurrentShift = async () => {
     if (userRole.value !== 'CASHIER') return;
+    const branchId = localStorage.getItem('branchId') || '';
+    const cashierId = localStorage.getItem('cashierId') || localStorage.getItem('userId') || '';
     try {
       const shift = await api.get<CashierShift>('/api/shifts/open');
-      currentShift.value = shift;
+      if (shift && shift.status === 'OPEN') {
+        currentShift.value = shift;
+        if (isElectron() && branchId) {
+          try { await (window as any).ipcRenderer.invoke('db:save-shift', { shift }); } catch (e) {}
+        }
+      } else {
+        currentShift.value = null;
+        if (isElectron() && branchId && cashierId) {
+          try { await (window as any).ipcRenderer.invoke('db:clear-active-shifts', { branchId, cashierId }); } catch (e) {}
+        }
+      }
     } catch (err: any) {
       console.log('No open shift found or error fetching shift:', err);
-      currentShift.value = null;
+      if (!currentShift.value) {
+        currentShift.value = null;
+      }
     }
   };
 
@@ -269,6 +292,10 @@ export function useAppViewModel() {
     try {
       const shift = await api.post<CashierShift>('/api/shifts/open', { openingCash });
       currentShift.value = shift;
+      const branchId = localStorage.getItem('branchId') || '';
+      if (isElectron() && branchId && shift) {
+        try { await (window as any).ipcRenderer.invoke('db:save-shift', { shift }); } catch (e) {}
+      }
       showToast('Shift opened successfully', 'success');
       return true;
     } catch (err: any) {
@@ -278,16 +305,27 @@ export function useAppViewModel() {
   };
 
   const closeShift = async (actualCash: number, notes?: string) => {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      showToast('Internet connection is required to close register shift and log out. Please connect to the internet.', 'error');
+      return false;
+    }
     try {
       const shift = await api.post<CashierShift>('/api/shifts/close', { actualCash, notes });
       currentShift.value = null;
-      showToast('Shift closed successfully. Discrepancy: ' + shift.discrepancy, 'success');
+      const branchId = localStorage.getItem('branchId') || '';
+      const cashierId = localStorage.getItem('cashierId') || localStorage.getItem('userId') || '';
+      if (isElectron() && branchId && cashierId) {
+        try { await (window as any).ipcRenderer.invoke('db:clear-active-shifts', { branchId, cashierId }); } catch (e) {}
+      }
+      showToast('Shift closed successfully. Discrepancy: ' + (shift?.discrepancy || 0), 'success');
       return true;
     } catch (err: any) {
       showToast(err.message || 'Failed to close shift', 'error');
       return false;
     }
   };
+
+
 
   const fetchCashMovementAnalytics = async (date?: string) => {
     if (userRole.value !== 'CASHIER') return;
@@ -455,9 +493,11 @@ export function useAppViewModel() {
         items,
       });
 
-      await fetchProducts();
-      await fetchSalesHistory();
-      await fetchCurrentShift();
+      // Non-blocking background refetches (allows 1ms UI response)
+      fetchProducts().catch(() => {});
+      fetchSalesHistory().catch(() => {});
+      fetchCurrentShift().catch(() => {});
+
 
       const receiptTxn: Transaction = {
         id: createdSale.id,
