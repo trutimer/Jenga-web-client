@@ -205,6 +205,7 @@
 import { ref } from 'vue';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { api } from '../services/api';
+import { isElectron } from '../services/offlineSalesService';
 import { 
   Phone, 
   Lock, 
@@ -259,9 +260,17 @@ const handleSubmit = async () => {
     const deviceFingerprint = await getDeviceFingerprint();
     const res = await api.post('/api/auth/login', { phone: phone.value, password: password.value, deviceFingerprint });
     
+    if (isElectron() && (res.user?.role === 'SUPER_ADMIN' || res.user?.role === 'ADMIN')) {
+      isLoggingIn.value = false;
+      localStorage.clear();
+      error.value = 'Super Admins and Admins cannot log into the Desktop application. Please access via the Web portal.';
+      return;
+    }
+
     if (res.user && res.user.role === 'SUPER_ADMIN') {
       isLoggingIn.value = false;
-      error.value = 'Super admins are not allowed to log into the terminal.';
+      localStorage.clear();
+      error.value = 'Super Admins are not allowed to log into the terminal.';
       return;
     }
 

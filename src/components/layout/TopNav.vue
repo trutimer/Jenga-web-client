@@ -16,6 +16,170 @@
       >
         <h1 class="text-xl font-black text-primary tracking-tight">{{ brandName }}</h1>
       </div>
+
+      <!-- Modules & Access Menu for CASHIER -->
+      <div v-if="userRole === 'CASHIER'" class="relative ml-2">
+        <button 
+          @click="modulesMenuOpen = !modulesMenuOpen"
+          class="flex items-center gap-2 px-3.5 py-1.5 bg-primary-container/30 border border-primary/30 text-primary rounded-xl font-bold text-xs hover:bg-primary-container/50 transition-all cursor-pointer shadow-xs"
+        >
+          <LayoutGrid class="w-4 h-4" />
+          <span>Modules & Access</span>
+          <ChevronDown class="w-3.5 h-3.5 transition-transform" :class="modulesMenuOpen ? 'rotate-180' : ''" />
+        </button>
+
+        <!-- Dropdown Backdrop -->
+        <div v-if="modulesMenuOpen" @click="modulesMenuOpen = false" class="fixed inset-0 z-40"></div>
+
+        <!-- Expanded Modules Mega Dropdown -->
+        <div 
+          v-if="modulesMenuOpen"
+          class="absolute left-0 top-full mt-2 w-80 sm:w-96 bg-surface rounded-2xl border border-outline-variant shadow-2xl p-4 z-50 flex flex-col gap-3 animate-fade-down"
+        >
+          <div class="flex items-center justify-between border-b border-outline-variant/60 pb-2.5">
+            <div class="flex items-center gap-2">
+              <Shield class="w-4 h-4 text-primary" />
+              <span class="text-xs font-black uppercase tracking-wider text-on-surface font-mono">Assigned Modules</span>
+            </div>
+            <button 
+              @click="navigateToModule('/checkout')"
+              class="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <ShoppingCart class="w-3.5 h-3.5" />
+              <span>Checkout POS</span>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1">
+            <!-- POS Checkout (Always active for cashier) -->
+            <button 
+              @click="navigateToModule('/checkout')"
+              class="flex flex-col gap-1 p-3 rounded-xl border transition-colors text-left group cursor-pointer"
+              :class="currentView === 'checkout' ? 'border-primary bg-primary-container/20' : 'border-outline-variant/60 bg-surface-container-lowest hover:border-primary'"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
+                  <ShoppingCart class="w-3.5 h-3.5 text-primary" />
+                  Checkout POS
+                </span>
+                <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">POS</span>
+              </div>
+              <span class="text-[11px] text-on-surface-variant/70 line-clamp-1">Process sales terminal</span>
+            </button>
+
+            <!-- Inventory Module -->
+            <button 
+              v-if="vm.hasPermission('inventory:view')"
+              @click="navigateToModule('/inventory')"
+              class="flex flex-col gap-1 p-3 rounded-xl border transition-colors text-left group cursor-pointer"
+              :class="currentView === 'inventory' ? 'border-primary bg-primary-container/20' : 'border-outline-variant/60 bg-surface-container-lowest hover:border-primary'"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
+                  <Package class="w-3.5 h-3.5 text-primary" />
+                  Inventory
+                </span>
+              </div>
+              <div class="flex flex-wrap gap-1 mt-1">
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">VIEW</span>
+                <span v-if="vm.hasPermission('inventory:create')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-container/40 text-primary">ADD</span>
+                <span v-if="vm.hasPermission('inventory:edit')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">EDIT</span>
+                <span v-if="vm.hasPermission('inventory:delete')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-error/10 text-error">DELETE</span>
+              </div>
+            </button>
+
+            <!-- Customers Module -->
+            <button 
+              v-if="vm.hasPermission('customers:view')"
+              @click="navigateToModule('/customers')"
+              class="flex flex-col gap-1 p-3 rounded-xl border transition-colors text-left group cursor-pointer"
+              :class="currentView === 'customers' ? 'border-primary bg-primary-container/20' : 'border-outline-variant/60 bg-surface-container-lowest hover:border-primary'"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
+                  <Users class="w-3.5 h-3.5 text-primary" />
+                  Customers
+                </span>
+              </div>
+              <div class="flex flex-wrap gap-1 mt-1">
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">VIEW</span>
+                <span v-if="vm.hasPermission('customers:create')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-container/40 text-primary">ADD</span>
+                <span v-if="vm.hasPermission('customers:edit')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">EDIT</span>
+                <span v-if="vm.hasPermission('customers:delete')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-error/10 text-error">DELETE</span>
+              </div>
+            </button>
+
+            <!-- Suppliers Module -->
+            <button 
+              v-if="vm.hasPermission('suppliers:view')"
+              @click="navigateToModule('/suppliers')"
+              class="flex flex-col gap-1 p-3 rounded-xl border transition-colors text-left group cursor-pointer"
+              :class="currentView === 'suppliers' ? 'border-primary bg-primary-container/20' : 'border-outline-variant/60 bg-surface-container-lowest hover:border-primary'"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
+                  <Truck class="w-3.5 h-3.5 text-primary" />
+                  Suppliers
+                </span>
+              </div>
+              <div class="flex flex-wrap gap-1 mt-1">
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">VIEW</span>
+                <span v-if="vm.hasPermission('suppliers:create')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-container/40 text-primary">ADD</span>
+                <span v-if="vm.hasPermission('suppliers:edit')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">EDIT</span>
+                <span v-if="vm.hasPermission('suppliers:delete')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-error/10 text-error">DELETE</span>
+              </div>
+            </button>
+
+            <!-- Reports Module -->
+            <button 
+              v-if="vm.hasPermission('reports:view')"
+              @click="navigateToModule('/reports')"
+              class="flex flex-col gap-1 p-3 rounded-xl border transition-colors text-left group cursor-pointer"
+              :class="currentView === 'reports' ? 'border-primary bg-primary-container/20' : 'border-outline-variant/60 bg-surface-container-lowest hover:border-primary'"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
+                  <BarChart3 class="w-3.5 h-3.5 text-primary" />
+                  Reports
+                </span>
+              </div>
+              <div class="flex flex-wrap gap-1 mt-1">
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">VIEW</span>
+                <span v-if="vm.hasPermission('reports:export')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">EXPORT</span>
+              </div>
+            </button>
+
+            <!-- Users Module -->
+            <button 
+              v-if="vm.hasPermission('users:view')"
+              @click="navigateToModule('/users')"
+              class="flex flex-col gap-1 p-3 rounded-xl border transition-colors text-left group cursor-pointer"
+              :class="currentView === 'users' ? 'border-primary bg-primary-container/20' : 'border-outline-variant/60 bg-surface-container-lowest hover:border-primary'"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
+                  <UserCog class="w-3.5 h-3.5 text-primary" />
+                  Users
+                </span>
+              </div>
+              <div class="flex flex-wrap gap-1 mt-1">
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">VIEW</span>
+              </div>
+            </button>
+          </div>
+
+          <!-- Footer Shortcut -->
+          <div class="pt-2 border-t border-outline-variant/60 flex justify-between items-center text-xs">
+            <span class="text-on-surface-variant/70 text-[11px]">Desktop POS Terminal</span>
+            <button 
+              @click="navigateToModule('/checkout')"
+              class="font-bold text-primary hover:underline cursor-pointer flex items-center gap-1"
+            >
+              <span>Return to Checkout POS &rarr;</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Trailing Actions -->
@@ -182,7 +346,16 @@ import {
   List,
   Download,
   Building2,
-  Clock
+  Clock,
+  LayoutGrid,
+  ChevronDown,
+  Shield,
+  ShoppingCart,
+  Package,
+  Users,
+  Truck,
+  BarChart3,
+  UserCog
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -200,11 +373,18 @@ defineEmits<{
 
 const router = useRouter();
 const route = useRoute();
-const { activeBranchId } = useAppViewModel();
+const vm = useAppViewModel();
+const { activeBranchId } = vm;
 
+const modulesMenuOpen = ref(false);
 const showDownloadModal = ref(false);
 const showLicenseModal = ref(false);
 const showExpiryAlertModal = ref(false);
+
+const navigateToModule = (path: string) => {
+  modulesMenuOpen.value = false;
+  router.push(path);
+};
 
 const licenseData = ref<any>(null);
 

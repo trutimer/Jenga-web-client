@@ -44,6 +44,9 @@ const searchQuery = ref('');
 const currentShift = ref<CashierShift | null>(null);
 const cashMovementAnalytics = ref<any>(null);
 const shiftSales = ref<any[]>([]);
+const userPermissions = ref<string[]>(
+  JSON.parse(localStorage.getItem('userPermissions') || '[]')
+);
 
 // Inactivity lockout timer
 let timeoutId: any = null;
@@ -404,11 +407,47 @@ export function useAppViewModel() {
     await fetchProducts();
   };
 
+  const fetchCurrentUserPermissions = async () => {
+    const currentUserId = userId.value || localStorage.getItem('cashierId');
+    if (!currentUserId) return;
+    try {
+      const res = await api.get<any>(`/api/users/${currentUserId}/permissions`);
+      if (res && res.permissions) {
+        userPermissions.value = res.permissions;
+        localStorage.setItem('userPermissions', JSON.stringify(res.permissions));
+      }
+    } catch (err) {
+      console.error('Failed to fetch current user permissions:', err);
+    }
+  };
+
+  const hasPermission = (code: string): boolean => {
+    if (userRole.value === 'SUPER_ADMIN' || userRole.value === 'ADMIN') {
+      return true;
+    }
+    if (userRole.value === 'CASHIER' && code === 'pos:checkout') {
+      return true;
+    }
+    return userPermissions.value.includes(code);
+  };
+
+  const hasCategoryAccess = (category: string): boolean => {
+    if (userRole.value === 'SUPER_ADMIN' || userRole.value === 'ADMIN') {
+      return true;
+    }
+    const cat = category.toLowerCase();
+    if (cat === 'pos' || cat === 'checkout') {
+      return hasPermission('pos:checkout');
+    }
+    return userPermissions.value.some((p) => p.toLowerCase().startsWith(cat + ':'));
+  };
+
   const handleLogin = (name: string, resolvedBranchId: string | null) => {
     activeBranchId.value = resolvedBranchId;
     user.value = name;
     userRole.value = localStorage.getItem('cashierRole') || 'CASHIER';
     userId.value = localStorage.getItem('cashierId');
+    fetchCurrentUserPermissions();
     if (userRole.value === 'CASHIER') {
       fetchCurrentShift();
     }
@@ -428,6 +467,7 @@ export function useAppViewModel() {
     activeBranchId.value = null;
     mobileMenuOpen.value = false;
     currentShift.value = null;
+    userPermissions.value = [];
     localStorage.clear();
     sessionStorage.clear();
     router.push('/login');
@@ -560,6 +600,10 @@ export function useAppViewModel() {
     deleteCashMovement,
     shiftSales,
     fetchShiftSales,
+    userPermissions,
+    fetchCurrentUserPermissions,
+    hasPermission,
+    hasCategoryAccess,
     reverseTransaction,
   };
 }

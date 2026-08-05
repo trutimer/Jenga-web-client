@@ -10,6 +10,7 @@
 
       <div class="flex gap-2.5 mt-4 sm:mt-0">
         <button
+          v-if="vm.hasPermission('reports:export')"
           @click="handleExportReport"
           class="px-4 py-2.5 bg-primary text-on-primary font-bold text-xs rounded-lg hover:bg-opacity-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow shadow-primary/10 border-0"
         >

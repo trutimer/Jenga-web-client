@@ -6,6 +6,7 @@
         <p class="text-sm text-on-surface-variant mt-1">Manage system access and roles</p>
       </div>
       <button 
+        v-if="vm.hasPermission('users:create')"
         @click="showCreateModal = true"
         class="h-10 px-4 bg-primary text-on-primary rounded-xl flex items-center justify-center font-bold text-sm hover:bg-opacity-90 transition-all cursor-pointer shadow-sm border-0 gap-2"
       >
@@ -243,8 +244,9 @@ import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import type { AppUser, UserCreateRequest, UserRole } from '../models/types';
 
 const router = useRouter();
+const vm = useAppViewModel();
 const { users, branches, isLoading, fetchUsers, fetchBranches, createUser, blockUser, unblockUser, deleteUser } = useUserViewModel();
-const { userRole, userId } = useAppViewModel();
+const { userRole, userId } = vm;
 
 const showCreateModal = ref(false);
 const showToggleModal = ref(false);

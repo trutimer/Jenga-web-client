@@ -11,6 +11,7 @@
       <!-- ACTION BUTTONS -->
       <div class="flex items-center gap-3">
         <button 
+          v-if="vm.hasPermission('inventory:create')"
           @click="showImportModal = true"
           class="h-10 px-4 rounded-lg border border-outline hover:bg-surface-container-low text-on-surface-variant font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm text-center bg-surface-container-lowest"
         >
@@ -27,6 +28,7 @@
         </button>
         
         <button 
+          v-if="vm.hasPermission('inventory:create')"
           @click="showAddModal = true"
           class="h-10 px-4.5 rounded-lg font-bold text-sm text-white flex items-center gap-2 transition-all cursor-pointer shadow-sm text-center border-0 bg-primary text-on-primary bg-primary text-on-primary">
           <Plus class="w-4.5 h-4.5 text-on-primary" />
@@ -396,6 +398,7 @@
                 <td class="p-4 text-center select-none whitespace-nowrap">
                   <div class="flex items-center justify-center gap-2">
                     <button 
+                      v-if="vm.hasPermission('inventory:edit')"
                       @click.stop="openEditModal(p)"
                       class="p-1.5 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-on-primary-container transition-colors cursor-pointer border-0 bg-transparent"
                       title="Edit Product"
@@ -403,6 +406,7 @@
                       <Pencil class="w-4.5 h-4.5" />
                     </button>
                     <button 
+                      v-if="vm.hasPermission('inventory:edit')"
                       @click.stop="openRestockModal(p)"
                       class="p-1.5 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-on-primary-container transition-colors cursor-pointer border-0 bg-transparent"
                       title="Restock Inventory"

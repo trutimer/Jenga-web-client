@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { api } from '../services/api';
 import { showToast } from '../services/toastService';
-import type { AppUser, UserCreateRequest, StoreBranch, CashierShift, ShiftDetail } from '../models/types';
+import type { AppUser, UserCreateRequest, StoreBranch, CashierShift, ShiftDetail, Permission, UserPermissionsResponse } from '../models/types';
 
 export function useUserViewModel() {
   const users = ref<AppUser[]>([]);
@@ -31,6 +31,43 @@ export function useUserViewModel() {
       console.error('Failed to fetch user details:', err);
       showToast('Failed to load user details.', 'error');
       return null;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const fetchUserPermissions = async (userId: string): Promise<string[]> => {
+    try {
+      const res = await api.get<UserPermissionsResponse>(`/api/users/${userId}/permissions`);
+      return res?.permissions || [];
+    } catch (err: any) {
+      console.error('Failed to fetch user permissions:', err);
+      showToast('Failed to load user permissions: ' + (err.message || 'Server error'), 'error');
+      return [];
+    }
+  };
+
+  const fetchPermissionsCatalog = async (): Promise<Permission[]> => {
+    try {
+      const catalog = await api.get<Permission[]>('/api/users/permissions/catalog');
+      return catalog || [];
+    } catch (err: any) {
+      console.error('Failed to fetch permissions catalog:', err);
+      showToast('Failed to load permissions catalog', 'error');
+      return [];
+    }
+  };
+
+  const updateUserPermissions = async (userId: string, permissions: string[]): Promise<boolean> => {
+    isLoading.value = true;
+    try {
+      await api.put(`/api/users/${userId}/permissions`, { permissions });
+      showToast('User permissions updated successfully', 'success');
+      return true;
+    } catch (err: any) {
+      console.error('Failed to update user permissions:', err);
+      showToast('Failed to update permissions: ' + (err.message || 'Server error'), 'error');
+      return false;
     } finally {
       isLoading.value = false;
     }
@@ -135,6 +172,9 @@ export function useUserViewModel() {
     isLoading,
     fetchUsers,
     fetchUserById,
+    fetchUserPermissions,
+    fetchPermissionsCatalog,
+    updateUserPermissions,
     fetchShiftsByCashier,
     fetchShiftDetails,
     fetchBranches,

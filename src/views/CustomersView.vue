@@ -34,6 +34,7 @@
         </button>
 
         <button 
+          v-if="vm.hasPermission('customers:create')"
           @click="openAddModal()"
           class="h-11 px-5 rounded-xl bg-primary text-on-primary hover:bg-opacity-95 active:scale-[0.98] font-bold text-sm flex items-center gap-2 cursor-pointer transition-all shadow-sm"
         >
@@ -996,6 +997,7 @@ import {
 import Toast from '../components/common/Toast.vue';
 import Modal from '../components/common/Modal.vue';
 import { customerService } from '../services/customerService';
+import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import type { 
   Customer, 
   CustomerType, 
@@ -1006,6 +1008,8 @@ import type {
   CustomerContactPerson,
   PaymentMethod
 } from '../models/types';
+
+const vm = useAppViewModel();
 
 // Toast state
 const toastMessage = ref<string | null>(null);

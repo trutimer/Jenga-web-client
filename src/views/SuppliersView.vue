@@ -26,6 +26,7 @@
         </button>
         
         <button 
+          v-if="vm.hasPermission('suppliers:create')"
           @click="showAddModal = true"
           class="h-11 px-5 rounded-xl bg-primary text-on-primary hover:bg-opacity-95 active:scale-[0.98] font-bold text-sm flex items-center gap-2 cursor-pointer transition-all shadow-sm"
         >

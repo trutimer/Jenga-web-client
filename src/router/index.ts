@@ -159,9 +159,28 @@ router.beforeEach((to, from, next) => {
     }
   } else if (isAuthenticated && role === 'ADMIN' && (!branchId || branchId === 'null' || branchId === 'undefined') && to.name !== 'select-branch') {
     next({ name: 'select-branch' });
-  } else if (isAuthenticated && role === 'CASHIER' && to.name !== 'checkout' && to.name !== 'receipt' && to.name !== 'cash-movements' && to.name !== 'shift-sales' && to.name !== 'shift-details' && to.name !== 'cashier-shifts' && to.name !== 'profile') {
-    // Restrict CASHIER to checkout, receipt, cash movements, shift sales, shift details, and profile pages
-    next({ name: 'checkout' });
+  } else if (isAuthenticated && role === 'CASHIER') {
+    const routeName = String(to.name || '');
+    const cashierAlwaysAllowed = ['checkout', 'receipt', 'cash-movements', 'shift-sales', 'shift-details', 'cashier-shifts', 'profile'];
+    if (cashierAlwaysAllowed.includes(routeName)) {
+      next();
+    } else {
+      const routePermissions: Record<string, string> = {
+        'inventory': 'inventory:view',
+        'customers': 'customers:view',
+        'suppliers': 'suppliers:view',
+        'reports': 'reports:view',
+        'users': 'users:view',
+        'dashboard': 'dashboard:view'
+      };
+      const requiredPerm = routePermissions[routeName];
+      const userPermissions: string[] = JSON.parse(localStorage.getItem('userPermissions') || '[]');
+      if (requiredPerm && userPermissions.includes(requiredPerm)) {
+        next();
+      } else {
+        next({ name: 'checkout' });
+      }
+    }
   } else {
     next();
   }

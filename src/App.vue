@@ -222,8 +222,10 @@ const router = useRouter();
 const route = useRoute();
 
 const hasBranch = computed(() => {
+  if (userRole.value === 'ADMIN') return true;
   return !!activeBranchId.value && activeBranchId.value !== 'null' && activeBranchId.value !== 'undefined' && activeBranchId.value !== '';
 });
+
 
 watch(
   () => route.path,

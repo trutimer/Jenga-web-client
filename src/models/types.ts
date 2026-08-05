@@ -195,6 +195,19 @@ export interface StoreBranch {
   email: string;
 }
 
+export interface Permission {
+  id?: string;
+  code: string;
+  name: string;
+  category: string;
+  description?: string;
+}
+
+export interface UserPermissionsResponse {
+  userId: string;
+  permissions: string[];
+}
+
 export interface AppUser {
   id: string;
   storeId: string;
@@ -207,6 +220,7 @@ export interface AppUser {
   lastLoginAt: string;
   createdAt: string;
   shifts?: CashierShift[];
+  permissions?: string[];
 }
 
 export interface UserCreateRequest {
