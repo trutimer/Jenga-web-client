@@ -219,6 +219,18 @@ export function useAppViewModel() {
       const salesData = response?.content || [];
       if (salesData) {
         const mappedSales: Transaction[] = salesData.map((s: any) => {
+          const totalVal = Number(s.totalAmount) || 0;
+          let method = 'Cash';
+          if (s.paymentMethod === 'MOBILE' || s.paymentMethod === 'MOBILE_MONEY') {
+            method = 'M-Pesa';
+          } else if (s.paymentMethod === 'CARD') {
+            method = 'Card';
+          } else if (s.paymentMethod === 'CREDIT' || s.paymentMethod === 'ON_CREDIT') {
+            method = 'CREDIT';
+          } else if (s.paymentMethod) {
+            method = s.paymentMethod;
+          }
+
           return {
             id: s.id,
             date: (s.createdAt
@@ -236,7 +248,7 @@ export function useAppViewModel() {
                 name: item.productName || 'Product',
                 barcode: item.productBarcode || '',
                 category: 'General',
-                cost: 0,
+                cost: Number(item.costPrice || item.cost || item.unitCost) || 0,
                 price: Number(item.unitPrice) || 0,
                 stock: 0,
                 minStock: 0,
@@ -246,17 +258,21 @@ export function useAppViewModel() {
               quantity: Number(item.quantity) || 0,
               discount: Number(item.discountPercent) || 0,
             })),
-            subtotal: Number(s.totalAmount) || 0,
+            subtotal: totalVal,
             discount: 0,
-            tax: (Number(s.totalAmount) * 0.18) / 1.18 || 0,
-            total: Number(s.totalAmount) || 0,
-            paymentMethod: (s.paymentMethod === 'MOBILE'
-              ? 'M-Pesa'
-              : s.paymentMethod === 'CARD'
-              ? 'Card'
-              : 'Cash') as 'Cash' | 'Card' | 'M-Pesa',
-            amountReceived: Number(s.totalAmount) || 0,
+            tax: (totalVal * 0.18) / 1.18 || 0,
+            total: totalVal,
+            paymentMethod: method,
+            amountReceived: totalVal,
             changeDue: 0,
+            refCode: s.customerCode || (s.id ? s.id.substring(0, 8).toUpperCase() : ''),
+            cashierId: s.cashierId || undefined,
+            cashierName: s.cashierName || undefined,
+            customerId: s.customerId || undefined,
+            customerName: s.customerName || undefined,
+            customerCode: s.customerCode || undefined,
+            reversedById: s.reversedById || null,
+            status: s.status || (s.reversedById ? 'VOID' : 'PAID'),
           };
         });
         transactionsHistory.value = mappedSales;

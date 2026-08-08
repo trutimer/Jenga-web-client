@@ -5,6 +5,7 @@ import type {
   CustomerPayment,
   RecordPaymentRequest,
   Invoice,
+  InvoiceItem,
   CustomerStatement,
   PageResponse,
   CustomerType,
@@ -116,5 +117,10 @@ export const customerService = {
   // Get single invoice by ID
   async getInvoiceById(id: string): Promise<Invoice> {
     return api.get<Invoice>(`/api/invoices/${id}`);
+  },
+
+  // Get items associated with an invoice
+  async getInvoiceItems(invoiceId: string): Promise<InvoiceItem[]> {
+    return api.get<InvoiceItem[]>(`/api/invoices/${invoiceId}/items`);
   }
 };

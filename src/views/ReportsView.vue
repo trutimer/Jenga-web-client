@@ -23,7 +23,7 @@
     <!-- Filters Panel -->
     <div class="bg-surface-container-lowest border border-outline-variant shadow-sm rounded-xl p-5 select-none">
       <span class="block text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider mb-3 px-1">Report Filters</span>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4">
         <!-- 1. Report Category -->
         <div class="flex flex-col gap-1.5">
           <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">Report Category</label>
@@ -56,7 +56,7 @@
           <input 
             type="date"
             v-model="fromDate"
-            :disabled="reportCategory !== 'sales'"
+            :disabled="reportCategory !== 'sales' && !(reportCategory === 'inventory' && inventoryReportType === 'restock')"
             class="w-full bg-surface-container-low border border-outline-variant text-xs font-bold text-on-surface hover:bg-surface-container-high disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg px-3 py-2 outline-none"
           />
         </div>
@@ -67,13 +67,44 @@
           <input 
             type="date"
             v-model="toDate"
-            :disabled="reportCategory !== 'sales'"
+            :disabled="reportCategory !== 'sales' && !(reportCategory === 'inventory' && inventoryReportType === 'restock')"
             class="w-full bg-surface-container-low border border-outline-variant text-xs font-bold text-on-surface hover:bg-surface-container-high disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg px-3 py-2 outline-none"
           />
         </div>
 
-        <!-- 5. Submit Filter Button -->
-        <div class="flex flex-col gap-1.5">
+        <!-- 5a. Sale Status Filter (Sales category only) -->
+        <div class="flex flex-col gap-1.5" v-if="reportCategory === 'sales'">
+          <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">Sale Status</label>
+          <select 
+            v-model="statusFilter"
+            class="w-full bg-surface-container-low border border-outline-variant text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors rounded-lg px-3 py-2.5 outline-none cursor-pointer"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="PAID">Paid Only</option>
+            <option value="UNPAID">Unpaid (Credit)</option>
+            <option value="VOID">Void / Reversed</option>
+            <option value="PARTIALLY_PAID">Partially Paid</option>
+          </select>
+        </div>
+
+        <!-- 5b. Stock Movement Type Filter (Restock inventory category only) -->
+        <div class="flex flex-col gap-1.5" v-if="reportCategory === 'inventory' && inventoryReportType === 'restock'">
+          <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">Movement Type</label>
+          <select 
+            v-model="movementTypeFilter"
+            class="w-full bg-surface-container-low border border-outline-variant text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors rounded-lg px-3 py-2.5 outline-none cursor-pointer"
+          >
+            <option value="ALL">All Movement Types</option>
+            <option value="PURCHASE">Purchase / Restock In</option>
+            <option value="ADJUSTMENT">Stock Adjustment</option>
+            <option value="SALE">Sales Outbound</option>
+            <option value="TRANSFER">Branch Transfer</option>
+            <option value="RETURN">Customer Return</option>
+          </select>
+        </div>
+
+        <!-- 6. Submit Filter Button -->
+        <div class="flex flex-col gap-1.5" :class="reportCategory === 'sales' ? '' : 'sm:col-span-2 md:col-span-1'">
           <label class="hidden md:block text-[10px] font-mono font-bold text-transparent select-none uppercase tracking-wider">Submit</label>
           <button 
             @click="applyFilters"
@@ -138,50 +169,81 @@
         
         <!-- SALES REPORT CATEGORY CONTENT -->
         <template v-if="reportCategory === 'sales'">
-          <!-- Quick Metrics (3 columns) -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <!-- Quick Metrics (4 columns for Sales & Profits) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
-            <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
+            <!-- Revenue (PAID & PARTIAL) -->
+            <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
                 <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Aggregate Invoice Revenue</span>
-                  <p class="text-2xl font-black font-mono text-primary leading-tight mt-1">{{ formatCurrency(totalInvoiced, currency) }}</p>
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">Paid Revenue</span>
+                  <p class="text-xl font-black font-mono text-emerald-600 leading-tight mt-1">{{ formatCurrency(totalInvoiced, currency) }}</p>
                 </div>
-                <Coins class="w-5 h-5 text-primary/70 shrink-0" />
+                <Coins class="w-5 h-5 text-emerald-600/70 shrink-0" />
               </div>
-              <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Before store concessions and loyalty awards</div>
+              <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Realized income (PAID & Partial)</div>
             </div>
 
-            <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
+            <!-- Unpaid Receivables -->
+            <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
                 <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Concessions (Discounts)</span>
-                  <p class="text-2xl font-black font-mono text-tertiary leading-tight mt-1">-{{ formatCurrency(totalDiscount, currency) }}</p>
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">Unpaid Receivables</span>
+                  <p class="text-xl font-black font-mono text-amber-600 leading-tight mt-1">{{ formatCurrency(totalUnpaid, currency) }}</p>
                 </div>
-                <Sparkles class="w-5 h-5 text-tertiary/70 shrink-0" />
+                <Clock class="w-5 h-5 text-amber-600/70 shrink-0" />
               </div>
-              <div class="text-[10px] text-tertiary/90 font-semibold mt-2">Consolidated active retail discount codes</div>
+              <div class="text-[10px] text-amber-700/80 font-semibold mt-2">Outstanding customer credit</div>
             </div>
 
-            <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
+            <!-- Voided / Reversed Sales -->
+            <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
                 <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Tax Liability (18% VAT)</span>
-                  <p class="text-2xl font-black font-mono text-on-surface leading-tight mt-1">{{ formatCurrency(totalTax, currency) }}</p>
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-rose-700 dark:text-rose-400">Voided / Reversed</span>
+                  <p class="text-xl font-black font-mono text-rose-600 leading-tight mt-1">{{ formatCurrency(totalVoided, currency) }}</p>
                 </div>
-                <FileText class="w-5 h-5 text-outline/70 shrink-0" />
+                <Ban class="w-5 h-5 text-rose-600/70 shrink-0" />
               </div>
-              <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">E-Invoicing VAT returns liability ledger</div>
+              <div class="text-[10px] text-rose-700/80 font-semibold mt-2">Cancelled & voided totals</div>
+            </div>
+
+            <!-- Profit / Loss Card -->
+            <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Profit / Loss</span>
+                  <p 
+                    class="text-xl font-black font-mono leading-tight mt-1"
+                    :class="totalProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'"
+                  >
+                    {{ totalProfit >= 0 ? '+' : '' }}{{ formatCurrency(totalProfit, currency) }}
+                  </p>
+                </div>
+                <TrendingUp class="w-5 h-5 shrink-0" :class="totalProfit >= 0 ? 'text-emerald-600/70' : 'text-rose-600/70'" />
+              </div>
+              <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Net profit (Paid revenue - Cost)</div>
             </div>
 
           </div>
 
           <!-- MAIN GRAPH/TABLE LEDGER FOR SALES -->
           <div v-if="reportType === 'sales'" class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col overflow-hidden">
-            <div class="p-4 bg-surface-container-low border-b border-outline-variant select-none">
+            <div class="p-4 bg-surface-container-low border-b border-outline-variant select-none flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <span class="text-xs font-mono font-bold uppercase tracking-wide text-on-surface-variant">
-                Timeframe: {{ fromDate || 'Start' }} to {{ toDate || 'Today' }} / Closed Registers Ledger
+                Timeframe: {{ fromDate || 'Start' }} to {{ toDate || 'Today' }} / Sales Ledger ({{ resolvedHistory.length }} items)
               </span>
+
+              <!-- Search Input -->
+              <div class="relative w-full sm:w-64">
+                <Search class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
+                <input 
+                  type="text"
+                  v-model="searchQuery"
+                  placeholder="Search reference, cashier, customer..."
+                  class="w-full bg-surface-container-lowest border border-outline-variant text-xs rounded-lg pl-8 pr-3 py-1.5 outline-none font-medium focus:border-primary"
+                />
+              </div>
             </div>
 
             <!-- Transactions History Table -->
@@ -189,11 +251,11 @@
               <table class="w-full text-left text-xs select-none">
                 <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant select-none">
                   <tr>
-                    <th class="p-4 pl-6">Reference No.</th>
+                    <th class="p-4 pl-6">Reference & Details</th>
                     <th class="p-4">Timestamp</th>
                     <th class="p-4">Payment Method</th>
                     <th class="p-4 text-right">Invoice Sum</th>
-                    <th class="p-4 text-right">Tax VAT</th>
+                    <th class="p-4 text-right">Profit / Loss</th>
                     <th class="p-4 text-right">Discount</th>
                     <th class="p-4">Ref Code</th>
                     <th class="p-4 text-center pr-6">Status</th>
@@ -206,23 +268,67 @@
                     @click="handleRowClick(txn)"
                     class="hover:bg-surface-container-high/60 transition-all font-sans text-sm cursor-pointer"
                   >
-                    <td class="p-4 pl-6 select-all font-bold text-on-surface">{{ txn.id }}</td>
+                    <td class="p-4 pl-6 select-all font-bold text-on-surface">
+                      <div class="font-mono text-xs">{{ txn.id }}</div>
+                      <div class="text-[10px] text-on-surface-variant font-normal mt-0.5 flex flex-wrap gap-x-2">
+                        <span v-if="txn.cashierName">Cashier: <strong class="font-semibold text-on-surface">{{ txn.cashierName }}</strong></span>
+                        <span v-if="txn.customerName">Customer: <strong class="font-semibold text-primary">{{ txn.customerName }}</strong> <span v-if="txn.customerCode" class="text-[9px] font-mono opacity-80">({{ txn.customerCode }})</span></span>
+                      </div>
+                    </td>
                     <td class="p-4 font-mono text-xs text-on-surface-variant">{{ txn.date }}</td>
                     <td class="p-4 font-semibold text-on-surface">{{ txn.paymentMethod }}</td>
-                    <td class="p-4 text-right font-mono font-black text-primary">{{ formatCurrency(txn.total, currency) }}</td>
-                    <td class="p-4 text-right font-mono text-on-surface-variant">{{ formatCurrency(txn.tax, currency) }}</td>
+                    <td class="p-4 text-right font-mono font-black" :class="(txn.status || '').toUpperCase() === 'VOID' || txn.total < 0 ? 'text-rose-600 line-through' : 'text-primary'">
+                      {{ formatCurrency(txn.total, currency) }}
+                    </td>
+                    <td 
+                      class="p-4 text-right font-mono font-bold" 
+                      :class="(txn.status || '').toUpperCase() === 'VOID' ? 'text-outline line-through' : (getTransactionProfit(txn) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600')"
+                    >
+                      {{ (txn.status || '').toUpperCase() === 'VOID' ? formatCurrency(0, currency) : ((getTransactionProfit(txn) >= 0 ? '+' : '') + formatCurrency(getTransactionProfit(txn), currency)) }}
+                    </td>
                     <td class="p-4 text-right font-mono text-tertiary">-{{ formatCurrency(txn.discount, currency) }}</td>
                     <td class="p-4 font-mono text-xs text-outline select-all">{{ txn.refCode || 'N/A' }}</td>
                     <td class="p-4 text-center pr-6">
-                      <span class="inline-flex items-center gap-1.5 px-2 bg-primary-container/25 text-primary text-[10px] font-bold rounded-full border border-primary/20">
-                        <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-                        SUCCESS
+                      <!-- Dynamic status pill -->
+                      <span 
+                        v-if="(txn.status || 'PAID').toUpperCase() === 'PAID' || (txn.status || '').toUpperCase() === 'SUCCESS' || (txn.status || '').toUpperCase() === 'COMPLETED'"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded-full border border-emerald-500/20"
+                      >
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        PAID
+                      </span>
+                      <span 
+                        v-else-if="(txn.status || '').toUpperCase() === 'UNPAID'"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] font-bold rounded-full border border-amber-500/20"
+                      >
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                        UNPAID
+                      </span>
+                      <span 
+                        v-else-if="(txn.status || '').toUpperCase() === 'VOID' || (txn.status || '').toUpperCase() === 'REVERSED'"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-500/10 text-rose-700 dark:text-rose-400 text-[10px] font-bold rounded-full border border-rose-500/20"
+                      >
+                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                        VOID
+                      </span>
+                      <span 
+                        v-else-if="(txn.status || '').toUpperCase() === 'PARTIALLY_PAID' || (txn.status || '').toUpperCase() === 'PARTIAL'"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-500/10 text-blue-700 dark:text-blue-400 text-[10px] font-bold rounded-full border border-blue-500/20"
+                      >
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                        PARTIAL
+                      </span>
+                      <span 
+                        v-else
+                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-gray-500/10 text-gray-700 text-[10px] font-bold rounded-full border border-gray-500/20"
+                      >
+                        {{ txn.status }}
                       </span>
                     </td>
                   </tr>
                   <tr v-if="resolvedHistory.length === 0">
                     <td colspan="8" class="p-8 text-center text-on-surface-variant font-medium">
-                      No sales transactions found for this date range.
+                      No sales transactions found matching your filters.
                     </td>
                   </tr>
                 </tbody>
@@ -287,110 +393,245 @@
 
         <!-- INVENTORY REPORT CATEGORY CONTENT -->
         <template v-else-if="reportCategory === 'inventory'">
-          <!-- Quick Metrics (3 columns) -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            
-            <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
-              <div class="flex justify-between items-start">
-                <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Total Stock Units</span>
-                  <p class="text-2xl font-black font-mono text-primary leading-tight mt-1">{{ totalInventoryItems }}</p>
-                </div>
-                <Package class="w-5 h-5 text-primary/70 shrink-0" />
-              </div>
-              <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Total quantity of products across all categories</div>
+          <!-- Sub-Report Type Toggle Bar -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm select-none">
+            <div>
+              <h3 class="text-base font-black text-on-surface">Inventory Status & Restock Center</h3>
+              <p class="text-xs text-on-surface-variant font-semibold mt-0.5">
+                {{ inventoryReportType === 'all' ? 'Viewing current full catalog stock status and valuation ledger.' : 'Viewing stock movements and restock history for selected date range.' }}
+              </p>
             </div>
-
-            <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
-              <div class="flex justify-between items-start">
-                <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Low Stock items</span>
-                  <p class="text-2xl font-black font-mono text-tertiary leading-tight mt-1">{{ lowStockItemsCount }}</p>
-                </div>
-                <AlertTriangle class="w-5 h-5 text-tertiary/70 shrink-0" />
-              </div>
-              <div class="text-[10px] text-tertiary/90 font-semibold mt-2">Products below safety or reorder threshold</div>
-            </div>
-
-            <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
-              <div class="flex justify-between items-start">
-                <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Inventory Valuation</span>
-                  <p class="text-2xl font-black font-mono text-on-surface leading-tight mt-1">{{ formatCurrency(totalInventoryValuation, currency) }}</p>
-                </div>
-                <TrendingUp class="w-5 h-5 text-outline/70 shrink-0" />
-              </div>
-              <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Total value based on retail selling price</div>
-            </div>
-
-          </div>
-
-          <!-- Inventory Table -->
-          <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col overflow-hidden">
-            <div class="p-4 bg-surface-container-low border-b border-outline-variant select-none">
-              <span class="text-xs font-mono font-bold uppercase tracking-wide text-on-surface-variant">Current Inventory Valuation Ledger</span>
-            </div>
-            
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-xs select-none">
-                <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant select-none">
-                  <tr>
-                    <th class="p-4 pl-6">Product Details</th>
-                    <th class="p-4">Category</th>
-                    <th class="p-4 text-center">Stock Level</th>
-                    <th class="p-4 text-right">Cost Price</th>
-                    <th class="p-4 text-right">Selling Price</th>
-                    <th class="p-4 text-right">Stock Value</th>
-                    <th class="p-4 text-center pr-6">Status</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-surface-variant">
-                  <tr 
-                    v-for="p in productsList" 
-                    :key="p.id" 
-                    class="hover:bg-surface-container-high/60 transition-all font-sans text-sm"
-                  >
-                    <td class="p-4 pl-6">
-                      <span class="font-bold text-on-surface block">{{ p.name }}</span>
-                      <span class="font-mono text-[10px] text-on-surface-variant/60 block mt-0.5">{{ p.barcode || 'NO BARCODE' }}</span>
-                    </td>
-                    <td class="p-4 font-semibold text-on-surface-variant">{{ p.category }}</td>
-                    <td class="p-4 text-center font-mono font-bold" :class="p.stock <= p.minStock ? 'text-tertiary' : 'text-on-surface'">
-                      {{ p.stock }} <span class="text-[10px] text-outline font-normal">/ {{ p.minStock }}</span>
-                    </td>
-                    <td class="p-4 text-right font-mono">{{ formatCurrency(p.cost, currency) }}</td>
-                    <td class="p-4 text-right font-mono font-black text-primary">{{ formatCurrency(p.price, currency) }}</td>
-                    <td class="p-4 text-right font-mono font-bold text-on-surface">{{ formatCurrency(p.stock * p.price, currency) }}</td>
-                    <td class="p-4 text-center pr-6">
-                      <span 
-                        v-if="p.stock === 0"
-                        class="inline-flex items-center gap-1.5 px-2 bg-tertiary/10 text-tertiary text-[10px] font-bold rounded-full border border-tertiary/20"
-                      >
-                        OUT OF STOCK
-                      </span>
-                      <span 
-                        v-else-if="p.stock <= p.minStock"
-                        class="inline-flex items-center gap-1.5 px-2 bg-amber-500/10 text-amber-600 text-[10px] font-bold rounded-full border border-amber-500/20"
-                      >
-                        LOW STOCK
-                      </span>
-                      <span 
-                        v-else
-                        class="inline-flex items-center gap-1.5 px-2 bg-primary-container/25 text-primary text-[10px] font-bold rounded-full border border-primary/20"
-                      >
-                        IN STOCK
-                      </span>
-                    </td>
-                  </tr>
-                  <tr v-if="productsList.length === 0">
-                    <td colspan="7" class="p-8 text-center text-on-surface-variant font-medium">
-                      No products found in the catalog.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="flex items-center gap-2 bg-surface-container-low p-1.5 rounded-xl border border-outline-variant shrink-0">
+              <button
+                @click="inventoryReportType = 'all'"
+                class="px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border-0 flex items-center gap-2"
+                :class="inventoryReportType === 'all' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-high bg-transparent'"
+              >
+                <Package class="w-4 h-4" />
+                <span>All Stock Report</span>
+              </button>
+              <button
+                @click="inventoryReportType = 'restock'"
+                class="px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border-0 flex items-center gap-2"
+                :class="inventoryReportType === 'restock' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-high bg-transparent'"
+              >
+                <RefreshCw class="w-4 h-4" />
+                <span>Restock Report</span>
+              </button>
             </div>
           </div>
+
+          <!-- OPTION A: ALL STOCK REPORT -->
+          <template v-if="inventoryReportType === 'all'">
+            <!-- Quick Metrics (3 columns) -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              
+              <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Total Stock Units</span>
+                    <p class="text-2xl font-black font-mono text-primary leading-tight mt-1">{{ totalInventoryItems }}</p>
+                  </div>
+                  <Package class="w-5 h-5 text-primary/70 shrink-0" />
+                </div>
+                <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Total quantity of products across all categories</div>
+              </div>
+
+              <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Low Stock items</span>
+                    <p class="text-2xl font-black font-mono text-tertiary leading-tight mt-1">{{ lowStockItemsCount }}</p>
+                  </div>
+                  <AlertTriangle class="w-5 h-5 text-tertiary/70 shrink-0" />
+                </div>
+                <div class="text-[10px] text-tertiary/90 font-semibold mt-2">Products below safety or reorder threshold</div>
+              </div>
+
+              <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Inventory Valuation</span>
+                    <p class="text-2xl font-black font-mono text-on-surface leading-tight mt-1">{{ formatCurrency(totalInventoryValuation, currency) }}</p>
+                  </div>
+                  <TrendingUp class="w-5 h-5 text-outline/70 shrink-0" />
+                </div>
+                <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Total value based on retail selling price</div>
+              </div>
+
+            </div>
+
+            <!-- Inventory Table -->
+            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col overflow-hidden">
+              <div class="p-4 bg-surface-container-low border-b border-outline-variant select-none">
+                <span class="text-xs font-mono font-bold uppercase tracking-wide text-on-surface-variant">Current Inventory Valuation Ledger</span>
+              </div>
+              
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs select-none">
+                  <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant select-none">
+                    <tr>
+                      <th class="p-4 pl-6">Product Details</th>
+                      <th class="p-4">Category</th>
+                      <th class="p-4 text-center">Stock Level</th>
+                      <th class="p-4 text-right">Cost Price</th>
+                      <th class="p-4 text-right">Selling Price</th>
+                      <th class="p-4 text-right">Stock Value</th>
+                      <th class="p-4 text-center pr-6">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-surface-variant">
+                    <tr 
+                      v-for="p in productsList" 
+                      :key="p.id" 
+                      class="hover:bg-surface-container-high/60 transition-all font-sans text-sm"
+                    >
+                      <td class="p-4 pl-6">
+                        <span class="font-bold text-on-surface block">{{ p.name }}</span>
+                        <span class="font-mono text-[10px] text-on-surface-variant/60 block mt-0.5">{{ p.barcode || 'NO BARCODE' }}</span>
+                      </td>
+                      <td class="p-4 font-semibold text-on-surface-variant">{{ p.category }}</td>
+                      <td class="p-4 text-center font-mono font-bold" :class="p.stock <= p.minStock ? 'text-tertiary' : 'text-on-surface'">
+                        {{ p.stock }} <span class="text-[10px] text-outline font-normal">/ {{ p.minStock }}</span>
+                      </td>
+                      <td class="p-4 text-right font-mono">{{ formatCurrency(p.cost, currency) }}</td>
+                      <td class="p-4 text-right font-mono font-black text-primary">{{ formatCurrency(p.price, currency) }}</td>
+                      <td class="p-4 text-right font-mono font-bold text-on-surface">{{ formatCurrency(p.stock * p.price, currency) }}</td>
+                      <td class="p-4 text-center pr-6">
+                        <span 
+                          v-if="p.stock === 0"
+                          class="inline-flex items-center gap-1.5 px-2 bg-tertiary/10 text-tertiary text-[10px] font-bold rounded-full border border-tertiary/20"
+                        >
+                          OUT OF STOCK
+                        </span>
+                        <span 
+                          v-else-if="p.stock <= p.minStock"
+                          class="inline-flex items-center gap-1.5 px-2 bg-amber-500/10 text-amber-600 text-[10px] font-bold rounded-full border border-amber-500/20"
+                        >
+                          LOW STOCK
+                        </span>
+                        <span 
+                          v-else
+                          class="inline-flex items-center gap-1.5 px-2 bg-primary-container/25 text-primary text-[10px] font-bold rounded-full border border-primary/20"
+                        >
+                          IN STOCK
+                        </span>
+                      </td>
+                    </tr>
+                    <tr v-if="productsList.length === 0">
+                      <td colspan="7" class="p-8 text-center text-on-surface-variant font-medium">
+                        No products found in the catalog.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </template>
+
+          <!-- OPTION B: RESTOCK REPORT -->
+          <template v-else-if="inventoryReportType === 'restock'">
+            <!-- Restock Quick Metrics -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              
+              <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Restock Log Entries</span>
+                    <p class="text-2xl font-black font-mono text-primary leading-tight mt-1">{{ filteredStockMovements.length }}</p>
+                  </div>
+                  <RefreshCw class="w-5 h-5 text-primary/70 shrink-0" />
+                </div>
+                <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Total stock additions & movements recorded</div>
+              </div>
+
+              <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Total Units Restocked</span>
+                    <p class="text-2xl font-black font-mono text-emerald-600 leading-tight mt-1">{{ totalRestockQuantity }}</p>
+                  </div>
+                  <Package class="w-5 h-5 text-emerald-600/70 shrink-0" />
+                </div>
+                <div class="text-[10px] text-emerald-700/80 font-semibold mt-2">Cumulative stock quantity added</div>
+              </div>
+
+              <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Restock Valuation</span>
+                    <p class="text-2xl font-black font-mono text-on-surface leading-tight mt-1">{{ formatCurrency(totalRestockValuation, currency) }}</p>
+                  </div>
+                  <TrendingUp class="w-5 h-5 text-outline/70 shrink-0" />
+                </div>
+                <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Total monetary value of stock entries</div>
+              </div>
+
+            </div>
+
+            <!-- Restock Movements Table -->
+            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col overflow-hidden">
+              <div class="p-4 bg-surface-container-low border-b border-outline-variant select-none flex justify-between items-center">
+                <span class="text-xs font-mono font-bold uppercase tracking-wide text-on-surface-variant">Stock Movements & Restock Audit History</span>
+                <span class="text-[11px] font-mono text-outline font-semibold">Range: {{ fromDate }} to {{ toDate }} (Filter: {{ movementTypeFilter }})</span>
+              </div>
+              
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs select-none">
+                  <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant select-none">
+                    <tr>
+                      <th class="p-4 pl-6">Date & Time</th>
+                      <th class="p-4">Product Name</th>
+                      <th class="p-4 text-center">Movement Type</th>
+                      <th class="p-4 text-center">Quantity</th>
+                      <th class="p-4 text-right">Cost Price</th>
+                      <th class="p-4 text-right">Selling Price</th>
+                      <th class="p-4 text-left pr-6">Added / Created By</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-surface-variant">
+                    <tr 
+                      v-for="sm in filteredStockMovements" 
+                      :key="sm.id" 
+                      class="hover:bg-surface-container-high/60 transition-all font-sans text-sm"
+                    >
+                      <td class="p-4 pl-6 font-mono text-xs text-on-surface-variant">
+                        {{ formatDateTime(sm.createdAt) }}
+                      </td>
+                      <td class="p-4">
+                        <span class="font-bold text-on-surface block">{{ sm.productName || 'Product' }}</span>
+                      </td>
+                      <td class="p-4 text-center">
+                        <span 
+                          class="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-bold rounded-full border"
+                          :class="getMovementTypeBadgeClass(sm.type)"
+                        >
+                          {{ (sm.type || 'PURCHASE').toUpperCase() }}
+                        </span>
+                      </td>
+                      <td class="p-4 text-center font-mono font-bold text-emerald-600">
+                        +{{ sm.quantity }}
+                      </td>
+                      <td class="p-4 text-right font-mono text-on-surface-variant">
+                        {{ formatCurrency(sm.costPrice || 0, currency) }}
+                      </td>
+                      <td class="p-4 text-right font-mono font-bold text-primary">
+                        {{ formatCurrency(sm.sellingPrice || 0, currency) }}
+                      </td>
+                      <td class="p-4 text-left pr-6">
+                        <span class="font-semibold text-on-surface block">{{ sm.createdByName || 'System / Admin' }}</span>
+                      </td>
+                    </tr>
+                    <tr v-if="filteredStockMovements.length === 0">
+                      <td colspan="7" class="p-8 text-center text-on-surface-variant font-medium">
+                        {{ isLoadingMovements ? 'Loading restock history from server...' : 'No stock movements matching your filter criteria.' }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </template>
         </template>
 
         <!-- SUPPLIERS REPORT CATEGORY CONTENT -->
@@ -512,7 +753,8 @@ import { useRouter } from 'vue-router';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { formatCurrency } from '../models/mockData';
 import { showToast } from '../services/toastService';
-import type { Transaction } from '../models/types';
+import { api } from '../services/api';
+import type { Transaction, StockMovement } from '../models/types';
 import { 
   TrendingUp, 
   Activity, 
@@ -525,7 +767,14 @@ import {
   AlertTriangle,
   Users,
   UserCheck,
-  CreditCard
+  CreditCard,
+  Ban,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Search,
+  Filter,
+  RefreshCw
 } from 'lucide-vue-next';
 
 const vm = useAppViewModel();
@@ -549,6 +798,8 @@ const reportCategory = ref<'sales' | 'inventory' | 'suppliers'>('sales');
 const exportFormat = ref<'PDF' | 'EXCEL' | 'CSV'>('PDF');
 const fromDate = ref(getTodayString());
 const toDate = ref(getTodayString());
+const statusFilter = ref<'ALL' | 'PAID' | 'UNPAID' | 'VOID' | 'PARTIALLY_PAID'>('ALL');
+const searchQuery = ref('');
 
 // Sidebar layout state for Sales
 const reportType = ref<'sales' | 'payments' | 'audit'>('sales');
@@ -556,11 +807,87 @@ const reportType = ref<'sales' | 'payments' | 'audit'>('sales');
 const transactionsHistory = computed(() => vm.transactionsHistory.value);
 const currency = computed(() => vm.settings.value.currency);
 
+// Inventory Report Type state ('all' | 'restock')
+const inventoryReportType = ref<'all' | 'restock'>('all');
+const movementTypeFilter = ref<string>('ALL');
+const stockMovementsList = ref<StockMovement[]>([]);
+const isLoadingMovements = ref<boolean>(false);
+
+const filteredStockMovements = computed(() => {
+  if (movementTypeFilter.value === 'ALL') {
+    return stockMovementsList.value;
+  }
+  return stockMovementsList.value.filter(sm => {
+    return (sm.type || '').toUpperCase() === movementTypeFilter.value.toUpperCase();
+  });
+});
+
+const totalRestockQuantity = computed(() => {
+  return filteredStockMovements.value.reduce((acc, sm) => acc + (Number(sm.quantity) || 0), 0);
+});
+
+const totalRestockValuation = computed(() => {
+  return filteredStockMovements.value.reduce((acc, sm) => {
+    const price = sm.costPrice || sm.sellingPrice || 0;
+    return acc + ((Number(sm.quantity) || 0) * price);
+  }, 0);
+});
+
+const fetchStockMovements = async () => {
+  const branchId = localStorage.getItem('branchId');
+  if (!branchId || branchId === 'null' || branchId === 'undefined') return;
+  isLoadingMovements.value = true;
+  try {
+    const res = await api.get<StockMovement[]>(`/api/products/stock-movements?storeBranchId=${branchId}&startDate=${fromDate.value}&endDate=${toDate.value}`);
+    stockMovementsList.value = res || [];
+  } catch (err) {
+    console.error('Failed to fetch stock movements:', err);
+    stockMovementsList.value = [];
+  } finally {
+    isLoadingMovements.value = false;
+  }
+};
+
+const formatDateTime = (dateStr?: string) => {
+  if (!dateStr) return '-';
+  try {
+    return new Date(dateStr).toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (e) {
+    return dateStr;
+  }
+};
+
+const getMovementTypeBadgeClass = (type: string) => {
+  const t = (type || '').toUpperCase();
+  if (t === 'PURCHASE' || t === 'IN' || t === 'ADD') {
+    return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+  } else if (t === 'ADJUSTMENT') {
+    return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+  } else if (t === 'TRANSFER') {
+    return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+  } else if (t === 'SALE' || t === 'OUT') {
+    return 'bg-slate-500/10 text-slate-600 border-slate-500/20';
+  }
+  return 'bg-primary/10 text-primary border-primary/20';
+};
+
+
+
 const applyFilters = () => {
   if (reportCategory.value === 'sales') {
     vm.fetchSalesHistory(fromDate.value, toDate.value);
   } else if (reportCategory.value === 'inventory') {
-    vm.fetchProducts();
+    if (inventoryReportType.value === 'all') {
+      vm.fetchProducts();
+    } else {
+      fetchStockMovements();
+    }
   } else if (reportCategory.value === 'suppliers') {
     vm.fetchSuppliers();
   }
@@ -574,6 +901,19 @@ watch(reportCategory, () => {
   applyFilters();
 });
 
+watch(inventoryReportType, () => {
+  if (reportCategory.value === 'inventory') {
+    applyFilters();
+  }
+});
+
+// Helper to check if sale status represents PAID status only
+const isPaidOnlyStatus = (status?: string) => {
+  if (!status) return true;
+  const s = status.toUpperCase();
+  return s === 'PAID' || s === 'SUCCESS' || s === 'COMPLETED';
+};
+
 // Dynamic filtering for Sales report
 const filteredTransactions = computed(() => {
   let list = transactionsHistory.value;
@@ -583,6 +923,27 @@ const filteredTransactions = computed(() => {
   if (toDate.value) {
     list = list.filter(t => t.date <= toDate.value);
   }
+  if (statusFilter.value !== 'ALL') {
+    list = list.filter(t => {
+      const st = (t.status || 'PAID').toUpperCase();
+      if (statusFilter.value === 'PAID') return st === 'PAID' || st === 'SUCCESS' || st === 'COMPLETED';
+      if (statusFilter.value === 'UNPAID') return st === 'UNPAID';
+      if (statusFilter.value === 'VOID') return st === 'VOID' || st === 'REVERSED';
+      if (statusFilter.value === 'PARTIALLY_PAID') return st === 'PARTIALLY_PAID' || st === 'PARTIAL';
+      return true;
+    });
+  }
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.toLowerCase().trim();
+    list = list.filter(t => 
+      (t.id && t.id.toLowerCase().includes(q)) ||
+      (t.refCode && t.refCode.toLowerCase().includes(q)) ||
+      (t.cashierName && t.cashierName.toLowerCase().includes(q)) ||
+      (t.customerName && t.customerName.toLowerCase().includes(q)) ||
+      (t.customerCode && t.customerCode.toLowerCase().includes(q)) ||
+      (t.paymentMethod && t.paymentMethod.toLowerCase().includes(q))
+    );
+  }
   return list;
 });
 
@@ -590,23 +951,87 @@ const resolvedHistory = computed(() => {
   return filteredTransactions.value;
 });
 
-// Sales quick metrics recalculation
+// Revenue: Sum of all sales (Invoice items) for PAID items only
 const totalInvoiced = computed(() => {
-  return filteredTransactions.value.reduce((acc, t) => acc + t.total, 0);
+  return filteredTransactions.value
+    .filter(t => isPaidOnlyStatus(t.status))
+    .reduce((acc, t) => {
+      if (t.items && t.items.length > 0) {
+        return acc + t.items.reduce((itemSum, item) => itemSum + ((item.quantity * item.product.price) - item.discount), 0);
+      }
+      return acc + Math.max(0, t.total);
+    }, 0);
+});
+
+const totalUnpaid = computed(() => {
+  return filteredTransactions.value
+    .filter(t => (t.status || '').toUpperCase() === 'UNPAID')
+    .reduce((acc, t) => acc + Math.max(0, t.total), 0);
+});
+
+const totalVoided = computed(() => {
+  return filteredTransactions.value
+    .filter(t => {
+      const st = (t.status || '').toUpperCase();
+      return st === 'VOID' || st === 'REVERSED' || t.total < 0;
+    })
+    .reduce((acc, t) => acc + Math.abs(t.total), 0);
 });
 
 const totalDiscount = computed(() => {
-  return filteredTransactions.value.reduce((acc, t) => acc + t.discount, 0);
+  return filteredTransactions.value
+    .filter(t => isPaidOnlyStatus(t.status))
+    .reduce((acc, t) => acc + t.discount, 0);
+});
+
+const getTransactionCost = (txn: Transaction) => {
+  if (!txn.items || txn.items.length === 0) return Math.max(0, txn.total * 0.70);
+  return txn.items.reduce((sum, item) => {
+    let unitCost = item.product?.cost || 0;
+    if (!unitCost && item.product?.id) {
+      const found = vm.products.value.find(p => p.id === item.product.id);
+      if (found && found.cost) unitCost = found.cost;
+    }
+    if (!unitCost && item.product?.wholesalePrice) {
+      unitCost = item.product.wholesalePrice;
+    }
+    if (!unitCost && item.product?.price) {
+      // Estimated Cost of Goods Sold (70% of retail price) if item cost is unpopulated
+      unitCost = item.product.price * 0.70;
+    }
+    return sum + (unitCost * item.quantity);
+  }, 0);
+};
+
+const getTransactionProfit = (txn: Transaction) => {
+  if ((txn.status || '').toUpperCase() === 'VOID') return 0;
+  const cost = getTransactionCost(txn);
+  return txn.total - cost;
+};
+
+const totalProfit = computed(() => {
+  return filteredTransactions.value
+    .filter(t => isPaidOnlyStatus(t.status))
+    .reduce((acc, t) => acc + getTransactionProfit(t), 0);
 });
 
 const totalTax = computed(() => {
-  return filteredTransactions.value.reduce((acc, t) => acc + t.tax, 0);
+  return filteredTransactions.value
+    .filter(t => isPaidOnlyStatus(t.status))
+    .reduce((acc, t) => acc + t.tax, 0);
 });
 
-const totalByMethod = (method: 'Cash' | 'Card' | 'M-Pesa') => {
+const totalByMethod = (method: string) => {
   return filteredTransactions.value
-    .filter(t => t.paymentMethod === method)
-    .reduce((acc, t) => acc + t.total, 0);
+    .filter(t => {
+      const isMethodMatch = t.paymentMethod.toLowerCase() === method.toLowerCase() ||
+        (method.toLowerCase() === 'cash' && t.paymentMethod.toUpperCase() === 'CASH') ||
+        (method.toLowerCase() === 'm-pesa' && (t.paymentMethod.toUpperCase() === 'MOBILE' || t.paymentMethod.toUpperCase() === 'M-PESA')) ||
+        (method.toLowerCase() === 'card' && t.paymentMethod.toUpperCase() === 'CARD') ||
+        (method.toLowerCase() === 'credit' && (t.paymentMethod.toUpperCase() === 'CREDIT' || t.paymentMethod.toUpperCase() === 'ON CREDIT'));
+      return isMethodMatch && isPaidOnlyStatus(t.status);
+    })
+    .reduce((acc, t) => acc + Math.max(0, t.total), 0);
 };
 
 // Inventory report computed fields
@@ -866,47 +1291,73 @@ const handleExportReport = () => {
     metadata = `${dateRangeStr} | Generated by Sarah K.`;
     filename = `JENGA-SALES-REPORT-${dateStr}`;
 
-    headers = ['Sold Items', 'Timestamp', 'Payment Method', 'Invoice Sum', 'Tax VAT', 'Discount', 'Ref Code', 'Status'];
+    headers = ['Reference No.', 'Cashier', 'Customer', 'Timestamp', 'Payment Method', 'Invoice Sum', 'Profit / Loss', 'Discount', 'Ref Code', 'Status'];
     rows = resolvedHistory.value.map(t => [
-      formatSoldItems(t),
+      t.id,
+      t.cashierName || 'N/A',
+      t.customerName ? `${t.customerName} (${t.customerCode || ''})` : 'Walk-in Customer',
       t.date,
       t.paymentMethod,
       formatCurrency(t.total, currency.value),
-      formatCurrency(t.tax, currency.value),
+      (getTransactionProfit(t) >= 0 ? '+' : '') + formatCurrency(getTransactionProfit(t), currency.value),
       `-${formatCurrency(t.discount, currency.value)}`,
       t.refCode || 'N/A',
-      'SUCCESS'
+      (t.status || 'PAID').toUpperCase()
     ]);
 
     kpis = [
-      { label: 'Aggregate Invoice Revenue', value: formatCurrency(totalInvoiced.value, currency.value) },
-      { label: 'Concessions (Discounts)', value: `-${formatCurrency(totalDiscount.value, currency.value)}` },
-      { label: 'Tax Liability (18% VAT)', value: formatCurrency(totalTax.value, currency.value) }
+      { label: 'Realized Revenue (Paid)', value: formatCurrency(totalInvoiced.value, currency.value) },
+      { label: 'Unpaid Receivables', value: formatCurrency(totalUnpaid.value, currency.value) },
+      { label: 'Voided / Reversals', value: formatCurrency(totalVoided.value, currency.value) },
+      { label: 'Gross Profit / Loss', value: `${totalProfit.value >= 0 ? '+' : ''}${formatCurrency(totalProfit.value, currency.value)}` }
     ];
 
   } else if (reportCategory.value === 'inventory') {
-    title = 'Inventory Valuation Status Report';
-    metadata = `Current Catalog Snapshot | Generated by Sarah K.`;
-    filename = `JENGA-INVENTORY-REPORT-${dateStr}`;
+    if (inventoryReportType.value === 'restock') {
+      title = 'Restock & Stock Movement History Report';
+      metadata = `Date Range: ${fromDate.value} to ${toDate.value} | Generated by Admin`;
+      filename = `JENGA-RESTOCK-REPORT-${dateStr}`;
 
-    headers = ['Barcode', 'Product Name', 'Category', 'Stock Level', 'Min Reorder Level', 'Cost Price', 'Selling Price', 'Valuation', 'Status'];
-    rows = productsList.value.map(p => [
-      p.barcode || 'N/A',
-      p.name,
-      p.category,
-      p.stock,
-      p.minStock,
-      formatCurrency(p.cost, currency.value),
-      formatCurrency(p.price, currency.value),
-      formatCurrency(p.stock * p.price, currency.value),
-      p.stock === 0 ? 'OUT OF STOCK' : (p.stock <= p.minStock ? 'LOW STOCK' : 'IN STOCK')
-    ]);
+      headers = ['Date & Time', 'Product Name', 'Movement Type', 'Quantity', 'Cost Price', 'Selling Price', 'Added / Created By'];
+      rows = filteredStockMovements.value.map(sm => [
+        formatDateTime(sm.createdAt),
+        sm.productName || 'Product',
+        (sm.type || 'PURCHASE').toUpperCase(),
+        `+${sm.quantity}`,
+        formatCurrency(sm.costPrice || 0, currency.value),
+        formatCurrency(sm.sellingPrice || 0, currency.value),
+        sm.createdByName || sm.createdById || 'System / Admin'
+      ]);
 
-    kpis = [
-      { label: 'Total Stock Units', value: String(totalInventoryItems.value) },
-      { label: 'Low Stock Items', value: String(lowStockItemsCount.value) },
-      { label: 'Inventory Valuation', value: formatCurrency(totalInventoryValuation.value, currency.value) }
-    ];
+      kpis = [
+        { label: 'Restock Log Entries', value: String(filteredStockMovements.value.length) },
+        { label: 'Total Units Restocked', value: String(totalRestockQuantity.value) },
+        { label: 'Restock Valuation', value: formatCurrency(totalRestockValuation.value, currency.value) }
+      ];
+    } else {
+      title = 'Inventory Valuation Status Report';
+      metadata = `Current Catalog Snapshot | Generated by Admin`;
+      filename = `JENGA-INVENTORY-REPORT-${dateStr}`;
+
+      headers = ['Barcode', 'Product Name', 'Category', 'Stock Level', 'Min Reorder Level', 'Cost Price', 'Selling Price', 'Valuation', 'Status'];
+      rows = productsList.value.map(p => [
+        p.barcode || 'N/A',
+        p.name,
+        p.category,
+        p.stock,
+        p.minStock,
+        formatCurrency(p.cost, currency.value),
+        formatCurrency(p.price, currency.value),
+        formatCurrency(p.stock * p.price, currency.value),
+        p.stock === 0 ? 'OUT OF STOCK' : (p.stock <= p.minStock ? 'LOW STOCK' : 'IN STOCK')
+      ]);
+
+      kpis = [
+        { label: 'Total Stock Units', value: String(totalInventoryItems.value) },
+        { label: 'Low Stock Items', value: String(lowStockItemsCount.value) },
+        { label: 'Inventory Valuation', value: formatCurrency(totalInventoryValuation.value, currency.value) }
+      ];
+    }
 
   } else if (reportCategory.value === 'suppliers') {
     title = 'Supplier Payables Ledger Report';

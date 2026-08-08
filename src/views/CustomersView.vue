@@ -27,7 +27,7 @@
 
         <button 
           @click="openRecordPaymentModal()"
-          class="h-11 px-5 rounded-xl border border-primary/30 text-primary hover:bg-primary/5 active:scale-[0.98] font-bold text-sm flex items-center gap-2 cursor-pointer transition-all bg-white shadow-xs"
+          class="h-11 px-5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 active:scale-[0.98] font-bold text-sm flex items-center gap-2 cursor-pointer transition-all shadow-sm"
         >
           <CreditCard class="w-4 h-4" />
           <span>Record Payment</span>
@@ -265,7 +265,7 @@
 
                   <button
                     @click="openRecordPaymentModal(customer)"
-                    class="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-success transition-all cursor-pointer"
+                    class="p-2 rounded-lg hover:bg-emerald-50 text-emerald-600 dark:hover:bg-emerald-950/30 transition-all cursor-pointer"
                     title="Record Payment"
                   >
                     <CreditCard class="w-4 h-4" />
@@ -521,8 +521,8 @@
               v-model.number="customerForm.creditLimit"
               @input="validateField('creditLimit')"
               @blur="validateField('creditLimit')"
-              min="1"
-              step="1000"
+              min="0"
+              step="any"
               placeholder="0.00"
               class="w-full h-10 px-3 rounded-xl border bg-surface focus:outline-none text-sm font-mono transition-colors"
               :class="formErrors.creditLimit ? 'border-error focus:border-error ring-1 ring-error/30' : 'border-outline-variant focus:border-primary'"
@@ -590,14 +590,14 @@
         </div>
 
         <!-- Optional Invoice Select -->
-        <div v-if="customerInvoices.length > 0">
+        <div v-if="unpaidCustomerInvoices.length > 0">
           <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Invoice (Optional)</label>
           <select 
             v-model="paymentForm.invoiceId"
             class="w-full h-10 px-3 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-semibold"
           >
             <option value="">General Account Payment</option>
-            <option v-for="inv in customerInvoices" :key="inv.id" :value="inv.id">
+            <option v-for="inv in unpaidCustomerInvoices" :key="inv.id" :value="inv.id">
               Invoice #{{ inv.invoiceNumber }} - Due: {{ formatCurrency(inv.dueAmount) }} (Status: {{ inv.status }})
             </option>
           </select>
@@ -611,8 +611,8 @@
               type="number"
               v-model.number="paymentForm.amount"
               required
-              min="1"
-              step="100"
+              min="0.01"
+              step="any"
               placeholder="0.00"
               class="w-full h-10 px-3 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-mono font-bold"
             />
@@ -667,9 +667,10 @@
           <button 
             type="submit" 
             :disabled="isSubmitting"
-            class="h-10 px-5 rounded-xl bg-success text-white text-sm font-bold hover:bg-opacity-90 disabled:opacity-50 cursor-pointer"
+            class="h-10 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold active:scale-[0.98] disabled:opacity-50 cursor-pointer transition-all shadow-sm flex items-center justify-center gap-2"
           >
-            {{ isSubmitting ? 'Recording...' : 'Record Payment' }}
+            <CreditCard v-if="!isSubmitting" class="w-4 h-4" />
+            <span>{{ isSubmitting ? 'Recording Payment...' : 'Record Payment' }}</span>
           </button>
         </div>
       </form>
@@ -802,6 +803,7 @@
                   <th class="p-3">Due</th>
                   <th class="p-3">Status</th>
                   <th class="p-3">Created</th>
+                  <th class="p-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-outline-variant">
@@ -816,9 +818,21 @@
                     </span>
                   </td>
                   <td class="p-3 text-on-surface-variant">{{ inv.createdAt ? formatDate(inv.createdAt) : '-' }}</td>
+                  <td class="p-3 text-right">
+                    <button 
+                      @click="handleDownloadInvoicePdf(inv)"
+                      :disabled="downloadingInvoiceId === inv.id"
+                      class="px-2.5 py-1 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-lg font-bold text-[11px] flex items-center gap-1.5 ml-auto transition-colors cursor-pointer disabled:opacity-50"
+                      title="Download Invoice PDF"
+                    >
+                      <LoaderCircle v-if="downloadingInvoiceId === inv.id" class="w-3.5 h-3.5 animate-spin text-primary shrink-0" />
+                      <Download v-else class="w-3.5 h-3.5 shrink-0" />
+                      <span>{{ downloadingInvoiceId === inv.id ? 'Loading items...' : 'Download PDF' }}</span>
+                    </button>
+                  </td>
                 </tr>
                 <tr v-if="customerInvoices.length === 0">
-                  <td colspan="6" class="p-6 text-center text-on-surface-variant">No invoices found for this customer.</td>
+                  <td colspan="7" class="p-6 text-center text-on-surface-variant">No invoices found for this customer.</td>
                 </tr>
               </tbody>
             </table>
@@ -992,12 +1006,14 @@ import {
   DollarSign,
   ShieldCheck,
   Printer,
-  AlertCircle
+  AlertCircle,
+  LoaderCircle
 } from 'lucide-vue-next';
 import Toast from '../components/common/Toast.vue';
 import Modal from '../components/common/Modal.vue';
 import { customerService } from '../services/customerService';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
+import { generateInvoicePdf } from '../utils/invoicePdfGenerator';
 import type { 
   Customer, 
   CustomerType, 
@@ -1104,6 +1120,12 @@ const showDetailsModal = ref<boolean>(false);
 const selectedCustomer = ref<Customer | null>(null);
 const activeTab = ref<string>('overview');
 const customerInvoices = ref<Invoice[]>([]);
+const unpaidCustomerInvoices = computed(() => {
+  return customerInvoices.value.filter(inv => {
+    const st = (inv.status || '').toUpperCase();
+    return st !== 'PAID' && st !== 'CANCELLED' && (inv.dueAmount == null || inv.dueAmount > 0);
+  });
+});
 const customerPayments = ref<CustomerPayment[]>([]);
 const customerStatement = ref<CustomerStatement | null>(null);
 
@@ -1430,11 +1452,24 @@ const savePayment = async () => {
     return;
   }
 
+  const rawBranchId = localStorage.getItem('branchId') || vm.activeBranchId?.value || '';
+  const selectedCust = customers.value.find(c => c.id === paymentForm.value.customerId);
+  const targetBranchId = (rawBranchId && rawBranchId !== 'null' && rawBranchId !== 'undefined' && rawBranchId.trim() !== '')
+    ? rawBranchId
+    : (selectedCust?.registeredBranchId || undefined);
+
+  if (!targetBranchId) {
+    showToast('Branch ID is required. Please select a store branch first.', 'error');
+    return;
+  }
+
   isSubmitting.value = true;
   try {
     await customerService.recordPayment({
       customerId: paymentForm.value.customerId,
       invoiceId: paymentForm.value.invoiceId || undefined,
+      branchId: targetBranchId,
+      storeBranchId: targetBranchId,
       amount: paymentForm.value.amount,
       paymentMethod: paymentForm.value.paymentMethod,
       referenceNumber: paymentForm.value.referenceNumber,
@@ -1449,6 +1484,29 @@ const savePayment = async () => {
   } finally {
     isSubmitting.value = false;
   }
+};
+
+const downloadingInvoiceId = ref<string | null>(null);
+
+const handleDownloadInvoicePdf = async (inv: Invoice) => {
+  if (!inv || !inv.id) return;
+
+  // If invoice bought items are not loaded, fetch them from backend with user indication
+  if (!inv.items || inv.items.length === 0) {
+    downloadingInvoiceId.value = inv.id;
+    showToast(`Fetching invoice #${inv.invoiceNumber} bought items... Please wait.`, 'success');
+    try {
+      const items = await customerService.getInvoiceItems(inv.id);
+      inv.items = items || [];
+    } catch (err: any) {
+      console.error('Failed to fetch invoice items:', err);
+      showToast('Could not fetch items from server. Generating invoice PDF with summary.', 'error');
+    } finally {
+      downloadingInvoiceId.value = null;
+    }
+  }
+
+  generateInvoicePdf(inv, selectedCustomer.value, vm.settings.value);
 };
 
 const openDetailsModal = async (c: Customer) => {

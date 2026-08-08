@@ -30,12 +30,17 @@ export interface Transaction {
   discount: number;
   tax: number;
   total: number;
-  paymentMethod: 'Cash' | 'Card' | 'M-Pesa' | 'On Credit' | 'CREDIT';
+  paymentMethod: 'Cash' | 'Card' | 'M-Pesa' | 'On Credit' | 'CREDIT' | string;
   amountReceived: number;
   changeDue: number;
   refCode?: string;
+  cashierId?: string;
+  cashierName?: string;
   customerId?: string;
   customerName?: string;
+  customerCode?: string;
+  reversedById?: string | null;
+  status?: 'PAID' | 'UNPAID' | 'VOID' | 'PARTIALLY_PAID' | 'SUCCESS' | string;
 }
 
 export interface Supplier {
@@ -133,10 +138,22 @@ export interface RecordPaymentRequest {
   customerId: string;
   invoiceId?: string;
   branchId?: string;
+  storeBranchId?: string;
   amount: number;
   paymentMethod: PaymentMethod;
   referenceNumber?: string;
   notes?: string;
+}
+
+export interface InvoiceItem {
+  id?: string;
+  productId?: string;
+  productName?: string;
+  productBarcode?: string;
+  discountPercent?: number;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
 }
 
 export interface Invoice {
@@ -159,6 +176,7 @@ export interface Invoice {
   postedAt?: string;
   financialPeriodId?: string;
   notes?: string;
+  items?: InvoiceItem[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -286,4 +304,22 @@ export interface ShiftDetail {
   summary: ShiftSummary;
   sales: any[];
   cashMovements: CashMovement[];
+}
+
+export type StockMovementType = 'PURCHASE' | 'ADJUSTMENT' | 'SALE' | 'TRANSFER' | 'RETURN' | string;
+
+export interface StockMovement {
+  id: string;
+  branchId?: string;
+  branchName?: string;
+  productId?: string;
+  productName?: string;
+  costPrice?: number;
+  sellingPrice?: number;
+  type: StockMovementType;
+  quantity: number;
+  referenceId?: string;
+  createdById?: string;
+  createdByName?: string;
+  createdAt?: string;
 }

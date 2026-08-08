@@ -34,7 +34,19 @@
           </div>
           <div class="flex justify-between w-full">
             <span>Cashier:</span>
-            <span class="text-on-surface font-bold">Sarah K.</span>
+            <span class="text-on-surface font-bold">{{ transaction.cashierName || 'Sarah K.' }}</span>
+          </div>
+          <div v-if="transaction.customerName" class="flex justify-between w-full">
+            <span>Customer:</span>
+            <span class="text-on-surface font-bold">{{ transaction.customerName }} <span v-if="transaction.customerCode" class="text-[9px]">({{ transaction.customerCode }})</span></span>
+          </div>
+          <div v-if="transaction.status" class="flex justify-between w-full items-center mt-1">
+            <span>Status:</span>
+            <span class="px-2 py-0.5 rounded text-[9.5px] font-black uppercase"
+              :class="transaction.status === 'PAID' || transaction.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-800' : (transaction.status === 'UNPAID' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')"
+            >
+              {{ transaction.status }}
+            </span>
           </div>
         </div>
 

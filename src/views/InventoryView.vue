@@ -413,6 +413,14 @@
                     >
                       <PlusCircle class="w-4.5 h-4.5" />
                     </button>
+                    <button 
+                      v-if="vm.hasPermission('inventory:delete') || vm.hasPermission('inventory:edit')"
+                      @click.stop="confirmDeleteProduct(p)"
+                      class="p-1.5 hover:bg-error-container/30 rounded-lg text-on-surface-variant hover:text-error transition-colors cursor-pointer border-0 bg-transparent"
+                      title="Delete Product"
+                    >
+                      <Trash2 class="w-4.5 h-4.5" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -888,6 +896,51 @@
       </div>
     </form>
   </Modal>
+
+  <!-- DELETE PRODUCT CONFIRMATION MODAL -->
+  <Modal
+    :isOpen="showDeleteModal"
+    :onClose="() => showDeleteModal = false"
+    title="Confirm Product Deletion"
+    subtitle="Are you sure you want to delete this product from inventory?"
+    maxWidth="max-w-md"
+  >
+    <div class="space-y-4">
+      <div class="p-4 rounded-xl bg-error-container/20 border border-error/30 flex items-start gap-3">
+        <AlertTriangle class="w-6 h-6 text-error shrink-0 mt-0.5" />
+        <div>
+          <h4 class="text-sm font-bold text-error">Warning</h4>
+          <p class="text-xs text-on-surface-variant mt-1">
+            You are about to delete <strong class="text-on-surface">{{ productToDelete?.name }}</strong> (Barcode: {{ productToDelete?.barcode || 'N/A' }}).
+          </p>
+        </div>
+      </div>
+
+      <p class="text-xs text-on-surface-variant leading-relaxed">
+        This action will remove the product from your active inventory catalog.
+      </p>
+
+      <div class="flex justify-end gap-3 pt-4 border-t border-outline-variant/50">
+        <button 
+          type="button"
+          @click="showDeleteModal = false"
+          :disabled="isDeleting"
+          class="px-4.5 py-2.5 rounded-lg border border-outline font-bold hover:bg-surface-container-low text-xs cursor-pointer text-on-surface-variant bg-surface-container-lowest"
+        >
+          Cancel
+        </button>
+        <button 
+          type="button"
+          @click="handleDeleteProduct"
+          :disabled="isDeleting"
+          class="px-5 py-2.5 rounded-lg font-bold text-xs text-white transition-all cursor-pointer border-0 shadow-sm bg-error hover:bg-error/90 disabled:opacity-50 flex items-center gap-1.5"
+        >
+          <Trash2 v-if="!isDeleting" class="w-4 h-4" />
+          <span>{{ isDeleting ? 'Deleting...' : 'Delete Product' }}</span>
+        </button>
+      </div>
+    </div>
+  </Modal>
 </template>
 
 <script setup lang="ts">
@@ -912,7 +965,9 @@ import {
   ChevronRight, 
   Check,
   Pencil,
-  PlusCircle
+  PlusCircle,
+  Trash2,
+  AlertTriangle
 } from 'lucide-vue-next';
 
 const route = useRoute();
@@ -1372,6 +1427,34 @@ const handleRestockProduct = async () => {
     showRestockModal.value = false;
   } catch (err: any) {
     showToast('Failed to submit stock movement: ' + (err.message || err), 'error');
+  }
+};
+
+// Delete Modal State
+const showDeleteModal = ref(false);
+const productToDelete = ref<Product | null>(null);
+const isDeleting = ref(false);
+
+// Delete Modal Actions
+const confirmDeleteProduct = (p: Product) => {
+  productToDelete.value = p;
+  showDeleteModal.value = true;
+};
+
+const handleDeleteProduct = async () => {
+  if (!productToDelete.value || !productToDelete.value.id) return;
+  isDeleting.value = true;
+  try {
+    await api.delete(`/api/products/${productToDelete.value.id}`);
+    showToast(`Product "${productToDelete.value.name}" deleted successfully`, 'success');
+    showDeleteModal.value = false;
+    productToDelete.value = null;
+    await vm.fetchProducts();
+  } catch (err: any) {
+    console.error('Failed to delete product:', err);
+    showToast(err.message || 'Failed to delete product', 'error');
+  } finally {
+    isDeleting.value = false;
   }
 };
 </script>

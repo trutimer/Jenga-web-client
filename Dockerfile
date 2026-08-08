@@ -1,6 +1,9 @@
 # --- Build Stage ---
 FROM --platform=linux/amd64 node:20-alpine AS build-stage
 
+# Install build dependencies for native modules (better-sqlite3, etc.)
+RUN apk add --no-cache python3 make g++
+
 # Set working directory
 WORKDIR /app
 
