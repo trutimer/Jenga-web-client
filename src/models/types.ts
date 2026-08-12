@@ -12,6 +12,8 @@ export interface Product {
   supplier: string;
   sku?: string;
   wholesalePrice?: number;
+  wholesaleBarcode?: string;
+  conversionFactor?: number;
   unitOfMeasure?: 'PCS' | 'KG' | 'LTR';
   expiryDate?: string;
 }
@@ -322,4 +324,18 @@ export interface StockMovement {
   createdById?: string;
   createdByName?: string;
   createdAt?: string;
+}
+
+export interface TopSellingProduct {
+  id: string;
+  name: string;
+  barcode?: string;
+  sku?: string;
+  categoryName?: string;
+  costPrice?: number;
+  sellingPrice?: number;
+  reorderLevel?: number;
+  stock?: number;
+  totalSold: number;
+  unitOfMeasure?: 'PCS' | 'KG' | 'LTR' | string;
 }

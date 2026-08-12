@@ -26,6 +26,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/top-selling-products',
+    name: 'top-selling-products',
+    component: () => import('../views/TopSellingProductsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/suppliers',
     name: 'suppliers',
     component: () => import('../views/SuppliersView.vue'),
@@ -167,6 +173,7 @@ router.beforeEach((to, from, next) => {
     } else {
       const routePermissions: Record<string, string> = {
         'inventory': 'inventory:view',
+        'top-selling-products': 'inventory:view',
         'customers': 'customers:view',
         'suppliers': 'suppliers:view',
         'reports': 'reports:view',

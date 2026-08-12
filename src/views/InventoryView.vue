@@ -509,6 +509,7 @@
               />
             </div>
 
+            <!-- Barcode SKU Code (Left) & Wholesale Barcode (Right) -->
             <div class="flex flex-col gap-1.5">
               <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Barcode SKU Code</label>
               <input 
@@ -520,20 +521,16 @@
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Category Segment</label>
-              <select 
-                v-model="newProdCategory"
-                class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
-              >
-                <option value="Snacks">Snacks</option>
-                <option value="Beverages">Beverages</option>
-                <option value="Dairy Products">Dairy Products</option>
-                <option value="Household">Household</option>
-                <option value="Grocery">Grocery</option>
-                <option value="Bakery">Bakery</option>
-              </select>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Wholesale Barcode</label>
+              <input 
+                type="text"
+                v-model="newProdWholesaleBarcode"
+                placeholder="Ex. 847291038999"
+                class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-mono outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20"
+              />
             </div>
 
+            <!-- Buy Cost & Retail Selling Price -->
             <div class="flex flex-col gap-1.5">
               <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Buy cost (Whole) ({{ currency }}) *</label>
               <input 
@@ -558,8 +555,12 @@
               />
             </div>
 
+            <!-- Wholesale Price & Product Size on the SAME row -->
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Wholesale Price ({{ currency }})</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
+                Wholesale Price ({{ currency }})
+                <span v-if="newProdConversionFactor && Number(newProdConversionFactor) > 1" class="text-error">*</span>
+              </label>
               <input 
                 type="number"
                 step="0.01"
@@ -570,10 +571,23 @@
             </div>
 
             <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Product Size (Units/Pack)</label>
+              <input 
+                type="number"
+                min="1"
+                v-model="newProdConversionFactor"
+                placeholder="E.g. 6, 12, 24"
+                class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
+              />
+            </div>
+
+            <!-- Initial Stock Units & Minimum Stock Alert on the SAME row -->
+            <div class="flex flex-col gap-1.5">
               <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Initial Stock Units</label>
               <input 
                 type="number"
                 v-model="newProdStock"
+                placeholder="E.g. 20"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
               />
             </div>
@@ -583,8 +597,24 @@
               <input 
                 type="number"
                 v-model="newProdMinStock"
+                placeholder="E.g. 10"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
               />
+            </div>
+
+            <!-- Payment Method & Unit of Measure on the SAME row -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Payment Method *</label>
+              <select 
+                v-model="newProdPaymentMethod"
+                required
+                class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
+              >
+                <option value="CASH">CASH (Cash Payout)</option>
+                <option value="ONCREDIT">ONCREDIT (On Credit)</option>
+                <option value="BANK_TRANSFER">BANK_TRANSFER (Bank Transfer)</option>
+                <option value="MOBILE_TRANSFER">MOBILE_TRANSFER (Mobile Transfer)</option>
+              </select>
             </div>
 
             <div class="flex flex-col gap-1.5">
@@ -600,7 +630,8 @@
               </select>
             </div>
 
-            <div class="flex flex-col gap-1.5">
+            <!-- Expiry Date -->
+            <div class="flex flex-col gap-1.5 col-span-2 sm:col-span-1">
               <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Expiry Date</label>
               <input 
                 type="date"
@@ -609,14 +640,33 @@
               />
             </div>
 
-            <div class="flex flex-col gap-1.5 col-span-2">
+            <!-- Category Segment (Left) & Assigned Supplier (Right) -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Category Segment</label>
+              <select 
+                v-model="newProdCategory"
+                class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
+              >
+                <option value="Snacks">Snacks</option>
+                <option value="Beverages">Beverages</option>
+                <option value="Dairy Products">Dairy Products</option>
+                <option value="Household">Household</option>
+                <option value="Grocery">Grocery</option>
+                <option value="Bakery">Bakery</option>
+              </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
               <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Assigned Supplier</label>
-              <input 
-                type="text"
+              <select 
                 v-model="newProdSupplier"
-                placeholder="E.g. Unilever Tanzania"
-                class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none text-on-surface focus:border-primary focus:ring-1"
-              />
+                class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
+              >
+                <option value="">Select Supplier (Optional)</option>
+                <option v-for="sup in filteredAddSuppliers" :key="sup.id" :value="sup.name">
+                  {{ sup.name }} <template v-if="sup.category">({{ sup.category }})</template>
+                </option>
+              </select>
             </div>
           </div>
 
@@ -703,6 +753,7 @@
   >
     <form @submit.prevent="handleEditProduct" class="space-y-4">
       <div class="grid grid-cols-2 gap-4">
+        <!-- Product Display Title -->
         <div class="flex flex-col gap-1.5 col-span-2">
           <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Product Display Title *</label>
           <input 
@@ -714,6 +765,7 @@
           />
         </div>
 
+        <!-- Barcode SKU Code (Left) & Wholesale Barcode (Right) -->
         <div class="flex flex-col gap-1.5">
           <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Barcode SKU Code</label>
           <input 
@@ -725,20 +777,16 @@
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Category Segment</label>
-          <select 
-            v-model="editProdCategory"
-            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
-          >
-            <option value="Snacks">Snacks</option>
-            <option value="Beverages">Beverages</option>
-            <option value="Dairy Products">Dairy Products</option>
-            <option value="Household">Household</option>
-            <option value="Grocery">Grocery</option>
-            <option value="Bakery">Bakery</option>
-          </select>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Wholesale Barcode</label>
+          <input 
+            type="text"
+            v-model="editProdWholesaleBarcode"
+            placeholder="Ex. 847291038999"
+            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-mono outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20"
+          />
         </div>
 
+        <!-- Buy Cost & Retail Selling Price -->
         <div class="flex flex-col gap-1.5">
           <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Buy cost (Whole) ({{ currency }}) *</label>
           <input 
@@ -763,8 +811,12 @@
           />
         </div>
 
+        <!-- Wholesale Price & Product Size on the SAME row -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Wholesale Price ({{ currency }})</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
+            Wholesale Price ({{ currency }})
+            <span v-if="editProdConversionFactor && Number(editProdConversionFactor) > 1" class="text-error">*</span>
+          </label>
           <input 
             type="number"
             step="0.01"
@@ -775,15 +827,38 @@
         </div>
 
         <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Product Size (Units/Pack)</label>
+          <input 
+            type="number"
+            min="1"
+            v-model="editProdConversionFactor"
+            placeholder="E.g. 6, 12, 24"
+            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
+          />
+        </div>
+
+        <!-- Minimum Stock Alert & Expiry Date on the SAME row -->
+        <div class="flex flex-col gap-1.5">
           <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Minimum Stock Alert</label>
           <input 
             type="number"
             v-model="editProdMinStock"
+            placeholder="E.g. 10"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
           />
         </div>
 
         <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Expiry Date</label>
+          <input 
+            type="date"
+            v-model="editProdExpiryDate"
+            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20"
+          />
+        </div>
+
+        <!-- Unit of Measure -->
+        <div class="flex flex-col gap-1.5 col-span-2">
           <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Unit of Measure *</label>
           <select 
             v-model="editProdUnitOfMeasure"
@@ -796,23 +871,33 @@
           </select>
         </div>
 
+        <!-- Category Segment (Left) & Assigned Supplier (Right) -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Expiry Date</label>
-          <input 
-            type="date"
-            v-model="editProdExpiryDate"
-            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20"
-          />
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Category Segment</label>
+          <select 
+            v-model="editProdCategory"
+            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
+          >
+            <option value="Snacks">Snacks</option>
+            <option value="Beverages">Beverages</option>
+            <option value="Dairy Products">Dairy Products</option>
+            <option value="Household">Household</option>
+            <option value="Grocery">Grocery</option>
+            <option value="Bakery">Bakery</option>
+          </select>
         </div>
 
         <div class="flex flex-col gap-1.5">
           <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Assigned Supplier</label>
-          <input 
-            type="text"
+          <select 
             v-model="editProdSupplier"
-            placeholder="E.g. Unilever Tanzania"
-            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none text-on-surface focus:border-primary focus:ring-1"
-          />
+            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
+          >
+            <option value="">Select Supplier (Optional)</option>
+            <option v-for="sup in filteredEditSuppliers" :key="sup.id" :value="sup.name">
+              {{ sup.name }} <template v-if="sup.category">({{ sup.category }})</template>
+            </option>
+          </select>
         </div>
       </div>
 
@@ -876,6 +961,35 @@
           <option value="SALE">Sale (Deduction)</option>
           <option value="ADJUSTMENT">Adjustment (Stock Correction)</option>
           <option value="RETURN">Return (Customer Return)</option>
+        </select>
+      </div>
+
+      <!-- Payment Method - Only when restockType is PURCHASE -->
+      <div v-if="restockType === 'PURCHASE'" class="flex flex-col gap-1.5">
+        <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Payment Method *</label>
+        <select 
+          v-model="restockPaymentMethod"
+          required
+          class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
+        >
+          <option value="CASH">CASH (Cash Payout)</option>
+          <option value="ONCREDIT">ONCREDIT (On Credit)</option>
+          <option value="BANK_TRANSFER">BANK_TRANSFER (Bank Transfer)</option>
+          <option value="MOBILE_TRANSFER">MOBILE_TRANSFER (Mobile Transfer)</option>
+        </select>
+      </div>
+
+      <!-- Supplier Dropdown (Optional) - Only when restockType is PURCHASE -->
+      <div v-if="restockType === 'PURCHASE'" class="flex flex-col gap-1.5">
+        <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Supplier (Optional)</label>
+        <select 
+          v-model="restockSupplierId"
+          class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
+        >
+          <option value="">Select Supplier (Optional)</option>
+          <option v-for="sup in filteredRestockSuppliers" :key="sup.id" :value="sup.id">
+            {{ sup.name }} <template v-if="sup.category">({{ sup.category }})</template>
+          </option>
         </select>
       </div>
 
@@ -996,11 +1110,14 @@ const newProdCategory = ref('Snacks');
 const newProdCost = ref('');
 const newProdPrice = ref('');
 const newProdWholesalePrice = ref('');
+const newProdWholesaleBarcode = ref('');
+const newProdConversionFactor = ref('');
 const newProdUnitOfMeasure = ref<'PCS' | 'KG' | 'LTR'>('PCS');
 const newProdStock = ref('20');
 const newProdMinStock = ref('10');
 const newProdSupplier = ref('');
 const newProdExpiryDate = ref('');
+const newProdPaymentMethod = ref<'CASH' | 'ONCREDIT' | 'BANK_TRANSFER' | 'MOBILE_TRANSFER'>('CASH');
 
 // Import Modal States
 const showImportModal = ref(false);
@@ -1020,7 +1137,68 @@ onMounted(async () => {
     console.error('Failed to load categories:', err);
   }
   vm.fetchProducts();
-  vm.fetchSuppliers();
+  // Pre-load suppliers in the background using SupplierController GET /api/suppliers
+  vm.fetchSuppliers().catch(err => console.error('Failed to fetch suppliers in background:', err));
+});
+
+// Helper function to strictly match product category with supplier category
+const isCategoryMatch = (productCat: string, supplierCat: string): boolean => {
+  if (!productCat || !supplierCat) return false;
+  const p = productCat.trim().toLowerCase();
+  const s = supplierCat.trim().toLowerCase();
+  
+  // Exact match
+  if (p === s) return true;
+  
+  // Singular / Plural normalization (e.g. "Beverages" vs "Beverage", "Snacks" vs "Snack")
+  const pBase = p.endsWith('s') ? p.slice(0, -1) : p;
+  const sBase = s.endsWith('s') ? s.slice(0, -1) : s;
+  if (pBase === sBase) return true;
+
+  // Substring / keyword inclusion (e.g. "Dairy Products" vs "Dairy")
+  if (p.includes(sBase) || s.includes(pBase)) return true;
+
+  return false;
+};
+
+// Dynamic Supplier filtering by selected Product Category on Add & Edit forms
+const filteredAddSuppliers = computed(() => {
+  const allSups = vm.suppliers.value || [];
+  if (!allSups.length) return [];
+  const selectedCat = (newProdCategory.value || '').trim();
+  if (!selectedCat) return allSups;
+
+  return allSups.filter(s => isCategoryMatch(selectedCat, s.category || ''));
+});
+
+const filteredEditSuppliers = computed(() => {
+  const allSups = vm.suppliers.value || [];
+  if (!allSups.length) return [];
+  const selectedCat = (editProdCategory.value || '').trim();
+  if (!selectedCat) return allSups;
+
+  const matching = allSups.filter(s => isCategoryMatch(selectedCat, s.category || ''));
+
+  // Always preserve existing assigned supplier if editing
+  if (editProdSupplier.value) {
+    const existsInMatching = matching.some(s => s.name.toLowerCase() === editProdSupplier.value.toLowerCase());
+    if (!existsInMatching) {
+      const existingSup = allSups.find(s => s.name.toLowerCase() === editProdSupplier.value.toLowerCase());
+      if (existingSup) {
+        return [existingSup, ...matching];
+      }
+    }
+  }
+  return matching;
+});
+
+watch(newProdCategory, () => {
+  if (newProdSupplier.value) {
+    const isStillValid = filteredAddSuppliers.value.some(s => s.name.toLowerCase() === newProdSupplier.value.toLowerCase());
+    if (!isStillValid) {
+      newProdSupplier.value = '';
+    }
+  }
 });
 
 watch(() => route.query.status, (newStatus) => {
@@ -1143,6 +1321,16 @@ const handleAddProduct = async () => {
   const stockNum = parseInt(newProdStock.value) || 0;
   const minStockNum = parseInt(newProdMinStock.value) || 10;
 
+  // Validation: if product size is filled, wholesale price is mandatory
+  const newSizeVal = newProdConversionFactor.value ? parseInt(String(newProdConversionFactor.value).trim()) : 0;
+  const newWholesaleStr = String(newProdWholesalePrice.value || '').trim();
+  const hasNewWholesalePrice = newWholesaleStr !== '' && !isNaN(parseFloat(newWholesaleStr));
+
+  if (newSizeVal > 1 && !hasNewWholesalePrice) {
+    showToast('Wholesale Price is mandatory when Product Size is specified.', 'error');
+    return;
+  }
+
   try {
     const branchId = localStorage.getItem('branchId');
     if (!branchId) {
@@ -1168,11 +1356,27 @@ const handleAddProduct = async () => {
       stock: stockNum,
       isActive: true,
       UnitOfMeasure: newProdUnitOfMeasure.value,
-      expiryDate: newProdExpiryDate.value || undefined
+      expiryDate: newProdExpiryDate.value || undefined,
+      paymentType: newProdPaymentMethod.value
     };
 
-    if (newProdWholesalePrice.value !== null && newProdWholesalePrice.value !== undefined && String(newProdWholesalePrice.value).trim() !== '') {
-      payload.wholesalePrice = parseFloat(String(newProdWholesalePrice.value));
+    if (newProdSupplier.value) {
+      const selectedSup = vm.suppliers.value.find(s => s.name.toLowerCase() === newProdSupplier.value.toLowerCase());
+      if (selectedSup) {
+        payload.supplierId = selectedSup.id;
+      }
+    }
+
+    if (hasNewWholesalePrice) {
+      payload.wholesalePrice = parseFloat(newWholesaleStr);
+    }
+
+    if (newProdWholesaleBarcode.value && newProdWholesaleBarcode.value.trim() !== '') {
+      payload.wholesaleBarcode = newProdWholesaleBarcode.value.trim();
+    }
+
+    if (newSizeVal > 0) {
+      payload.conversionFactor = newSizeVal;
     }
 
     const createdVm = await api.post('/api/products', payload);
@@ -1188,6 +1392,9 @@ const handleAddProduct = async () => {
       minStock: createdVm.reorderLevel || 10,
       status: createdVm.stock === 0 ? 'Out of Stock' : (createdVm.stock <= createdVm.reorderLevel ? 'Low Stock' : 'In Stock'),
       supplier: newProdSupplier.value || '',
+      wholesalePrice: createdVm.wholesalePrice ? Number(createdVm.wholesalePrice) : undefined,
+      wholesaleBarcode: createdVm.wholesaleBarcode || newProdWholesaleBarcode.value || undefined,
+      conversionFactor: createdVm.conversionFactor ? Number(createdVm.conversionFactor) : undefined,
       unitOfMeasure: createdVm.unitOfMeasure || createdVm.UnitOfMeasure || newProdUnitOfMeasure.value,
       expiryDate: formatDateForInput(createdVm.expiryDate || newProdExpiryDate.value) || undefined
     };
@@ -1202,11 +1409,14 @@ const handleAddProduct = async () => {
     newProdCost.value = '';
     newProdPrice.value = '';
     newProdWholesalePrice.value = '';
+    newProdWholesaleBarcode.value = '';
+    newProdConversionFactor.value = '';
     newProdUnitOfMeasure.value = 'PCS';
     newProdStock.value = '20';
     newProdMinStock.value = '10';
     newProdSupplier.value = '';
     newProdExpiryDate.value = '';
+    newProdPaymentMethod.value = 'CASH';
   } catch (err: any) {
     showToast('Failed to add product: ' + (err.message || err), 'error');
   }
@@ -1264,6 +1474,8 @@ const editProdCategory = ref('Snacks');
 const editProdCost = ref('');
 const editProdPrice = ref('');
 const editProdWholesalePrice = ref('');
+const editProdWholesaleBarcode = ref('');
+const editProdConversionFactor = ref('');
 const editProdUnitOfMeasure = ref<'PCS' | 'KG' | 'LTR'>('PCS');
 const editProdMinStock = ref('10');
 const editProdSupplier = ref('');
@@ -1274,6 +1486,17 @@ const showRestockModal = ref(false);
 const restockingProduct = ref<Product | null>(null);
 const restockQty = ref('10');
 const restockType = ref<'PURCHASE' | 'SALE' | 'ADJUSTMENT' | 'RETURN'>('PURCHASE');
+const restockPaymentMethod = ref<'CASH' | 'ONCREDIT' | 'BANK_TRANSFER' | 'MOBILE_TRANSFER'>('CASH');
+const restockSupplierId = ref<string>('');
+
+const filteredRestockSuppliers = computed(() => {
+  const allSups = vm.suppliers.value || [];
+  if (!allSups.length || !restockingProduct.value) return allSups;
+  const selectedCat = (restockingProduct.value.category || '').trim();
+  if (!selectedCat) return allSups;
+
+  return allSups.filter(s => isCategoryMatch(selectedCat, s.category || ''));
+});
 
 // Global 2D Barcode Scanner integration (Model X11 / Siyuanchuang Electronics)
 useBarcodeScanner({
@@ -1313,6 +1536,8 @@ const openEditModal = (p: Product) => {
   editProdCost.value = p.cost.toString();
   editProdPrice.value = p.price.toString();
   editProdWholesalePrice.value = p.wholesalePrice ? p.wholesalePrice.toString() : '';
+  editProdWholesaleBarcode.value = p.wholesaleBarcode || '';
+  editProdConversionFactor.value = p.conversionFactor ? p.conversionFactor.toString() : '';
   editProdUnitOfMeasure.value = p.unitOfMeasure || 'PCS';
   editProdMinStock.value = p.minStock.toString();
   editProdSupplier.value = p.supplier;
@@ -1330,6 +1555,16 @@ const handleEditProduct = async () => {
   const priceNum = parseFloat(editProdPrice.value);
   const costNum = parseFloat(editProdCost.value);
   const minStockNum = parseInt(editProdMinStock.value) || 10;
+
+  // Validation: if product size is filled, wholesale price is mandatory
+  const editSizeVal = editProdConversionFactor.value ? parseInt(String(editProdConversionFactor.value).trim()) : 0;
+  const editWholesaleStr = String(editProdWholesalePrice.value || '').trim();
+  const hasEditWholesalePrice = editWholesaleStr !== '' && !isNaN(parseFloat(editWholesaleStr));
+
+  if (editSizeVal > 1 && !hasEditWholesalePrice) {
+    showToast('Wholesale Price is mandatory when Product Size is specified.', 'error');
+    return;
+  }
 
   try {
     let cat = categories.value.find(c => c.name.toLowerCase() === editProdCategory.value.toLowerCase());
@@ -1353,8 +1588,16 @@ const handleEditProduct = async () => {
       expiryDate: editProdExpiryDate.value || undefined
     };
 
-    if (editProdWholesalePrice.value !== null && editProdWholesalePrice.value !== undefined && String(editProdWholesalePrice.value).trim() !== '') {
-      payload.wholesalePrice = parseFloat(String(editProdWholesalePrice.value));
+    if (hasEditWholesalePrice) {
+      payload.wholesalePrice = parseFloat(editWholesaleStr);
+    }
+
+    if (editProdWholesaleBarcode.value && editProdWholesaleBarcode.value.trim() !== '') {
+      payload.wholesaleBarcode = editProdWholesaleBarcode.value.trim();
+    }
+
+    if (editSizeVal > 0) {
+      payload.conversionFactor = editSizeVal;
     }
 
     const updatedVm = await api.put(`/api/products/${editingProduct.value.id}`, payload);
@@ -1375,6 +1618,8 @@ const handleEditProduct = async () => {
         supplier: editProdSupplier.value || '',
         sku: updatedVm.sku || '',
         wholesalePrice: updatedVm.wholesalePrice ? Number(updatedVm.wholesalePrice) : undefined,
+        wholesaleBarcode: updatedVm.wholesaleBarcode || editProdWholesaleBarcode.value || undefined,
+        conversionFactor: updatedVm.conversionFactor ? Number(updatedVm.conversionFactor) : undefined,
         unitOfMeasure: updatedVm.unitOfMeasure || updatedVm.UnitOfMeasure || editProdUnitOfMeasure.value,
         expiryDate: formatDateForInput(updatedVm.expiryDate || editProdExpiryDate.value) || undefined
       };
@@ -1391,6 +1636,8 @@ const openRestockModal = (p: Product) => {
   restockingProduct.value = p;
   restockQty.value = '10';
   restockType.value = 'PURCHASE';
+  restockPaymentMethod.value = 'CASH';
+  restockSupplierId.value = '';
   showRestockModal.value = true;
 };
 
@@ -1403,10 +1650,19 @@ const handleRestockProduct = async () => {
   }
 
   try {
-    await api.post(`/api/products/${restockingProduct.value.id}/stock-movement`, {
+    const payload: any = {
       type: restockType.value,
       quantity: addedQty
-    });
+    };
+
+    if (restockType.value === 'PURCHASE') {
+      payload.paymentType = restockPaymentMethod.value;
+      if (restockSupplierId.value) {
+        payload.supplierId = restockSupplierId.value;
+      }
+    }
+
+    await api.post(`/api/products/${restockingProduct.value.id}/stock-movement`, payload);
 
     // Update local state
     const index = vm.products.value.findIndex(p => p.id === restockingProduct.value?.id);

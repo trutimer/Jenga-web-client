@@ -253,28 +253,30 @@
       subtitle="Register a new vendor and configure initial billing."
     >
       <form id="add-supplier-form" @submit.prevent="handleAddSupplier" class="flex flex-col gap-4">
-        <!-- Supplier Name -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Supplier Name *</label>
-          <input
-            type="text"
-            required
-            v-model="newSupplierName"
-            placeholder="N/A"
-            class="h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm text-on-surface"
-          />
-        </div>
+        <!-- Grid for Supplier Name & Contact Person -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Supplier Name -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Supplier Name *</label>
+            <input
+              type="text"
+              required
+              v-model="newSupplierName"
+              placeholder="E.g. Unilever Tanzania"
+              class="h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm text-on-surface"
+            />
+          </div>
 
-        <!-- Contact Person -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Contact Person *</label>
-          <input
-            type="text"
-            required
-            v-model="newContactPerson"
-            placeholder="N/A"
-            class="h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm text-on-surface"
-          />
+          <!-- Contact Person (Optional) -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Contact Person</label>
+            <input
+              type="text"
+              v-model="newContactPerson"
+              placeholder="Contact person name (Optional)"
+              class="h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm text-on-surface"
+            />
+          </div>
         </div>
 
         <!-- Grid for Contact Info -->
@@ -286,25 +288,24 @@
               type="text"
               required
               v-model="newPhone"
-              placeholder="N/A"
+              placeholder="+255..."
               class="h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-mono text-on-surface"
             />
           </div>
 
-          <!-- Email -->
+          <!-- Email (Optional) -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Email Address *</label>
+            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Email Address</label>
             <input
               type="email"
-              required
               v-model="newEmail"
-              placeholder="N/A"
+              placeholder="supplier@example.com (Optional)"
               class="h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm text-on-surface"
             />
           </div>
         </div>
 
-        <!-- Grid for settings -->
+        <!-- Grid for Category & Initial Outstanding Balance -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- Category Select -->
           <div class="flex flex-col gap-1.5">
@@ -322,40 +323,26 @@
                 <option value="Grocery">Grocery</option>
                 <option value="Household">Household</option>
                 <option value="Dairy Products">Dairy Products</option>
+                <option value="Snacks">Snacks</option>
               </select>
               <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant/60 text-[10px]">▼</div>
             </div>
           </div>
 
-          <!-- Status Select -->
+          <!-- Initial Outstanding Balance -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Status *</label>
+            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Outstanding Balance (TZS)</label>
             <div class="relative">
-              <select
-                v-model="newStatus"
-                class="w-full h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-semibold appearance-none cursor-pointer text-on-surface"
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-              <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant/60 text-[10px]">▼</div>
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold font-mono text-on-surface-variant/50">TZS</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                v-model="newBalance"
+                placeholder="0.00"
+                class="w-full h-11 pl-12 pr-4 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-mono text-on-surface"
+              />
             </div>
-          </div>
-        </div>
-
-        <!-- Initial Outstanding Balance -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Initial Outstanding Balance (TZS)</label>
-          <div class="relative">
-            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold font-mono text-on-surface-variant/50">TZS</span>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              v-model="newBalance"
-              placeholder="0.00"
-              class="w-full h-11 pl-12 pr-4 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-mono text-on-surface"
-            />
           </div>
         </div>
       </form>
@@ -462,28 +449,30 @@
       subtitle="Update vendor credentials and status information."
     >
       <form id="edit-supplier-form" @submit.prevent="handleEditSupplier" class="flex flex-col gap-4">
-        <!-- Supplier Name -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Supplier Name *</label>
-          <input
-            type="text"
-            required
-            v-model="editSupplierName"
-            placeholder="N/A"
-            class="h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm text-on-surface"
-          />
-        </div>
+        <!-- Grid for Supplier Name & Contact Person -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Supplier Name -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Supplier Name *</label>
+            <input
+              type="text"
+              required
+              v-model="editSupplierName"
+              placeholder="Supplier Name"
+              class="h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm text-on-surface"
+            />
+          </div>
 
-        <!-- Contact Person -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Contact Person *</label>
-          <input
-            type="text"
-            required
-            v-model="editContactPerson"
-            placeholder="N/A"
-            class="h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm text-on-surface"
-          />
+          <!-- Contact Person (Optional) -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Contact Person</label>
+            <input
+              type="text"
+              v-model="editContactPerson"
+              placeholder="Contact person name (Optional)"
+              class="h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm text-on-surface"
+            />
+          </div>
         </div>
 
         <!-- Grid for Contact Info -->
@@ -495,25 +484,24 @@
               type="text"
               required
               v-model="editPhone"
-              placeholder="N/A"
+              placeholder="Phone number"
               class="h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-mono text-on-surface"
             />
           </div>
 
-          <!-- Email -->
+          <!-- Email (Optional) -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Email Address *</label>
+            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Email Address</label>
             <input
               type="email"
-              required
               v-model="editEmail"
-              placeholder="N/A"
+              placeholder="Email address (Optional)"
               class="h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm text-on-surface"
             />
           </div>
         </div>
 
-        <!-- Grid for settings -->
+        <!-- Grid for Category & Outstanding Balance -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- Category Select -->
           <div class="flex flex-col gap-1.5">
@@ -531,23 +519,25 @@
                 <option value="Grocery">Grocery</option>
                 <option value="Household">Household</option>
                 <option value="Dairy Products">Dairy Products</option>
+                <option value="Snacks">Snacks</option>
               </select>
               <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant/60 text-[10px]">▼</div>
             </div>
           </div>
 
-          <!-- Status Select -->
+          <!-- Outstanding Balance -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Status *</label>
+            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Outstanding Balance (TZS)</label>
             <div class="relative">
-              <select
-                v-model="editStatus"
-                class="w-full h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-semibold appearance-none cursor-pointer text-on-surface"
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-              <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant/60 text-[10px]">▼</div>
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold font-mono text-on-surface-variant/50">TZS</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                v-model="editBalance"
+                placeholder="0.00"
+                class="w-full h-11 pl-12 pr-4 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-mono text-on-surface"
+              />
             </div>
           </div>
         </div>
@@ -823,8 +813,8 @@ const handleExportCSV = () => {
 };
 
 const handleAddSupplier = async () => {
-  if (!newSupplierName.value.trim() || !newContactPerson.value.trim() || !newPhone.value.trim() || !newEmail.value.trim()) {
-    showToast('Please fill in all required fields', 'error');
+  if (!newSupplierName.value.trim() || !newPhone.value.trim()) {
+    showToast('Please fill in required fields (Supplier Name & Phone Number)', 'error');
     return;
   }
 
@@ -847,13 +837,13 @@ const handleAddSupplier = async () => {
     const createdVm = await api.post('/api/suppliers', {
       storeId,
       code: nextCode,
-      name: newSupplierName.value,
-      contactPerson: newContactPerson.value,
-      phone: newPhone.value,
-      email: newEmail.value,
+      name: newSupplierName.value.trim(),
+      contactPerson: newContactPerson.value ? newContactPerson.value.trim() : '',
+      phone: newPhone.value.trim(),
+      email: newEmail.value ? newEmail.value.trim() : '',
       category: newCategory.value,
       balance: balanceNum,
-      status: newStatus.value
+      status: 'Active'
     });
 
     const newSupplier: Supplier = {
@@ -865,7 +855,7 @@ const handleAddSupplier = async () => {
       email: createdVm.email || '',
       category: createdVm.category || 'Wholesale',
       balance: Number(createdVm.balance) || 0,
-      status: (createdVm.status || 'Active') as 'Active' | 'Inactive'
+      status: 'Active'
     };
 
     vm.suppliers.value = [newSupplier, ...vm.suppliers.value];
@@ -898,7 +888,7 @@ const handleOpenEditModal = (supplier: Supplier) => {
   editPhone.value = supplier.phone;
   editEmail.value = supplier.email;
   editCategory.value = supplier.category;
-  editStatus.value = supplier.status;
+  editStatus.value = supplier.status || 'Active';
   editBalance.value = supplier.balance;
   editCode.value = supplier.code;
   showEditModal.value = true;
@@ -906,8 +896,8 @@ const handleOpenEditModal = (supplier: Supplier) => {
 
 const handleEditSupplier = async () => {
   if (!selectedSupplierForEdit.value) return;
-  if (!editSupplierName.value.trim() || !editContactPerson.value.trim() || !editPhone.value.trim() || !editEmail.value.trim()) {
-    showToast('Please fill in all required fields', 'error');
+  if (!editSupplierName.value.trim() || !editPhone.value.trim()) {
+    showToast('Please fill in required fields (Supplier Name & Phone Number)', 'error');
     return;
   }
 
@@ -921,13 +911,13 @@ const handleEditSupplier = async () => {
     const updatedVm = await api.put(`/api/suppliers/${selectedSupplierForEdit.value.id}`, {
       storeId,
       code: editCode.value,
-      name: editSupplierName.value,
-      contactPerson: editContactPerson.value,
-      phone: editPhone.value,
-      email: editEmail.value,
+      name: editSupplierName.value.trim(),
+      contactPerson: editContactPerson.value ? editContactPerson.value.trim() : '',
+      phone: editPhone.value.trim(),
+      email: editEmail.value ? editEmail.value.trim() : '',
       category: editCategory.value,
       balance: editBalance.value,
-      status: editStatus.value
+      status: 'Active'
     });
 
     const index = vm.suppliers.value.findIndex(s => s.id === selectedSupplierForEdit.value?.id);

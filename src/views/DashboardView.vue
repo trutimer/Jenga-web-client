@@ -334,10 +334,11 @@
         <div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
           <h3 class="text-md font-bold text-on-surface">Top Selling Products Today</h3>
           <button 
-            @click="router.push('/inventory')"
-            class="text-primary text-xs font-bold hover:underline cursor-pointer"
+            @click="router.push('/top-selling-products')"
+            class="text-primary text-xs font-bold hover:underline cursor-pointer flex items-center gap-1"
           >
-            View Full Catalog
+            <span>View Full Catalog</span>
+            <ArrowRight class="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -447,7 +448,8 @@ import {
   Coffee,
   GlassWater,
   Sparkles,
-  Clock
+  Clock,
+  ArrowRight
 } from 'lucide-vue-next';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { formatCurrency } from '../models/mockData';
