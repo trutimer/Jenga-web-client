@@ -62,3 +62,96 @@ textarea {
 .animate-zoom-pulse {
   animation: zoomPulse 2.2s infinite ease-in-out;
 }
+
+/* Jenga Loader Animations */
+@keyframes jengaFloatTop {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    filter: drop-shadow(0 4px 6px rgba(244, 81, 30, 0.25));
+  }
+  50% {
+    transform: translateY(-16px) scale(1.03);
+    filter: drop-shadow(0 14px 12px rgba(244, 81, 30, 0.45));
+  }
+}
+
+@keyframes jengaFloatMid {
+  0%, 100% {
+    transform: translateY(0px);
+    filter: drop-shadow(0 3px 5px rgba(255, 140, 26, 0.2));
+  }
+  50% {
+    transform: translateY(-9px);
+    filter: drop-shadow(0 10px 8px rgba(255, 140, 26, 0.35));
+  }
+}
+
+@keyframes jengaFloatArm {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(-6px) translateX(-4px);
+  }
+}
+
+@keyframes jengaBasePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.985);
+  }
+}
+
+@keyframes jengaShadowPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.22);
+    opacity: 0.15;
+  }
+}
+
+@keyframes jengaGlowPulse {
+  0%, 100% {
+    opacity: 0.3;
+    filter: blur(12px);
+  }
+  50% {
+    opacity: 0.7;
+    filter: blur(18px);
+  }
+}
+
+.animate-jenga-top {
+  animation: jengaFloatTop 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.animate-jenga-mid {
+  animation: jengaFloatMid 2s ease-in-out infinite 0.2s;
+  transform-origin: center;
+}
+
+.animate-jenga-arm {
+  animation: jengaFloatArm 2s ease-in-out infinite 0.35s;
+  transform-origin: center;
+}
+
+.animate-jenga-base {
+  animation: jengaBasePulse 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.animate-jenga-shadow {
+  animation: jengaShadowPulse 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.animate-jenga-glow {
+  animation: jengaGlowPulse 2.4s ease-in-out infinite;
+}
+

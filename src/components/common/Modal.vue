@@ -7,7 +7,7 @@
     />
 
     <!-- Dialog Container -->
-    <div class="relative w-full bg-surface rounded-2xl border border-outline-variant shadow-2xl overflow-hidden animate-scale-in" :class="maxWidth">
+    <div class="relative z-10 w-full bg-surface rounded-2xl border border-outline-variant shadow-2xl overflow-hidden animate-scale-in" :class="maxWidth">
       <!-- Header -->
       <div class="px-6 py-5 border-b border-outline-variant flex items-center justify-between bg-surface-container-low">
         <div>

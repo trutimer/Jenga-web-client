@@ -25,7 +25,15 @@
       <!-- Decorative ambient background gradient -->
       <div class="absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,_#f1f5f9_0%,_transparent_60%)] pointer-events-none" />
 
-      <main class="w-full max-w-[400px] flex flex-col gap-10 relative z-10 animate-fade-up">
+      <main class="w-full max-w-[400px] flex flex-col gap-10 relative z-10 animate-fade-up min-h-[460px]">
+        <!-- Jenga Logo Loading Visual Overlay during authentication -->
+        <JengaLoader 
+          v-if="isLoggingIn" 
+          overlay 
+          size="lg" 
+          label="Authenticating Terminal" 
+          sublabel="Verifying credentials & initializing POS session..." 
+        />
         
         <!-- Header / Branding -->
         <header class="flex flex-col items-center gap-4 text-center">
@@ -120,6 +128,7 @@
             :disabled="isLoggingIn"
             class="w-full h-14 bg-primary text-on-primary rounded-xl font-bold hover:bg-opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4 shadow-md shadow-primary/20 cursor-pointer disabled:opacity-50"
           >
+            <RotateCw v-if="isLoggingIn" class="w-5 h-5 animate-spin text-white" />
             <span>{{ isLoggingIn ? 'Authenticating...' : 'Sign In' }}</span>
             <ArrowRight v-if="!isLoggingIn" class="w-5 h-5" />
           </button>
@@ -206,6 +215,7 @@ import { ref } from 'vue';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { api } from '../services/api';
 import { isElectron } from '../services/offlineSalesService';
+import JengaLoader from '../components/common/JengaLoader.vue';
 import { 
   Phone, 
   Lock, 
@@ -216,7 +226,8 @@ import {
   ShieldAlert,
   ExternalLink,
   Store,
-  X
+  X,
+  RotateCw
 } from 'lucide-vue-next';
 
 const vm = useAppViewModel();

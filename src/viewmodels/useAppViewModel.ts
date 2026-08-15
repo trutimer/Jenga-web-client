@@ -36,6 +36,9 @@ const activeBranchId = ref<string | null>(localStorage.getItem('branchId'));
 const mobileMenuOpen = ref(false);
 const sidebarCollapsed = ref(false);
 const products = ref<Product[]>(INITIAL_PRODUCTS);
+const isFetchingProducts = ref(false);
+const isFetchingSales = ref(false);
+const isFetchingSuppliers = ref(false);
 const settings = ref<StoreSettings>(INITIAL_STORE_SETTINGS);
 const transactionsHistory = ref<Transaction[]>([]);
 const lastTransaction = ref<Transaction | null>(null);
@@ -125,6 +128,7 @@ export function useAppViewModel() {
     const branchId = localStorage.getItem('branchId');
     if (!branchId || branchId === 'null' || branchId === 'undefined') return;
 
+    isFetchingProducts.value = true;
     try {
       const productsData = await api.get<any>(`/api/products?storeBranchId=${branchId}`);
       const productsList: any[] = Array.isArray(productsData) ? productsData : (productsData?.content || []);
@@ -169,12 +173,18 @@ export function useAppViewModel() {
             wholesalePrice: p.wholesalePrice ? Number(p.wholesalePrice) : undefined,
             unitOfMeasure: p.unitOfMeasure || p.UnitOfMeasure || undefined,
             expiryDate: formattedExpiry || undefined,
+            wholesaleBarcode: p.wholesaleBarcode || undefined,
+            conversionFactor: p.conversionFactor ? Number(p.conversionFactor) : undefined,
+            categoryName: p.categoryName || p.category || 'General',
+            supplierName: p.supplierName || p.supplier || '',
           };
         });
         products.value = mappedProducts;
       }
     } catch (err) {
       console.error('Failed to fetch products:', err);
+    } finally {
+      isFetchingProducts.value = false;
     }
   };
 
@@ -182,6 +192,7 @@ export function useAppViewModel() {
   const fetchSuppliers = async () => {
     const storeId = localStorage.getItem('storeId');
     if (!storeId || storeId === 'null' || storeId === 'undefined') return;
+    isFetchingSuppliers.value = true;
     try {
       const suppliersData = await api.get<any>(`/api/suppliers?storeId=${storeId}&size=1000`);
       const suppliersList: any[] = Array.isArray(suppliersData) ? suppliersData : (suppliersData?.content || []);
@@ -201,11 +212,14 @@ export function useAppViewModel() {
       }
     } catch (err) {
       console.error('Failed to fetch suppliers:', err);
+    } finally {
+      isFetchingSuppliers.value = false;
     }
   };
 
 
   const fetchSalesHistory = async (startDate?: string, endDate?: string) => {
+    isFetchingSales.value = true;
     try {
       let url = '/api/sales';
       const params = new URLSearchParams();
@@ -251,16 +265,16 @@ export function useAppViewModel() {
                 cost: Number(item.costPrice || item.cost || item.unitCost) || 0,
                 price: Number(item.unitPrice) || 0,
                 stock: 0,
-                minStock: 0,
+                minStock: 10,
                 status: 'In Stock' as const,
                 supplier: '',
               },
-              quantity: Number(item.quantity) || 0,
+              quantity: Number(item.quantity) || 1,
               discount: Number(item.discountPercent) || 0,
             })),
-            subtotal: totalVal,
+            subtotal: Number(s.subtotal) || totalVal,
             discount: 0,
-            tax: (totalVal * 0.18) / 1.18 || 0,
+            tax: Number(s.taxAmount) || (totalVal * 0.18) / 1.18 || 0,
             total: totalVal,
             paymentMethod: method,
             amountReceived: totalVal,
@@ -279,6 +293,8 @@ export function useAppViewModel() {
       }
     } catch (err) {
       console.error('Failed to fetch sales history:', err);
+    } finally {
+      isFetchingSales.value = false;
     }
   };
 
@@ -590,6 +606,9 @@ export function useAppViewModel() {
     mobileMenuOpen,
     sidebarCollapsed,
     products,
+    isFetchingProducts,
+    isFetchingSales,
+    isFetchingSuppliers,
     settings,
     transactionsHistory,
     lastTransaction,

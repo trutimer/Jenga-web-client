@@ -1,8 +1,8 @@
 <template>
-  <div class="max-w-7xl mx-auto py-2 font-sans select-none animate-fade-up">
+  <div class="w-full max-w-[1720px] mx-auto py-2 font-sans select-none animate-fade-up px-2 sm:px-4 md:px-6">
     
     <!-- HEADER SECTION -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-surface">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 bg-surface">
       <div>
         <h1 class="text-[32px] font-bold text-on-surface tracking-tight leading-tight">Product Inventory</h1>
         <p class="text-sm text-on-surface-variant mt-1">Manage catalog, pricing, and stock levels across branches.</p>
@@ -10,6 +10,16 @@
       
       <!-- ACTION BUTTONS -->
       <div class="flex items-center gap-3">
+        <button 
+          @click="vm.fetchProducts()"
+          :disabled="vm.isFetchingProducts.value"
+          class="h-10 px-3.5 rounded-lg border border-outline hover:bg-surface-container-low text-on-surface-variant font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm text-center bg-surface-container-lowest disabled:opacity-60"
+          title="Refresh Product Catalog"
+        >
+          <RotateCw :class="['w-4 h-4 text-on-surface-variant', vm.isFetchingProducts.value ? 'animate-spin text-primary' : '']" />
+          <span>Refresh</span>
+        </button>
+
         <button 
           v-if="vm.hasPermission('inventory:create')"
           @click="showImportModal = true"
@@ -38,10 +48,10 @@
     </div>
 
     <!-- MAIN SPLIT PANEL LAYOUT -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 items-start border-t border-outline-variant/50 pt-7">
+    <div class="flex flex-col lg:flex-row gap-6 items-start border-t border-outline-variant/50 pt-6">
       
       <!-- LEFT COLUMN: FILTERS SECTION -->
-      <div class="md:col-span-1 pr-2 space-y-7">
+      <div class="w-full lg:w-64 xl:w-72 shrink-0 space-y-6">
         <div class="flex justify-between items-center mb-1">
           <h2 class="text-xl font-bold text-on-surface">Filters</h2>
           <button 
@@ -225,7 +235,7 @@
       </div>
 
       <!-- RIGHT COLUMN: LISTING AREA -->
-      <div class="md:col-span-3 border-l border-outline-variant/50 pl-2 md:pl-8 space-y-5">
+      <div class="flex-1 min-w-0 border-l border-outline-variant/50 pl-2 lg:pl-6 space-y-5">
         
         <!-- ACTIVE FILTER BADGES ROW -->
         <div class="flex items-center gap-3 text-sm select-none">
@@ -296,21 +306,30 @@
         </div>
 
         <!-- TABLE CONTAINER CARD -->
-        <div class="border border-outline-variant rounded-xl overflow-hidden shadow-sm bg-surface-container-lowest">
+        <div class="border border-outline-variant rounded-xl overflow-hidden shadow-sm bg-surface-container-lowest relative min-h-[360px]">
+          <!-- Jenga Logo Loading Visual Overlay -->
+          <JengaLoader 
+            v-if="vm.isFetchingProducts.value" 
+            overlay 
+            size="lg" 
+            label="Fetching Product Inventory" 
+            sublabel="Synchronizing product catalog & branch stock levels..." 
+          />
+
           <table class="w-full text-left border-collapse text-[13px] select-all">
             <thead class="bg-surface-container-lowest border-b border-outline-variant text-on-surface-variant font-mono text-[11px] uppercase select-none">
               <tr>
-                <th class="p-4 pl-5 w-12 text-center">
+                <th class="px-3 py-3.5 pl-4 w-10 text-center">
                   <div class="w-[18px] h-[18px] rounded border border-outline flex items-center justify-center cursor-pointer bg-surface-container-lowest" />
                 </th>
-                <th class="p-4 pl-2 font-bold">Product Name & Barcode</th>
-                <th class="p-4 font-bold">Category</th>
-                <th class="p-4 text-center font-bold">QTY</th>
-                <th class="p-4 text-center font-bold">Cost ({{ currency }})</th>
-                <th class="p-4 text-center font-bold">Price ({{ currency }})</th>
-                <th class="p-4 text-center font-bold">Wholesale ({{ currency }})</th>
-                <th class="p-4 text-center font-bold">Expiry Date</th>
-                <th class="p-4 text-center font-bold">Actions</th>
+                <th class="px-3.5 py-3.5 font-bold min-w-[200px]">Product Name & Barcode</th>
+                <th class="px-3.5 py-3.5 font-bold">Category</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">QTY</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">Cost ({{ currency }})</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">Price ({{ currency }})</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">Wholesale ({{ currency }})</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">Expiry Date</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -321,28 +340,28 @@
                 :class="p.stock === 0 ? 'opacity-85 bg-surface-container/40 text-outline' : ''"
               >
                 <!-- Checkbox -->
-                <td class="p-4 pl-5 text-center select-none">
+                <td class="px-3 py-3 text-center select-none">
                   <div class="w-[18px] h-[18px] rounded border border-outline flex items-center justify-center cursor-pointer bg-surface-container-lowest" />
                 </td>
 
                 <!-- Product Name & SKU Barcode -->
-                <td class="p-4 pl-2">
+                <td class="px-3.5 py-3">
                   <span 
                     class="font-semibold text-on-surface block leading-snug"
                     :class="p.stock === 0 ? 'line-through text-outline/90' : ''"
                   >
                     {{ p.name }}
                   </span>
-                  <span class="font-mono text-xs text-outline block mt-1">{{ p.barcode }}</span>
+                  <span class="font-mono text-xs text-outline block mt-0.5">{{ p.barcode }}</span>
                 </td>
 
                 <!-- Category -->
-                <td class="p-4 text-on-surface-variant font-medium">
+                <td class="px-3.5 py-3 text-on-surface-variant font-medium text-xs">
                   {{ p.category }}
                 </td>
 
                 <!-- Quantity (QTY) -->
-                <td class="p-4 text-center select-none">
+                <td class="px-3.5 py-3 text-center select-none">
                   <span 
                     class="px-2.5 py-1 rounded-full text-xs font-bold font-mono"
                     :class="p.stock === 0 ? 'bg-error-container text-error' : (p.stock <= p.minStock ? 'bg-warning-container text-warning' : 'bg-primary-container text-on-primary-container')"
@@ -352,12 +371,12 @@
                 </td>
 
                 <!-- Cost -->
-                <td class="p-4 text-center font-mono select-all">
+                <td class="px-3.5 py-3 text-center font-mono select-all">
                   <span class="text-[13px] text-on-surface-variant block font-semibold">{{ formatCurrencyWithoutSymbol(p.cost, currency) }}</span>
                 </td>
 
                 <!-- Price -->
-                <td class="p-4 text-center font-mono select-all">
+                <td class="px-3.5 py-3 text-center font-mono select-all">
                   <span 
                     class="text-[14px] block font-extrabold"
                     :class="p.stock === 0 ? 'text-outline' : 'text-primary'"
@@ -367,14 +386,14 @@
                 </td>
 
                 <!-- Wholesale Price -->
-                <td class="p-4 text-center font-mono select-all">
+                <td class="px-3.5 py-3 text-center font-mono select-all">
                   <span class="text-[13px] text-on-surface-variant block font-semibold">
                     {{ p.wholesalePrice ? formatCurrencyWithoutSymbol(p.wholesalePrice, currency) : 'N/A' }}
                   </span>
                 </td>
 
                 <!-- Expiry Date -->
-                <td class="p-4 text-center font-mono select-all">
+                <td class="px-3.5 py-3 text-center font-mono select-all">
                   <div class="flex flex-col items-center gap-1">
                     <span class="text-[13px] text-on-surface-variant block font-semibold">
                       {{ p.expiryDate ? new Date(p.expiryDate).toLocaleDateString() : 'N/A' }}
@@ -395,7 +414,7 @@
                 </td>
 
                 <!-- Actions -->
-                <td class="p-4 text-center select-none whitespace-nowrap">
+                <td class="px-3.5 py-3 text-center select-none whitespace-nowrap">
                   <div class="flex items-center justify-center gap-2">
                     <button 
                       v-if="vm.hasPermission('inventory:edit')"
@@ -447,33 +466,84 @@
               {{ Math.min(currentPage * itemsPerPage, filteredProducts.length) }} of {{ filteredProducts.length }} entries
             </div>
 
-            <!-- Pagination buttons -->
-            <div class="flex items-center gap-1.5 font-sans">
-              <button 
-                :disabled="currentPage === 1"
-                @click="currentPage = Math.max(1, currentPage - 1)"
-                class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-surface-container-lowest"
-              >
-                <ChevronLeft class="w-4 h-4 text-on-surface-variant" />
-              </button>
+            <!-- Pagination buttons & Jump to page -->
+            <div class="flex flex-wrap items-center gap-2 font-sans">
+              <!-- First & Prev Page -->
+              <div class="flex items-center gap-1">
+                <button 
+                  :disabled="currentPage === 1"
+                  @click="currentPage = 1"
+                  class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-surface-container-lowest"
+                  title="First Page"
+                >
+                  <ChevronsLeft class="w-4 h-4 text-on-surface-variant" />
+                </button>
 
-              <button
-                v-for="pg in totalPages"
-                :key="pg"
-                @click="currentPage = pg"
-                class="w-8 h-8 rounded border flex items-center justify-center text-sm font-bold transition-all cursor-pointer"
-                :class="currentPage === pg ? 'bg-primary border-primary text-on-primary' : 'bg-transparent border-outline-variant text-on-surface-variant'"
-              >
-                {{ pg }}
-              </button>
+                <button 
+                  :disabled="currentPage === 1"
+                  @click="currentPage = Math.max(1, currentPage - 1)"
+                  class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-surface-container-lowest"
+                  title="Previous Page"
+                >
+                  <ChevronLeft class="w-4 h-4 text-on-surface-variant" />
+                </button>
+              </div>
 
-              <button 
-                :disabled="currentPage === totalPages"
-                @click="currentPage = Math.min(totalPages, currentPage + 1)"
-                class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-surface-container-lowest"
-              >
-                <ChevronRight class="w-4 h-4 text-on-surface-variant" />
-              </button>
+              <!-- Scrollable Windowed Page Buttons -->
+              <div class="flex items-center gap-1 overflow-x-auto max-w-[280px] sm:max-w-[360px] md:max-w-[420px] py-1 px-0.5 no-scrollbar scroll-smooth">
+                <template v-for="(pg, idx) in visiblePages" :key="idx">
+                  <span 
+                    v-if="pg === '...'" 
+                    class="w-8 h-8 flex items-center justify-center text-xs font-bold text-on-surface-variant/60 select-none shrink-0"
+                  >
+                    ...
+                  </span>
+                  <button
+                    v-else
+                    @click="currentPage = Number(pg)"
+                    class="w-8 h-8 rounded border flex items-center justify-center text-xs font-bold transition-all cursor-pointer shrink-0"
+                    :class="currentPage === pg ? 'bg-primary border-primary text-on-primary shadow-xs' : 'bg-surface-container-lowest border-outline-variant text-on-surface-variant hover:bg-surface-container-low'"
+                  >
+                    {{ pg }}
+                  </button>
+                </template>
+              </div>
+
+              <!-- Next & Last Page -->
+              <div class="flex items-center gap-1">
+                <button 
+                  :disabled="currentPage === totalPages"
+                  @click="currentPage = Math.min(totalPages, currentPage + 1)"
+                  class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-surface-container-lowest"
+                  title="Next Page"
+                >
+                  <ChevronRight class="w-4 h-4 text-on-surface-variant" />
+                </button>
+
+                <button 
+                  :disabled="currentPage === totalPages"
+                  @click="currentPage = totalPages"
+                  class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-surface-container-lowest"
+                  title="Last Page"
+                >
+                  <ChevronsRight class="w-4 h-4 text-on-surface-variant" />
+                </button>
+              </div>
+
+              <!-- Jump to page input -->
+              <div class="flex items-center gap-1.5 ml-2 border-l border-outline-variant/60 pl-3 text-xs text-on-surface-variant">
+                <span>Page</span>
+                <input 
+                  type="number" 
+                  :min="1" 
+                  :max="totalPages"
+                  :value="currentPage"
+                  @change="handleJumpPage"
+                  @keyup.enter="handleJumpPage"
+                  class="w-12 h-8 text-center bg-surface-container-low border border-outline-variant rounded text-xs font-bold outline-none focus:border-primary text-on-surface font-mono"
+                />
+                <span>of {{ totalPages }}</span>
+              </div>
             </div>
           </div>
 
@@ -583,9 +653,11 @@
 
             <!-- Initial Stock Units & Minimum Stock Alert on the SAME row -->
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Initial Stock Units</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Initial Stock Units *</label>
               <input 
                 type="number"
+                required
+                min="1"
                 v-model="newProdStock"
                 placeholder="E.g. 20"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
@@ -593,9 +665,11 @@
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Minimum Stock Alert</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Minimum Stock Alert *</label>
               <input 
                 type="number"
+                required
+                min="1"
                 v-model="newProdMinStock"
                 placeholder="E.g. 10"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
@@ -924,89 +998,106 @@
     :isOpen="showRestockModal" 
     title="Restock Inventory" 
     subtitle="Add stock units to existing catalog item" 
-    :onClose="() => showRestockModal = false"
+    :onClose="closeRestockModal"
     maxWidth="max-w-md"
   >
-    <form @submit.prevent="handleRestockProduct" class="space-y-4" v-if="restockingProduct">
-      <div class="bg-surface-container-low p-4.5 rounded-xl border border-outline-variant/50 space-y-2">
-        <div class="flex justify-between text-sm">
-          <span class="text-on-surface-variant font-medium">Product Name:</span>
-          <span class="font-bold text-on-surface">{{ restockingProduct.name }}</span>
+    <form @submit.prevent="handleRestockProduct" class="space-y-4 relative min-h-[320px]" v-if="restockingProduct">
+      <!-- Jenga Logo Loading Visual Overlay on restock submit -->
+      <JengaLoader 
+        v-if="isRestocking" 
+        overlay 
+        size="md" 
+        label="Processing Stock Entry" 
+        sublabel="Updating inventory ledger & supplier balances..." 
+      />
+
+      <div class="space-y-4">
+        <div class="bg-surface-container-low p-4.5 rounded-xl border border-outline-variant/50 space-y-2">
+          <div class="flex justify-between text-sm">
+            <span class="text-on-surface-variant font-medium">Product Name:</span>
+            <span class="font-bold text-on-surface">{{ restockingProduct.name }}</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-on-surface-variant font-medium">Current Stock Level:</span>
+            <span class="font-mono font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded text-xs">{{ restockingProduct.stock }} units</span>
+          </div>
         </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-on-surface-variant font-medium">Current Stock Level:</span>
-          <span class="font-mono font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded text-xs">{{ restockingProduct.stock }} units</span>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">New Stock Units to Add *</label>
+          <input 
+            type="number"
+            min="1"
+            v-model="restockQty"
+            :disabled="isRestocking"
+            placeholder="E.g. 50"
+            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-mono outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
+          />
         </div>
-      </div>
 
-      <div class="flex flex-col gap-1.5">
-        <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">New Stock Units to Add *</label>
-        <input 
-          type="number"
-          required
-          min="1"
-          v-model="restockQty"
-          placeholder="E.g. 50"
-          class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-mono outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20"
-        />
-      </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Restock Type / Reason *</label>
+          <select 
+            v-model="restockType"
+            :disabled="isRestocking"
+            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
+          >
+            <option value="PURCHASE">Purchase (New Stock)</option>
+            <option value="SALE">Sale (Deduction)</option>
+            <option value="ADJUSTMENT">Adjustment (Stock Correction)</option>
+            <option value="RETURN">Return (Customer Return)</option>
+          </select>
+        </div>
 
-      <div class="flex flex-col gap-1.5">
-        <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Restock Type / Reason *</label>
-        <select 
-          v-model="restockType"
-          class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
-        >
-          <option value="PURCHASE">Purchase (New Stock)</option>
-          <option value="SALE">Sale (Deduction)</option>
-          <option value="ADJUSTMENT">Adjustment (Stock Correction)</option>
-          <option value="RETURN">Return (Customer Return)</option>
-        </select>
-      </div>
+        <!-- Payment Method - Only when restockType is PURCHASE -->
+        <div v-if="restockType === 'PURCHASE'" class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Payment Method *</label>
+          <select 
+            v-model="restockPaymentMethod"
+            :disabled="isRestocking"
+            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
+          >
+            <option value="CASH">CASH (Cash Payout)</option>
+            <option value="ONCREDIT">ONCREDIT (On Credit)</option>
+            <option value="BANK_TRANSFER">BANK_TRANSFER (Bank Transfer)</option>
+            <option value="MOBILE_TRANSFER">MOBILE_TRANSFER (Mobile Transfer)</option>
+          </select>
+        </div>
 
-      <!-- Payment Method - Only when restockType is PURCHASE -->
-      <div v-if="restockType === 'PURCHASE'" class="flex flex-col gap-1.5">
-        <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Payment Method *</label>
-        <select 
-          v-model="restockPaymentMethod"
-          required
-          class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
-        >
-          <option value="CASH">CASH (Cash Payout)</option>
-          <option value="ONCREDIT">ONCREDIT (On Credit)</option>
-          <option value="BANK_TRANSFER">BANK_TRANSFER (Bank Transfer)</option>
-          <option value="MOBILE_TRANSFER">MOBILE_TRANSFER (Mobile Transfer)</option>
-        </select>
-      </div>
+        <!-- Supplier Dropdown (Optional) - Only when restockType is PURCHASE -->
+        <div v-if="restockType === 'PURCHASE'" class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Supplier (Optional)</label>
+          <select 
+            v-model="restockSupplierId"
+            :disabled="isRestocking"
+            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
+          >
+            <option value="">Select Supplier (Optional)</option>
+            <option v-for="sup in filteredRestockSuppliers" :key="sup.id" :value="sup.id">
+              {{ sup.name }} <template v-if="sup.category">({{ sup.category }})</template>
+            </option>
+          </select>
+        </div>
 
-      <!-- Supplier Dropdown (Optional) - Only when restockType is PURCHASE -->
-      <div v-if="restockType === 'PURCHASE'" class="flex flex-col gap-1.5">
-        <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Supplier (Optional)</label>
-        <select 
-          v-model="restockSupplierId"
-          class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
-        >
-          <option value="">Select Supplier (Optional)</option>
-          <option v-for="sup in filteredRestockSuppliers" :key="sup.id" :value="sup.id">
-            {{ sup.name }} <template v-if="sup.category">({{ sup.category }})</template>
-          </option>
-        </select>
-      </div>
-
-      <div class="flex justify-end gap-3 pt-4 border-t border-outline-variant/50">
-        <button 
-          type="button"
-          @click="showRestockModal = false"
-          class="px-4.5 py-2.5 rounded-lg border border-outline font-bold hover:bg-surface-container-low text-xs cursor-pointer text-on-surface-variant text-center bg-surface-container-lowest"
-        >
-          Cancel
-        </button>
-        <button 
-          type="submit"
-          class="px-5 py-2.5 rounded-lg font-bold text-xs text-white transition-all cursor-pointer text-center border-0 shadow-sm bg-primary text-on-primary"
-        >
-          Add to Stock
-        </button>
+        <div class="flex justify-end gap-3 pt-4 border-t border-outline-variant/50">
+          <button 
+            type="button"
+            :disabled="isRestocking"
+            @click="closeRestockModal"
+            class="px-4.5 py-2.5 rounded-lg border border-outline font-bold hover:bg-surface-container-low text-xs cursor-pointer text-on-surface-variant text-center bg-surface-container-lowest disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancel
+          </button>
+          <button 
+            type="button"
+            @click="handleRestockProduct"
+            :disabled="isRestocking"
+            class="px-5 py-2.5 rounded-lg font-bold text-xs text-white transition-all cursor-pointer text-center border-0 shadow-sm bg-primary text-on-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            <RotateCw v-if="isRestocking" class="w-3.5 h-3.5 animate-spin text-white" />
+            <span>{{ isRestocking ? 'Restocking...' : 'Add to Stock' }}</span>
+          </button>
+        </div>
       </div>
     </form>
   </Modal>
@@ -1067,6 +1158,7 @@ import type { Product } from '../models/types';
 import { formatCurrencyWithoutSymbol } from '../models/mockData';
 import { api } from '../services/api';
 import Modal from '../components/common/Modal.vue';
+import JengaLoader from '../components/common/JengaLoader.vue';
 import { 
   Plus, 
   Upload, 
@@ -1077,11 +1169,14 @@ import {
   ChevronDown, 
   ChevronLeft, 
   ChevronRight, 
+  ChevronsLeft,
+  ChevronsRight,
   Check,
   Pencil,
   PlusCircle,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  RotateCw
 } from 'lucide-vue-next';
 
 const route = useRoute();
@@ -1100,7 +1195,7 @@ const showAllCategories = ref(false);
 
 // Pagination
 const currentPage = ref(1);
-const itemsPerPage = 8;
+const itemsPerPage = 15;
 
 // Add Modal States
 const showAddModal = ref(false);
@@ -1113,8 +1208,8 @@ const newProdWholesalePrice = ref('');
 const newProdWholesaleBarcode = ref('');
 const newProdConversionFactor = ref('');
 const newProdUnitOfMeasure = ref<'PCS' | 'KG' | 'LTR'>('PCS');
-const newProdStock = ref('20');
-const newProdMinStock = ref('10');
+const newProdStock = ref('');
+const newProdMinStock = ref('');
 const newProdSupplier = ref('');
 const newProdExpiryDate = ref('');
 const newProdPaymentMethod = ref<'CASH' | 'ONCREDIT' | 'BANK_TRANSFER' | 'MOBILE_TRANSFER'>('CASH');
@@ -1305,21 +1400,63 @@ const filteredProducts = computed(() => {
 
 const totalPages = computed(() => Math.ceil(filteredProducts.value.length / itemsPerPage) || 1);
 
+const visiblePages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const delta = 2; // Pages around current page
+  
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages: (number | string)[] = [];
+  const left = current - delta;
+  const right = current + delta + 1;
+
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || (i >= left && i < right)) {
+      pages.push(i);
+    } else if (pages[pages.length - 1] !== '...') {
+      pages.push('...');
+    }
+  }
+
+  return pages;
+});
+
+const handleJumpPage = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const val = parseInt(target.value, 10);
+  if (!isNaN(val)) {
+    currentPage.value = Math.max(1, Math.min(totalPages.value, val));
+  }
+};
+
 const paginatedProducts = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   return filteredProducts.value.slice(start, start + itemsPerPage);
 });
 
 const handleAddProduct = async () => {
-  if (!newProdName.value || !newProdCost.value || !newProdPrice.value) {
+  if (!newProdName.value || !newProdCost.value || !newProdPrice.value || !newProdStock.value || !newProdMinStock.value) {
     showToast('Please fill out all required fields', 'error');
     return;
   }
 
   const priceNum = parseFloat(newProdPrice.value);
   const costNum = parseFloat(newProdCost.value);
-  const stockNum = parseInt(newProdStock.value) || 0;
-  const minStockNum = parseInt(newProdMinStock.value) || 10;
+  const stockNum = parseInt(newProdStock.value);
+  const minStockNum = parseInt(newProdMinStock.value);
+
+  if (isNaN(stockNum) || stockNum <= 0) {
+    showToast('Initial Stock Units must be a valid number greater than zero', 'error');
+    return;
+  }
+
+  if (isNaN(minStockNum) || minStockNum <= 0) {
+    showToast('Minimum Stock Alert must be a valid number greater than zero', 'error');
+    return;
+  }
 
   // Validation: if product size is filled, wholesale price is mandatory
   const newSizeVal = newProdConversionFactor.value ? parseInt(String(newProdConversionFactor.value).trim()) : 0;
@@ -1483,8 +1620,9 @@ const editProdExpiryDate = ref('');
 
 // Restock Modal States
 const showRestockModal = ref(false);
+const isRestocking = ref(false);
 const restockingProduct = ref<Product | null>(null);
-const restockQty = ref('10');
+const restockQty = ref('');
 const restockType = ref<'PURCHASE' | 'SALE' | 'ADJUSTMENT' | 'RETURN'>('PURCHASE');
 const restockPaymentMethod = ref<'CASH' | 'ONCREDIT' | 'BANK_TRANSFER' | 'MOBILE_TRANSFER'>('CASH');
 const restockSupplierId = ref<string>('');
@@ -1632,23 +1770,36 @@ const handleEditProduct = async () => {
 };
 
 // Restock Modal Actions
+const closeRestockModal = () => {
+  if (!isRestocking.value) {
+    showRestockModal.value = false;
+  }
+};
+
 const openRestockModal = (p: Product) => {
   restockingProduct.value = p;
-  restockQty.value = '10';
+  restockQty.value = '';
   restockType.value = 'PURCHASE';
   restockPaymentMethod.value = 'CASH';
   restockSupplierId.value = '';
+  isRestocking.value = false;
   showRestockModal.value = true;
 };
 
 const handleRestockProduct = async () => {
-  if (!restockingProduct.value) return;
-  const addedQty = parseInt(restockQty.value) || 0;
-  if (addedQty <= 0) {
-    showToast('Please enter a valid stock quantity to add', 'error');
+  if (!restockingProduct.value || isRestocking.value) return;
+  const rawQtyStr = String(restockQty.value ?? '').trim();
+  if (!rawQtyStr) {
+    showToast('Please enter the stock units to add', 'error');
+    return;
+  }
+  const addedQty = parseInt(rawQtyStr);
+  if (isNaN(addedQty) || addedQty <= 0) {
+    showToast('Stock units to add must be a valid number greater than zero', 'error');
     return;
   }
 
+  isRestocking.value = true;
   try {
     const payload: any = {
       type: restockType.value,
@@ -1678,11 +1829,13 @@ const handleRestockProduct = async () => {
     }
 
     // Fetch fresh values from API to ensure database integrity
-    vm.fetchProducts();
+    await vm.fetchProducts();
 
     showRestockModal.value = false;
   } catch (err: any) {
     showToast('Failed to submit stock movement: ' + (err.message || err), 'error');
+  } finally {
+    isRestocking.value = false;
   }
 };
 

@@ -88,7 +88,14 @@
     </div>
 
     <!-- SUPPLIERS TABLE -->
-    <div class="rounded-2xl border border-outline-variant bg-surface-container-lowest overflow-hidden shadow-xs">
+    <div class="rounded-2xl border border-outline-variant bg-surface-container-lowest overflow-hidden shadow-xs relative min-h-[360px]">
+      <JengaLoader 
+        v-if="vm.isFetchingSuppliers.value" 
+        overlay 
+        size="lg" 
+        label="Fetching Supplier Directory" 
+        sublabel="Synchronizing vendor ledgers & balances..." 
+      />
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
@@ -213,34 +220,84 @@
           Showing {{ Math.min(filteredSuppliers.length, (currentPage - 1) * itemsPerPage + 1) }}-{{ Math.min(filteredSuppliers.length, currentPage * itemsPerPage) }} of {{ filteredSuppliers.length }} suppliers
         </span>
 
-        <div class="flex items-center gap-1.5">
-          <button
-            :disabled="currentPage === 1"
-            @click="currentPage = Math.max(1, currentPage - 1)"
-            class="p-1.5 rounded-lg border border-outline-variant hover:bg-surface-container-high disabled:opacity-40 disabled:hover:bg-transparent transition-all cursor-pointer bg-white"
-          >
-            <ChevronLeft class="w-4 h-4" />
-          </button>
+        <!-- Pagination buttons & Jump to page -->
+        <div class="flex flex-wrap items-center gap-2 font-sans">
+          <!-- First & Prev Page -->
+          <div class="flex items-center gap-1">
+            <button 
+              :disabled="currentPage === 1"
+              @click="currentPage = 1"
+              class="w-8 h-8 rounded-lg border border-outline-variant flex items-center justify-center hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-white"
+              title="First Page"
+            >
+              <ChevronsLeft class="w-4 h-4 text-on-surface-variant" />
+            </button>
 
-          <button
-            v-for="pageNum in totalPages"
-            :key="pageNum"
-            @click="currentPage = pageNum"
-            class="min-w-8 h-8 rounded-lg text-xs font-bold border transition-all cursor-pointer"
-            :class="currentPage === pageNum 
-              ? 'bg-primary text-on-primary border-primary' 
-              : 'border-outline-variant hover:bg-surface-container-high text-on-surface bg-white'"
-          >
-            {{ pageNum }}
-          </button>
+            <button 
+              :disabled="currentPage === 1"
+              @click="currentPage = Math.max(1, currentPage - 1)"
+              class="w-8 h-8 rounded-lg border border-outline-variant flex items-center justify-center hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-white"
+              title="Previous Page"
+            >
+              <ChevronLeft class="w-4 h-4 text-on-surface-variant" />
+            </button>
+          </div>
 
-          <button
-            :disabled="currentPage === totalPages"
-            @click="currentPage = Math.min(totalPages, currentPage + 1)"
-            class="p-1.5 rounded-lg border border-outline-variant hover:bg-surface-container-high disabled:opacity-40 disabled:hover:bg-transparent transition-all cursor-pointer bg-white"
-          >
-            <ChevronRight class="w-4 h-4" />
-          </button>
+          <!-- Scrollable Windowed Page Buttons -->
+          <div class="flex items-center gap-1 overflow-x-auto max-w-[280px] sm:max-w-[360px] md:max-w-[420px] py-1 px-0.5 no-scrollbar scroll-smooth">
+            <template v-for="(pg, idx) in visiblePages" :key="idx">
+              <span 
+                v-if="pg === '...'" 
+                class="w-8 h-8 flex items-center justify-center text-xs font-bold text-on-surface-variant/60 select-none shrink-0"
+              >
+                ...
+              </span>
+              <button
+                v-else
+                @click="currentPage = Number(pg)"
+                class="w-8 h-8 rounded-lg border flex items-center justify-center text-xs font-bold transition-all cursor-pointer shrink-0"
+                :class="currentPage === pg ? 'bg-primary border-primary text-on-primary shadow-xs' : 'bg-white border-outline-variant text-on-surface hover:bg-surface-container-high'"
+              >
+                {{ pg }}
+              </button>
+            </template>
+          </div>
+
+          <!-- Next & Last Page -->
+          <div class="flex items-center gap-1">
+            <button 
+              :disabled="currentPage === totalPages"
+              @click="currentPage = Math.min(totalPages, currentPage + 1)"
+              class="w-8 h-8 rounded-lg border border-outline-variant flex items-center justify-center hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-white"
+              title="Next Page"
+            >
+              <ChevronRight class="w-4 h-4 text-on-surface-variant" />
+            </button>
+
+            <button 
+              :disabled="currentPage === totalPages"
+              @click="currentPage = totalPages"
+              class="w-8 h-8 rounded-lg border border-outline-variant flex items-center justify-center hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-white"
+              title="Last Page"
+            >
+              <ChevronsRight class="w-4 h-4 text-on-surface-variant" />
+            </button>
+          </div>
+
+          <!-- Jump to page input -->
+          <div class="flex items-center gap-1.5 ml-2 border-l border-outline-variant/60 pl-3 text-xs text-on-surface-variant">
+            <span>Page</span>
+            <input 
+              type="number" 
+              :min="1" 
+              :max="totalPages"
+              :value="currentPage"
+              @change="handleJumpPage"
+              @keyup.enter="handleJumpPage"
+              class="w-12 h-8 text-center bg-white border border-outline-variant rounded-lg text-xs font-bold outline-none focus:border-primary text-on-surface font-mono"
+            />
+            <span>of {{ totalPages }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -635,6 +692,7 @@ import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import type { Supplier } from '../models/types';
 import Modal from '../components/common/Modal.vue';
 import Toast from '../components/common/Toast.vue';
+import JengaLoader from '../components/common/JengaLoader.vue';
 import { api } from '../services/api';
 import { 
   Search, 
@@ -643,6 +701,8 @@ import {
   Plus, 
   ChevronLeft, 
   ChevronRight, 
+  ChevronsLeft,
+  ChevronsRight,
   FileText, 
   TrendingUp,
   Coins,
@@ -666,7 +726,7 @@ const searchQuery = ref('');
 const selectedCategory = ref('All');
 const selectedStatus = ref('All');
 const currentPage = ref(1);
-const itemsPerPage = 5;
+const itemsPerPage = 15;
 
 // Modal triggers
 const showAddModal = ref(false);
@@ -735,6 +795,38 @@ const filteredSuppliers = computed(() => {
 });
 
 const totalPages = computed(() => Math.ceil(filteredSuppliers.value.length / itemsPerPage) || 1);
+
+const visiblePages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const delta = 2;
+  
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages: (number | string)[] = [];
+  const left = current - delta;
+  const right = current + delta + 1;
+
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || (i >= left && i < right)) {
+      pages.push(i);
+    } else if (pages[pages.length - 1] !== '...') {
+      pages.push('...');
+    }
+  }
+
+  return pages;
+});
+
+const handleJumpPage = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const val = parseInt(target.value, 10);
+  if (!isNaN(val)) {
+    currentPage.value = Math.max(1, Math.min(totalPages.value, val));
+  }
+};
 
 const paginatedSuppliers = computed(() => {
   const startIndex = (currentPage.value - 1) * itemsPerPage;

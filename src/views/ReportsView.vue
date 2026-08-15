@@ -108,10 +108,12 @@
           <label class="hidden md:block text-[10px] font-mono font-bold text-transparent select-none uppercase tracking-wider">Submit</label>
           <button 
             @click="applyFilters"
-            class="w-full py-2.5 bg-primary text-on-primary font-bold text-xs rounded-lg hover:bg-opacity-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow border-0 text-white"
+            :disabled="isReportLoading"
+            class="w-full py-2.5 bg-primary text-on-primary font-bold text-xs rounded-lg hover:bg-opacity-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow border-0 text-white disabled:opacity-60"
           >
-            <Activity class="w-4 h-4" />
-            <span>Apply Filters</span>
+            <RotateCw v-if="isReportLoading" class="w-4 h-4 animate-spin text-white" />
+            <Activity v-else class="w-4 h-4" />
+            <span>{{ isReportLoading ? 'Applying...' : 'Apply Filters' }}</span>
           </button>
         </div>
       </div>
@@ -164,8 +166,16 @@
       <!-- Right Main Container (KPIs + list) -->
       <div 
         :class="reportCategory === 'sales' ? 'lg:col-span-3' : 'lg:col-span-4'" 
-        class="space-y-6"
+        class="space-y-6 relative min-h-[420px]"
       >
+        <!-- Jenga Logo Loading Visual Overlay for Reports -->
+        <JengaLoader 
+          v-if="isReportLoading" 
+          overlay 
+          size="xl" 
+          :label="loadingLabel" 
+          :sublabel="loadingSublabel" 
+        />
         
         <!-- SALES REPORT CATEGORY CONTENT -->
         <template v-if="reportCategory === 'sales'">
@@ -482,7 +492,7 @@
                   </thead>
                   <tbody class="divide-y divide-surface-variant">
                     <tr 
-                      v-for="p in productsList" 
+                      v-for="p in paginatedProductsList" 
                       :key="p.id" 
                       class="hover:bg-surface-container-high/60 transition-all font-sans text-sm"
                     >
@@ -525,6 +535,56 @@
                     </tr>
                   </tbody>
                 </table>
+              </div>
+
+              <!-- Inventory Report Pagination Footer (15 items per page) -->
+              <div class="p-4 bg-surface-container-lowest border-t border-outline-variant flex flex-col sm:flex-row justify-between items-center gap-4 select-none">
+                <div class="text-xs text-on-surface-variant font-medium">
+                  Showing {{ productsList.length === 0 ? 0 : (inventoryCurrentPage - 1) * inventoryItemsPerPage + 1 }} to
+                  {{ Math.min(inventoryCurrentPage * inventoryItemsPerPage, productsList.length) }} of {{ productsList.length }} entries
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 font-sans text-xs">
+                  <div class="flex items-center gap-1">
+                    <button 
+                      :disabled="inventoryCurrentPage === 1"
+                      @click="inventoryCurrentPage = 1"
+                      class="w-7 h-7 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-white"
+                      title="First Page"
+                    >
+                      <ChevronsLeft class="w-3.5 h-3.5 text-on-surface-variant" />
+                    </button>
+                    <button 
+                      :disabled="inventoryCurrentPage === 1"
+                      @click="inventoryCurrentPage = Math.max(1, inventoryCurrentPage - 1)"
+                      class="w-7 h-7 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-white"
+                      title="Previous Page"
+                    >
+                      <ChevronLeft class="w-3.5 h-3.5 text-on-surface-variant" />
+                    </button>
+                  </div>
+
+                  <span class="px-2 font-mono font-bold text-on-surface">Page {{ inventoryCurrentPage }} of {{ inventoryTotalPages }}</span>
+
+                  <div class="flex items-center gap-1">
+                    <button 
+                      :disabled="inventoryCurrentPage === inventoryTotalPages"
+                      @click="inventoryCurrentPage = Math.min(inventoryTotalPages, inventoryCurrentPage + 1)"
+                      class="w-7 h-7 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-white"
+                      title="Next Page"
+                    >
+                      <ChevronRight class="w-3.5 h-3.5 text-on-surface-variant" />
+                    </button>
+                    <button 
+                      :disabled="inventoryCurrentPage === inventoryTotalPages"
+                      @click="inventoryCurrentPage = inventoryTotalPages"
+                      class="w-7 h-7 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-white"
+                      title="Last Page"
+                    >
+                      <ChevronsRight class="w-3.5 h-3.5 text-on-surface-variant" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </template>
@@ -591,7 +651,7 @@
                   </thead>
                   <tbody class="divide-y divide-surface-variant">
                     <tr 
-                      v-for="sm in filteredStockMovements" 
+                      v-for="sm in paginatedStockMovements" 
                       :key="sm.id" 
                       class="hover:bg-surface-container-high/60 transition-all font-sans text-sm"
                     >
@@ -629,6 +689,56 @@
                     </tr>
                   </tbody>
                 </table>
+              </div>
+
+              <!-- Restock Report Pagination Footer (15 items per page) -->
+              <div class="p-4 bg-surface-container-lowest border-t border-outline-variant flex flex-col sm:flex-row justify-between items-center gap-4 select-none">
+                <div class="text-xs text-on-surface-variant font-medium">
+                  Showing {{ filteredStockMovements.length === 0 ? 0 : (restockCurrentPage - 1) * restockItemsPerPage + 1 }} to
+                  {{ Math.min(restockCurrentPage * restockItemsPerPage, filteredStockMovements.length) }} of {{ filteredStockMovements.length }} entries
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 font-sans text-xs">
+                  <div class="flex items-center gap-1">
+                    <button 
+                      :disabled="restockCurrentPage === 1"
+                      @click="restockCurrentPage = 1"
+                      class="w-7 h-7 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-white"
+                      title="First Page"
+                    >
+                      <ChevronsLeft class="w-3.5 h-3.5 text-on-surface-variant" />
+                    </button>
+                    <button 
+                      :disabled="restockCurrentPage === 1"
+                      @click="restockCurrentPage = Math.max(1, restockCurrentPage - 1)"
+                      class="w-7 h-7 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-white"
+                      title="Previous Page"
+                    >
+                      <ChevronLeft class="w-3.5 h-3.5 text-on-surface-variant" />
+                    </button>
+                  </div>
+
+                  <span class="px-2 font-mono font-bold text-on-surface">Page {{ restockCurrentPage }} of {{ restockTotalPages }}</span>
+
+                  <div class="flex items-center gap-1">
+                    <button 
+                      :disabled="restockCurrentPage === restockTotalPages"
+                      @click="restockCurrentPage = Math.min(restockTotalPages, restockCurrentPage + 1)"
+                      class="w-7 h-7 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-white"
+                      title="Next Page"
+                    >
+                      <ChevronRight class="w-3.5 h-3.5 text-on-surface-variant" />
+                    </button>
+                    <button 
+                      :disabled="restockCurrentPage === restockTotalPages"
+                      @click="restockCurrentPage = restockTotalPages"
+                      class="w-7 h-7 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-white"
+                      title="Last Page"
+                    >
+                      <ChevronsRight class="w-3.5 h-3.5 text-on-surface-variant" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </template>
@@ -754,6 +864,7 @@ import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { formatCurrency } from '../models/mockData';
 import { showToast } from '../services/toastService';
 import { api } from '../services/api';
+import JengaLoader from '../components/common/JengaLoader.vue';
 import type { Transaction, StockMovement } from '../models/types';
 import { 
   TrendingUp, 
@@ -774,7 +885,12 @@ import {
   XCircle,
   Search,
   Filter,
-  RefreshCw
+  RefreshCw,
+  RotateCw,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-vue-next';
 
 const vm = useAppViewModel();
@@ -811,7 +927,34 @@ const currency = computed(() => vm.settings.value.currency);
 const inventoryReportType = ref<'all' | 'restock'>('all');
 const movementTypeFilter = ref<string>('ALL');
 const stockMovementsList = ref<StockMovement[]>([]);
-const isLoadingMovements = ref<boolean>(false);
+const isLoadingMovements = ref(false);
+
+const isReportLoading = computed(() => {
+  if (reportCategory.value === 'sales') {
+    return vm.isFetchingSales.value;
+  }
+  if (reportCategory.value === 'inventory') {
+    return inventoryReportType.value === 'all' ? vm.isFetchingProducts.value : isLoadingMovements.value;
+  }
+  if (reportCategory.value === 'suppliers') {
+    return vm.isFetchingSuppliers.value;
+  }
+  return false;
+});
+
+const loadingLabel = computed(() => {
+  if (reportCategory.value === 'sales') return 'Fetching Sales & Profit Reports';
+  if (reportCategory.value === 'inventory') return 'Fetching Inventory Status Reports';
+  if (reportCategory.value === 'suppliers') return 'Fetching Supplier Overview Reports';
+  return 'Loading Report Data';
+});
+
+const loadingSublabel = computed(() => {
+  if (reportCategory.value === 'sales') return 'Querying /api/sales for transaction metrics & net profits...';
+  if (reportCategory.value === 'inventory') return 'Querying /api/products for catalog stock levels...';
+  if (reportCategory.value === 'suppliers') return 'Querying /api/suppliers for supplier ledger...';
+  return 'Please wait while analytical data is compiled...';
+});
 
 const filteredStockMovements = computed(() => {
   if (movementTypeFilter.value === 'ALL') {
@@ -880,6 +1023,8 @@ const getMovementTypeBadgeClass = (type: string) => {
 
 
 const applyFilters = () => {
+  inventoryCurrentPage.value = 1;
+  restockCurrentPage.value = 1;
   if (reportCategory.value === 'sales') {
     vm.fetchSalesHistory(fromDate.value, toDate.value);
   } else if (reportCategory.value === 'inventory') {
@@ -1034,8 +1179,31 @@ const totalByMethod = (method: string) => {
     .reduce((acc, t) => acc + Math.max(0, t.total), 0);
 };
 
-// Inventory report computed fields
+// Inventory report computed fields & pagination (15 items per page)
+const inventoryCurrentPage = ref(1);
+const inventoryItemsPerPage = 15;
+const restockCurrentPage = ref(1);
+const restockItemsPerPage = 15;
+
 const productsList = computed(() => vm.products.value);
+
+const paginatedProductsList = computed(() => {
+  const start = (inventoryCurrentPage.value - 1) * inventoryItemsPerPage;
+  return productsList.value.slice(start, start + inventoryItemsPerPage);
+});
+
+const inventoryTotalPages = computed(() => {
+  return Math.ceil(productsList.value.length / inventoryItemsPerPage) || 1;
+});
+
+const paginatedStockMovements = computed(() => {
+  const start = (restockCurrentPage.value - 1) * restockItemsPerPage;
+  return filteredStockMovements.value.slice(start, start + restockItemsPerPage);
+});
+
+const restockTotalPages = computed(() => {
+  return Math.ceil(filteredStockMovements.value.length / restockItemsPerPage) || 1;
+});
 
 const totalInventoryItems = computed(() => {
   return productsList.value.reduce((acc, p) => acc + p.stock, 0);

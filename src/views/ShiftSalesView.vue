@@ -18,7 +18,113 @@
     </header>
 
     <div class="flex-1 overflow-y-auto pr-2 pb-8">
-      
+
+      <!-- SHIFT SALES SUMMARY BANNER -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <!-- 1. Total Shift Sales Card -->
+        <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
+                <ShoppingBag class="w-5 h-5" />
+              </div>
+              <div>
+                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Total Shift Revenue</span>
+                <span class="text-[11px] font-medium text-on-surface-variant/70">Completed Sales</span>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary font-mono">
+              {{ totalActiveTransactionsCount }} Txns
+            </span>
+          </div>
+          <div class="mt-2">
+            <div class="text-2xl font-black font-mono text-primary tracking-tight">
+              {{ formatCurrency(totalActiveSalesAmount, settings.currency) }}
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Payment Method Breakdown Card -->
+        <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+                <PieChart class="w-5 h-5" />
+              </div>
+              <div>
+                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Payment Breakdown</span>
+                <span class="text-[11px] font-medium text-on-surface-variant/70">By Payment Channel</span>
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mt-1">
+            <!-- Cash -->
+            <div class="p-2 rounded-xl bg-surface-container-low border border-outline-variant/60 flex items-center justify-between">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <Banknote class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span class="text-xs font-bold text-on-surface truncate">Cash</span>
+              </div>
+              <span class="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 pl-1 truncate">
+                {{ formatCurrency(paymentBreakdown.cash, settings.currency) }}
+              </span>
+            </div>
+            <!-- Mobile -->
+            <div class="p-2 rounded-xl bg-surface-container-low border border-outline-variant/60 flex items-center justify-between">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <Smartphone class="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                <span class="text-xs font-bold text-on-surface truncate">Mobile</span>
+              </div>
+              <span class="text-xs font-mono font-bold text-purple-700 dark:text-purple-400 pl-1 truncate">
+                {{ formatCurrency(paymentBreakdown.mobile, settings.currency) }}
+              </span>
+            </div>
+            <!-- Card / Bank -->
+            <div class="p-2 rounded-xl bg-surface-container-low border border-outline-variant/60 flex items-center justify-between">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <CreditCard class="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span class="text-xs font-bold text-on-surface truncate">Card/Bank</span>
+              </div>
+              <span class="text-xs font-mono font-bold text-blue-700 dark:text-blue-400 pl-1 truncate">
+                {{ formatCurrency(paymentBreakdown.card, settings.currency) }}
+              </span>
+            </div>
+            <!-- Credit -->
+            <div class="p-2 rounded-xl bg-surface-container-low border border-outline-variant/60 flex items-center justify-between">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <Receipt class="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span class="text-xs font-bold text-on-surface truncate">Credit</span>
+              </div>
+              <span class="text-xs font-mono font-bold text-amber-700 dark:text-amber-400 pl-1 truncate">
+                {{ formatCurrency(paymentBreakdown.credit, settings.currency) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Reversed / Void Sales Card -->
+        <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-xl bg-error/10 text-error flex items-center justify-center font-bold shrink-0">
+                <RotateCcw class="w-5 h-5" />
+              </div>
+              <div>
+                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Reversed Sales</span>
+                <span class="text-[11px] font-medium text-on-surface-variant/70">Voided Transactions</span>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-error/10 text-error font-mono">
+              {{ totalReversedCount }} Voids
+            </span>
+          </div>
+          <div class="mt-2">
+            <div class="text-2xl font-black font-mono text-error tracking-tight">
+              {{ formatCurrency(totalReversedSalesAmount, settings.currency) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ITEMS MODAL -->
       <Modal 
         :isOpen="selectedSale !== null" 
@@ -66,7 +172,7 @@
           </div>
 
           <!-- Actions -->
-          <div v-if="selectedSale.status !== 'VOID'" class="flex justify-end pt-4 border-t border-outline-variant mt-2">
+          <div v-if="selectedSale.status !== 'VOID' && selectedSale.status !== 'REFUNDED'" class="flex justify-end pt-4 border-t border-outline-variant mt-2">
             <button 
               @click="confirmReverse(selectedSale.id)"
               :disabled="isReversing"
@@ -118,20 +224,21 @@
                 <td class="px-5 py-4 text-center">
                   <div class="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-on-surface">
                     <Banknote v-if="sale.paymentMethod === 'CASH'" class="w-3.5 h-3.5 text-emerald-600" />
-                    <CreditCard v-else-if="sale.paymentMethod === 'CARD'" class="w-3.5 h-3.5 text-blue-600" />
-                    <Smartphone v-else-if="sale.paymentMethod === 'MOBILE'" class="w-3.5 h-3.5 text-purple-600" />
+                    <CreditCard v-else-if="sale.paymentMethod === 'CARD' || sale.paymentMethod === 'BANK_TRANSFER'" class="w-3.5 h-3.5 text-blue-600" />
+                    <Smartphone v-else-if="sale.paymentMethod === 'MOBILE' || sale.paymentMethod === 'MOBILE_TRANSFER'" class="w-3.5 h-3.5 text-purple-600" />
+                    <Receipt v-else-if="sale.paymentMethod === 'CREDIT' || sale.paymentMethod === 'ONCREDIT' || sale.paymentMethod === 'ON_CREDIT'" class="w-3.5 h-3.5 text-amber-600" />
                     <span>{{ sale.paymentMethod }}</span>
                   </div>
                 </td>
                 <td class="px-5 py-4">
                   <span 
                     class="px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider"
-                    :class="sale.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' : 'bg-error-container text-on-error-container'"
+                    :class="(sale.status === 'COMPLETED' || sale.status === 'PAID') ? 'bg-emerald-100 text-emerald-800' : 'bg-error-container text-on-error-container'"
                   >
                     {{ sale.status }}
                   </span>
                 </td>
-                <td class="px-5 py-4 text-right font-mono font-black text-primary" :class="sale.status === 'VOID' ? 'line-through opacity-50' : ''">
+                <td class="px-5 py-4 text-right font-mono font-black text-primary" :class="(sale.status === 'VOID' || sale.status === 'REFUNDED') ? 'line-through opacity-50' : ''">
                   {{ formatCurrency(sale.totalAmount, settings.currency) }}
                 </td>
                 <td class="px-5 py-4 text-right">
@@ -159,7 +266,18 @@ import { useRouter } from 'vue-router';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { formatCurrency } from '../models/mockData';
 import Modal from '../components/common/Modal.vue';
-import { X, Eye, Banknote, CreditCard, Smartphone, RotateCcw, AlertCircle } from 'lucide-vue-next';
+import { 
+  X, 
+  Eye, 
+  Banknote, 
+  CreditCard, 
+  Smartphone, 
+  RotateCcw, 
+  AlertCircle,
+  ShoppingBag,
+  PieChart,
+  Receipt
+} from 'lucide-vue-next';
 
 const router = useRouter();
 const vm = useAppViewModel();
@@ -171,6 +289,51 @@ const isReversing = ref(false);
 
 onMounted(() => {
   vm.fetchShiftSales();
+});
+
+// Computed Metrics for Summary Cards
+const totalActiveSalesAmount = computed(() => {
+  return shiftSales.value
+    .filter((s: any) => s.status === 'PAID' || s.status === 'COMPLETED')
+    .reduce((sum: number, s: any) => sum + (Number(s.totalAmount) || 0), 0);
+});
+
+const totalActiveTransactionsCount = computed(() => {
+  return shiftSales.value.filter((s: any) => s.status === 'PAID' || s.status === 'COMPLETED').length;
+});
+
+const totalReversedSalesAmount = computed(() => {
+  return shiftSales.value
+    .filter((s: any) => s.status === 'VOID' || s.status === 'REFUNDED')
+    .reduce((sum: number, s: any) => sum + (Number(s.totalAmount) || 0), 0);
+});
+
+const totalReversedCount = computed(() => {
+  return shiftSales.value.filter((s: any) => s.status === 'VOID' || s.status === 'REFUNDED').length;
+});
+
+const paymentBreakdown = computed(() => {
+  const activeSales = shiftSales.value.filter((s: any) => s.status === 'PAID' || s.status === 'COMPLETED');
+  
+  let cash = 0, card = 0, mobile = 0, credit = 0, other = 0;
+
+  for (const s of activeSales) {
+    const amt = Number(s.totalAmount) || 0;
+    const method = String(s.paymentMethod || '').toUpperCase();
+    if (method === 'CASH') {
+      cash += amt;
+    } else if (method === 'CARD' || method === 'BANK_TRANSFER' || method === 'TRANSFER') {
+      card += amt;
+    } else if (method === 'MOBILE' || method === 'MOBILE_TRANSFER') {
+      mobile += amt;
+    } else if (method === 'CREDIT' || method === 'ONCREDIT' || method === 'ON_CREDIT') {
+      credit += amt;
+    } else {
+      other += amt;
+    }
+  }
+
+  return { cash, card, mobile, credit, other };
 });
 
 const formatTime = (isoString: string) => {

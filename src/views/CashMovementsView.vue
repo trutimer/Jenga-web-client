@@ -146,15 +146,17 @@
                   <td class="px-5 py-4 text-right space-x-2">
                     <button 
                       @click="editMovement(m)"
-                      class="p-1.5 rounded-lg hover:bg-primary-container text-primary transition-colors cursor-pointer"
-                      title="Edit Movement"
+                      :disabled="!canModifyMovement(m)"
+                      class="p-1.5 rounded-lg hover:bg-primary-container text-primary transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                      :title="canModifyMovement(m) ? 'Edit Movement' : 'Action disabled: Authorized by another user'"
                     >
                       <Edit2 class="w-4 h-4" />
                     </button>
                     <button 
-                      @click="confirmDelete(m.id)"
-                      class="p-1.5 rounded-lg hover:bg-error-container text-error transition-colors cursor-pointer"
-                      title="Delete Movement"
+                      @click="confirmDelete(m)"
+                      :disabled="!canModifyMovement(m)"
+                      class="p-1.5 rounded-lg hover:bg-error-container text-error transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                      :title="canModifyMovement(m) ? 'Delete Movement' : 'Action disabled: Authorized by another user'"
                     >
                       <Trash2 class="w-4 h-4" />
                     </button>
@@ -175,12 +177,24 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { formatCurrency } from '../models/mockData';
+import { showToast } from '../services/toastService';
 import Modal from '../components/common/Modal.vue';
 import { Plus, X, AlertCircle, Edit2, Trash2 } from 'lucide-vue-next';
 
 const router = useRouter();
 const vm = useAppViewModel();
 const settings = computed(() => vm.settings.value);
+
+const currentUserId = computed(() => {
+  return (localStorage.getItem('userId') || localStorage.getItem('cashierId') || vm.userId?.value || '').toLowerCase().trim();
+});
+
+const canModifyMovement = (m: any): boolean => {
+  if (!m) return false;
+  if (!m.authorizedById) return true;
+  const authId = String(m.authorizedById).toLowerCase().trim();
+  return authId === currentUserId.value;
+};
 
 const isAdding = ref(false);
 const isEditing = ref(false);
@@ -227,6 +241,10 @@ const openAddModal = () => {
 };
 
 const editMovement = (movement: any) => {
+  if (!canModifyMovement(movement)) {
+    showToast('You are not authorized to edit this cash movement.', 'error');
+    return;
+  }
   newMovement.value = {
     type: movement.type,
     amount: movement.amount,
@@ -238,9 +256,13 @@ const editMovement = (movement: any) => {
   isAdding.value = true;
 };
 
-const confirmDelete = async (id: string) => {
+const confirmDelete = async (movement: any) => {
+  if (!canModifyMovement(movement)) {
+    showToast('You are not authorized to delete this cash movement.', 'error');
+    return;
+  }
   if (window.confirm('Are you sure you want to delete this cash movement? This will adjust your expected cash.')) {
-    await vm.deleteCashMovement(id);
+    await vm.deleteCashMovement(movement.id);
   }
 };
 
