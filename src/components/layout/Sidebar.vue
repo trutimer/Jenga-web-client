@@ -21,26 +21,13 @@
       </button>
     </div>
 
-    <!-- CTA Button -->
-    <div class="p-5" :class="sidebarCollapsed ? 'px-3' : ''">
-      <button 
-        @click="router.push('/checkout')"
-        class="w-full h-12 bg-primary text-on-primary rounded-xl flex items-center justify-center font-semibold text-sm hover:bg-opacity-90 active:scale-[0.98] transition-all duration-200 cursor-pointer shadow-sm"
-        :class="sidebarCollapsed ? 'px-0' : 'py-3 gap-2'"
-        :title="sidebarCollapsed ? 'New Transaction' : ''"
-      >
-        <PlusCircle class="w-5 h-5" />
-        <span v-if="!sidebarCollapsed">New Transaction</span>
-      </button>
-    </div>
-
     <!-- Main Nav Links -->
-    <div class="flex-1 overflow-y-auto py-4 flex flex-col gap-2.5">
+    <div class="flex-1 overflow-y-auto py-4 flex flex-col gap-1.5" :class="sidebarCollapsed ? 'px-2' : 'px-3'">
       <template v-for="item in menuItems" :key="item.label">
         <div 
           v-if="item.disabled"
           class="py-3 flex items-center rounded-xl cursor-not-allowed select-none transition-all duration-200"
-          :class="sidebarCollapsed ? 'justify-center mx-2 px-0' : 'gap-3.5 px-4.5 mx-3 text-on-surface-variant/40'"
+          :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3.5 px-3 text-on-surface-variant/40'"
           :title="`${item.label} (Simulated feature)`"
         >
           <component :is="item.icon" class="w-5 h-5 shrink-0 text-on-surface-variant/40" />
@@ -48,13 +35,58 @@
           <span v-if="!sidebarCollapsed" class="ml-auto text-[10px] font-mono border border-outline-variant/30 px-1.5 py-0.2 rounded text-outline bg-surface-container-high scale-[0.85] origin-right">MOCK</span>
         </div>
 
+        <!-- Expandable Parent Menu Item (with Children) -->
+        <div v-else-if="item.children && item.children.length > 0" class="flex flex-col">
+          <button
+            @click="handleParentClick(item)"
+            class="py-3 flex items-center justify-between rounded-xl transition-all duration-200 text-left font-sans cursor-pointer group"
+            :title="sidebarCollapsed ? item.label : ''"
+            :class="[
+              sidebarCollapsed ? 'justify-center px-0' : 'px-3',
+              isParentActive(item) 
+                ? 'bg-primary-container text-on-primary-container font-bold shadow-xs' 
+                : 'text-on-surface-variant hover:bg-surface-variant/40'
+            ]"
+          >
+            <div class="flex items-center gap-3.5 min-w-0">
+              <component :is="item.icon" class="w-5 h-5 shrink-0" :class="isParentActive(item) ? 'stroke-[2.5px]' : ''" />
+              <span v-if="!sidebarCollapsed" class="text-sm font-semibold truncate">{{ item.label }}</span>
+            </div>
+            <ChevronDown 
+              v-if="!sidebarCollapsed" 
+              class="w-4 h-4 text-on-surface-variant transition-transform duration-200 shrink-0"
+              :class="expandedMenus[item.id] ? 'rotate-180 text-primary' : ''"
+            />
+          </button>
+
+          <!-- Nested Submenu Items -->
+          <div 
+            v-if="!sidebarCollapsed && expandedMenus[item.id]" 
+            class="flex flex-col gap-1 pl-3 mt-1.5 mb-1 ml-4 border-l-2 border-outline-variant/60 animate-fade-in"
+          >
+            <button
+              v-for="sub in item.children"
+              :key="sub.tab"
+              @click="navigateToSubmenu(item.id, sub.tab)"
+              class="py-2 px-2.5 flex items-center gap-2.5 rounded-lg text-xs font-semibold transition-all text-left cursor-pointer"
+              :class="isSubmenuActive(item.id, sub.tab)
+                ? 'bg-primary text-on-primary font-bold shadow-xs'
+                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'"
+            >
+              <component :is="sub.icon" class="w-3.5 h-3.5 shrink-0" :class="isSubmenuActive(item.id, sub.tab) ? 'text-on-primary' : 'text-on-surface-variant'" />
+              <span class="truncate">{{ sub.label }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Normal Single Menu Item -->
         <button
           v-else
           @click="router.push('/' + item.id)"
           class="py-3 flex items-center rounded-xl transition-all duration-200 text-left font-sans cursor-pointer"
           :title="sidebarCollapsed ? item.label : ''"
           :class="[
-            sidebarCollapsed ? 'justify-center mx-2 px-0' : 'gap-3.5 px-4.5 mx-3',
+            sidebarCollapsed ? 'justify-center px-0' : 'gap-3.5 px-3',
             isActive(item.id) 
               ? 'bg-primary-container text-on-primary-container font-bold translate-x-1 shadow-xs' 
               : 'text-on-surface-variant hover:bg-surface-variant/40'
@@ -92,6 +124,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { 
   LayoutDashboard, 
@@ -101,13 +134,20 @@ import {
   Users,
   UserCog, 
   BarChart3, 
+  Landmark,
+  FileSpreadsheet,
+  Layers,
+  BookOpen,
+  Search,
+  CalendarCheck,
   Settings, 
   HelpCircle, 
   LogOut, 
   Store,
   PlusCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ChevronDown
 } from 'lucide-vue-next';
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
 
@@ -116,19 +156,39 @@ defineProps<{
   branchName: string;
 }>();
 
-const { sidebarCollapsed } = useAppViewModel();
+const { sidebarCollapsed, userRole } = useAppViewModel();
 
 const router = useRouter();
 const route = useRoute();
+
+interface SubMenuItem {
+  tab: string;
+  label: string;
+  icon: any;
+}
 
 interface MenuItem {
   id: string;
   label: string;
   icon: any;
   disabled?: boolean;
+  adminOnly?: boolean;
+  children?: SubMenuItem[];
 }
 
-const menuItems: MenuItem[] = [
+const expandedMenus = ref<Record<string, boolean>>({
+  finance: false
+});
+
+watch(() => route.path, (newPath) => {
+  if (newPath.startsWith('/finance')) {
+    expandedMenus.value.finance = true;
+  } else {
+    expandedMenus.value.finance = false;
+  }
+}, { immediate: true });
+
+const rawMenuItems: MenuItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'checkout', label: 'POS Checkout', icon: CreditCard },
   { id: 'inventory', label: 'Inventory', icon: Package },
@@ -136,12 +196,63 @@ const menuItems: MenuItem[] = [
   { id: 'customers', label: 'Customers', icon: Users },
   { id: 'users', label: 'User Management', icon: UserCog },
   { id: 'reports', label: 'Reports', icon: BarChart3 },
+  { 
+    id: 'finance', 
+    label: 'Finance & Accounts', 
+    icon: Landmark, 
+    adminOnly: true,
+    children: [
+      { tab: 'statements', label: 'Financial Statements', icon: FileSpreadsheet },
+      { tab: 'accounts', label: 'Chart of Accounts', icon: Layers },
+      { tab: 'journal', label: 'General Ledger & Journals', icon: BookOpen },
+      { tab: 'ledger', label: 'Account Statement', icon: Search },
+      { tab: 'periods', label: 'Fiscal Periods', icon: CalendarCheck },
+    ]
+  },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
+
+const menuItems = computed(() => {
+  return rawMenuItems.filter(item => {
+    if (item.adminOnly) {
+      return userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN';
+    }
+    return true;
+  });
+});
 
 const isActive = (view: string) => {
   const currentView = route.path.substring(1) || 'dashboard';
   return currentView === view || (view === 'inventory' && currentView === 'stock-in');
+};
+
+const isParentActive = (item: MenuItem) => {
+  const currentView = route.path.substring(1) || 'dashboard';
+  return currentView.startsWith(item.id);
+};
+
+const isSubmenuActive = (parentId: string, tab: string) => {
+  const currentView = route.path.substring(1) || 'dashboard';
+  if (!currentView.startsWith(parentId)) return false;
+  const currentTab = (route.query.tab as string) || 'statements';
+  return currentTab === tab;
+};
+
+const handleParentClick = (item: MenuItem) => {
+  if (sidebarCollapsed.value) {
+    sidebarCollapsed.value = false;
+    expandedMenus.value[item.id] = true;
+    router.push('/' + item.id);
+    return;
+  }
+  expandedMenus.value[item.id] = !expandedMenus.value[item.id];
+  if (!isParentActive(item)) {
+    router.push('/' + item.id);
+  }
+};
+
+const navigateToSubmenu = (parentId: string, tab: string) => {
+  router.push({ path: '/' + parentId, query: { tab } });
 };
 
 const alertHelp = () => {

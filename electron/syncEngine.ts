@@ -5,8 +5,8 @@ let isOnline = false
 let isSyncing = false
 let syncTimer: NodeJS.Timeout | null = null
 let healthCheckTimer: NodeJS.Timeout | null = null
-// let apiBaseUrl = 'http://localhost:9090'
-let apiBaseUrl = 'https://jenga-api.sintax.tz';
+let apiBaseUrl = 'http://localhost:9090'
+// let apiBaseUrl = 'https://jenga-api.sintax.tz';
 
 export function setApiBaseUrl(url: string) {
   if (url && url.trim() !== '') {

@@ -50,6 +50,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/finance',
+    name: 'finance',
+    component: () => import('../views/FinanceView.vue'),
+    meta: { requiresAuth: true, adminOnly: true }
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('../views/SettingsView.vue'),
@@ -154,6 +160,9 @@ router.beforeEach((to, from, next) => {
       sessionStorage.clear();
     }
     next({ name: 'login' });
+  } else if (to.meta.adminOnly && role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
+    // Strictly restrict adminOnly modules (Finance & Accounting) to Store Owner / Admin
+    next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
   } else if (to.name === 'select-branch' && role !== 'ADMIN') {
     // Branch selection is strictly restricted to ADMIN role only
     next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });

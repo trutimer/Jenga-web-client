@@ -68,7 +68,7 @@ export interface StoreSettings {
   timezone: string;
 }
 
-export type ViewType = 'login' | 'select-branch' | 'dashboard' | 'checkout' | 'inventory' | 'reports' | 'settings' | 'receipt' | 'stock-in' | 'suppliers' | 'users' | 'profile' | 'customers';
+export type ViewType = 'login' | 'select-branch' | 'dashboard' | 'checkout' | 'inventory' | 'reports' | 'settings' | 'receipt' | 'stock-in' | 'suppliers' | 'users' | 'profile' | 'customers' | 'finance';
 
 export type CustomerType = 'PERSON' | 'COMPANY';
 export type CustomerStatus = 'ACTIVE' | 'INACTIVE';
@@ -339,3 +339,218 @@ export interface TopSellingProduct {
   totalSold: number;
   unitOfMeasure?: 'PCS' | 'KG' | 'LTR' | string;
 }
+
+// ==========================================
+// FINANCE & ACCOUNTING MODULE TYPES
+// ==========================================
+
+export type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
+
+export type AccountCategory =
+  | 'CURRENT_ASSET'
+  | 'NON_CURRENT_ASSET'
+  | 'CURRENT_LIABILITY'
+  | 'NON_CURRENT_LIABILITY'
+  | 'EQUITY'
+  | 'OPERATING_REVENUE'
+  | 'OTHER_INCOME'
+  | 'COST_OF_GOODS_SOLD'
+  | 'OPERATING_EXPENSE'
+  | 'TAX_EXPENSE'
+  | 'OTHER_EXPENSE';
+
+export interface ChartOfAccount {
+  id: string;
+  storeId?: string;
+  code: string;
+  name: string;
+  accountType: AccountType;
+  accountCategory?: AccountCategory;
+  parentId?: string | null;
+  parentName?: string | null;
+  active: boolean;
+  system: boolean;
+  currencyCode?: string;
+  description?: string;
+}
+
+export interface CreateChartOfAccountRequest {
+  name: string;
+  accountType: AccountType;
+  accountCategory?: AccountCategory;
+  description?: string;
+}
+
+export type PeriodStatus = 'OPEN' | 'CLOSED' | 'LOCKED';
+
+export interface FinancialPeriod {
+  id: string;
+  storeId?: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: PeriodStatus;
+  closedAt?: string;
+  closedByName?: string;
+  createdAt?: string;
+}
+
+export type JournalStatus = 'DRAFT' | 'POSTED' | 'REVERSED' | 'VOID';
+
+export interface JournalLine {
+  id?: string;
+  accountId: string;
+  accountCode?: string;
+  accountName?: string;
+  accountType?: string;
+  branchId?: string;
+  branchName?: string;
+  debit: number;
+  credit: number;
+  description?: string;
+  createdAt?: string;
+}
+
+export interface JournalEntry {
+  id: string;
+  storeId?: string;
+  branchId?: string;
+  branchName?: string;
+  entryNumber: string;
+  referenceType: string;
+  referenceId?: string;
+  description: string;
+  entryDate: string;
+  periodId?: string;
+  periodName?: string;
+  status: JournalStatus;
+  postedAt?: string;
+  postedByName?: string;
+  currencyCode?: string;
+  reversalOfId?: string | null;
+  reversedById?: string | null;
+  totalDebit: number;
+  totalCredit: number;
+  lines: JournalLine[];
+  createdAt?: string;
+}
+
+export interface JournalLineItemRequest {
+  accountId: string;
+  branchId?: string;
+  debit?: number;
+  credit?: number;
+  description?: string;
+}
+
+export interface CreateJournalEntryRequest {
+  storeBranchId?: string;
+  description: string;
+  entryDate?: string;
+  referenceType?: string;
+  referenceId?: string;
+  lines: JournalLineItemRequest[];
+}
+
+export interface TrialBalanceLineItem {
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  accountType: AccountType;
+  accountCategory?: AccountCategory;
+  totalDebit: number;
+  totalCredit: number;
+  netDebit: number;
+  netCredit: number;
+}
+
+export interface TrialBalanceReport {
+  storeId: string;
+  asOfDate: string;
+  currency: string;
+  totalDebit: number;
+  totalCredit: number;
+  balanced: boolean;
+  accounts: TrialBalanceLineItem[];
+}
+
+export interface IncomeStatementLine {
+  accountCode: string;
+  accountName: string;
+  amount: number;
+}
+
+export interface IncomeStatementReport {
+  storeId: string;
+  startDate: string;
+  endDate: string;
+  currency: string;
+  operatingRevenueLines: IncomeStatementLine[];
+  grossRevenue: number;
+  salesDiscounts: number;
+  netRevenue: number;
+  cogsLines: IncomeStatementLine[];
+  costOfGoodsSold: number;
+  grossProfit: number;
+  expenseLines: IncomeStatementLine[];
+  totalExpenses: number;
+  otherIncome: number;
+  otherExpenses: number;
+  netIncome: number;
+}
+
+export interface BalanceSheetLine {
+  accountCode: string;
+  accountName: string;
+  balance: number;
+}
+
+export interface BalanceSheetReport {
+  storeId: string;
+  asOfDate: string;
+  currency: string;
+  currentAssets: BalanceSheetLine[];
+  totalCurrentAssets: number;
+  nonCurrentAssets: BalanceSheetLine[];
+  totalNonCurrentAssets: number;
+  totalAssets: number;
+  currentLiabilities: BalanceSheetLine[];
+  totalCurrentLiabilities: number;
+  nonCurrentLiabilities: BalanceSheetLine[];
+  totalNonCurrentLiabilities: number;
+  totalLiabilities: number;
+  equityLines: BalanceSheetLine[];
+  retainedEarnings: number;
+  currentPeriodNetIncome: number;
+  totalEquity: number;
+  totalLiabilitiesAndEquity: number;
+  balanced: boolean;
+}
+
+export interface LedgerTransactionLine {
+  entryDate: string;
+  entryNumber: string;
+  referenceType: string;
+  referenceId?: string;
+  description: string;
+  branchName?: string;
+  debit: number;
+  credit: number;
+  runningBalance: number;
+}
+
+export interface AccountLedgerStatementReport {
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  accountType: AccountType;
+  startDate: string;
+  endDate: string;
+  currency: string;
+  openingBalance: number;
+  totalDebit: number;
+  totalCredit: number;
+  closingBalance: number;
+  transactions: LedgerTransactionLine[];
+}
+
