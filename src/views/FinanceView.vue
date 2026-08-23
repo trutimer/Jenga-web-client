@@ -428,30 +428,7 @@
                 </div>
 
                 <div class="p-5 space-y-5 text-xs font-sans">
-                  <!-- Current Assets -->
-                  <div class="space-y-2">
-                    <div class="font-bold uppercase tracking-wider text-on-surface-variant flex justify-between">
-                      <span>Current Assets (Liquid)</span>
-                      <span>Balance</span>
-                    </div>
-                    <div 
-                      v-for="item in displayedCurrentAssets" 
-                      :key="item.accountCode"
-                      class="flex justify-between items-center py-1 text-on-surface hover:bg-surface-container-low px-2 rounded-lg"
-                    >
-                      <span class="flex items-center gap-2 font-medium">
-                        <span class="font-mono text-[11px] text-on-surface-variant">{{ item.accountCode }}</span>
-                        <span>{{ item.accountName }}</span>
-                      </span>
-                      <span class="font-mono font-semibold">{{ formatCurrency(item.balance) }}</span>
-                    </div>
-                    <div class="flex justify-between items-center pt-1 font-bold text-on-surface bg-surface-container-low/60 px-3 py-1.5 rounded-lg">
-                      <span>Total Current Assets</span>
-                      <span class="font-mono text-primary">{{ formatCurrency(balanceSheet?.totalCurrentAssets || 0) }}</span>
-                    </div>
-                  </div>
-
-                  <!-- Non-Current Assets -->
+                  <!-- Non-Current Assets (Fixed & Long Term) -->
                   <div class="space-y-2">
                     <div class="font-bold uppercase tracking-wider text-on-surface-variant flex justify-between">
                       <span>Non-Current Assets (Fixed & Long Term)</span>
@@ -476,6 +453,29 @@
                       <span class="font-mono text-primary">{{ formatCurrency(balanceSheet?.totalNonCurrentAssets || 0) }}</span>
                     </div>
                   </div>
+
+                  <!-- Current Assets (Liquid) -->
+                  <div class="space-y-2">
+                    <div class="font-bold uppercase tracking-wider text-on-surface-variant flex justify-between">
+                      <span>Current Assets (Liquid)</span>
+                      <span>Balance</span>
+                    </div>
+                    <div 
+                      v-for="item in displayedCurrentAssets" 
+                      :key="item.accountCode"
+                      class="flex justify-between items-center py-1 text-on-surface hover:bg-surface-container-low px-2 rounded-lg"
+                    >
+                      <span class="flex items-center gap-2 font-medium">
+                        <span class="font-mono text-[11px] text-on-surface-variant">{{ item.accountCode }}</span>
+                        <span>{{ item.accountName }}</span>
+                      </span>
+                      <span class="font-mono font-semibold">{{ formatCurrency(item.balance) }}</span>
+                    </div>
+                    <div class="flex justify-between items-center pt-1 font-bold text-on-surface bg-surface-container-low/60 px-3 py-1.5 rounded-lg">
+                      <span>Total Current Assets</span>
+                      <span class="font-mono text-primary">{{ formatCurrency(balanceSheet?.totalCurrentAssets || 0) }}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -498,33 +498,10 @@
                 </div>
 
                 <div class="p-5 space-y-5 text-xs font-sans">
-                  <!-- Current Liabilities -->
-                  <div class="space-y-2">
-                    <div class="font-bold uppercase tracking-wider text-amber-800 flex justify-between">
-                      <span>Current Liabilities</span>
-                      <span>Balance</span>
-                    </div>
-                    <div 
-                      v-for="item in displayedCurrentLiabilities" 
-                      :key="item.accountCode"
-                      class="flex justify-between items-center py-1 text-on-surface hover:bg-surface-container-low px-2 rounded-lg"
-                    >
-                      <span class="flex items-center gap-2 font-medium">
-                        <span class="font-mono text-[11px] text-on-surface-variant">{{ item.accountCode }}</span>
-                        <span>{{ item.accountName }}</span>
-                      </span>
-                      <span class="font-mono font-semibold text-amber-700">{{ formatCurrency(item.balance) }}</span>
-                    </div>
-                    <div class="flex justify-between items-center pt-1 font-bold text-on-surface bg-amber-500/10 px-3 py-1.5 rounded-lg text-amber-900">
-                      <span>Total Current Liabilities</span>
-                      <span class="font-mono">{{ formatCurrency(balanceSheet?.totalCurrentLiabilities || 0) }}</span>
-                    </div>
-                  </div>
-
                   <!-- Non-Current Liabilities -->
                   <div class="space-y-2" v-if="(balanceSheet?.nonCurrentLiabilities?.length || 0) > 0">
                     <div class="font-bold uppercase tracking-wider text-amber-800 flex justify-between">
-                      <span>Long-Term Liabilities</span>
+                      <span>Long-Term Liabilities (Non-Current)</span>
                       <span>Balance</span>
                     </div>
                     <div 
@@ -541,6 +518,29 @@
                     <div class="flex justify-between items-center pt-1 font-bold text-on-surface bg-surface-container-low/60 px-3 py-1.5 rounded-lg">
                       <span>Total Long-Term Liabilities</span>
                       <span class="font-mono">{{ formatCurrency(balanceSheet?.totalNonCurrentLiabilities || 0) }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Current Liabilities -->
+                  <div class="space-y-2">
+                    <div class="font-bold uppercase tracking-wider text-amber-800 flex justify-between">
+                      <span>Current Liabilities (Short-Term)</span>
+                      <span>Balance</span>
+                    </div>
+                    <div 
+                      v-for="item in displayedCurrentLiabilities" 
+                      :key="item.accountCode"
+                      class="flex justify-between items-center py-1 text-on-surface hover:bg-surface-container-low px-2 rounded-lg"
+                    >
+                      <span class="flex items-center gap-2 font-medium">
+                        <span class="font-mono text-[11px] text-on-surface-variant">{{ item.accountCode }}</span>
+                        <span>{{ item.accountName }}</span>
+                      </span>
+                      <span class="font-mono font-semibold text-amber-700">{{ formatCurrency(item.balance) }}</span>
+                    </div>
+                    <div class="flex justify-between items-center pt-1 font-bold text-on-surface bg-amber-500/10 px-3 py-1.5 rounded-lg text-amber-900">
+                      <span>Total Current Liabilities</span>
+                      <span class="font-mono">{{ formatCurrency(balanceSheet?.totalCurrentLiabilities || 0) }}</span>
                     </div>
                   </div>
 

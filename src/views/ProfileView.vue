@@ -400,7 +400,7 @@ const goBack = () => {
   if (userRole.value === 'CASHIER') {
     router.push('/checkout');
   } else {
-    router.push('/dashboard');
+    router.push('/settings');
   }
 };
 

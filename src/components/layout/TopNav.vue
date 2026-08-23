@@ -184,6 +184,9 @@
 
     <!-- Trailing Actions -->
     <div class="flex items-center gap-4 ml-auto">
+      <!-- Notifications (Admins & Managers only) -->
+      <NotificationDropdown v-if="isStoreAdminOrManager" />
+
       <!-- License Expiry Display Button (Replaces Low Stock) -->
       <button 
         @click="handleExpiryClick"
@@ -245,17 +248,6 @@
       <div class="flex items-center gap-1 text-on-surface-variant">
         <!-- Cloud Sync & Offline Status -->
         <SyncStatusBadge />
-
-
-        <!-- Account/User profile -->
-        <button 
-          @click="router.push('/profile')"
-          class="p-2 hover:bg-surface-container rounded-full transition-colors flex items-center justify-center cursor-pointer"
-          :class="currentView === 'profile' ? 'text-primary bg-primary-container/30' : ''"
-          title="My Account Profile & Password"
-        >
-          <User class="w-5 h-5 stroke-[2px]" />
-        </button>
 
         <!-- Logout for Cashier (since they don't have sidebar) -->
         <button 
@@ -332,6 +324,7 @@ import Modal from '../common/Modal.vue';
 import LicenseModal from '../common/LicenseModal.vue';
 import LicenseExpiryAlertModal from '../common/LicenseExpiryAlertModal.vue';
 import SyncStatusBadge from '../SyncStatusBadge.vue';
+import NotificationDropdown from '../notifications/NotificationDropdown.vue';
 
 import { api } from '../../services/api';
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
@@ -465,7 +458,12 @@ const isElectron = computed(() => {
 
 const isAdmin = computed(() => {
   const role = props.userRole || localStorage.getItem('cashierRole');
-  return role === 'ADMIN';
+  return role === 'ADMIN' || role === 'SUPER_ADMIN';
+});
+
+const isStoreAdminOrManager = computed(() => {
+  const role = props.userRole || localStorage.getItem('cashierRole');
+  return role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'MANAGER';
 });
 
 const currentView = computed(() => {

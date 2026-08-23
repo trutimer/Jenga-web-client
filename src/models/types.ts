@@ -66,6 +66,7 @@ export interface StoreSettings {
   email: string;
   currency: 'TZS' | 'USD' | 'EUR';
   timezone: string;
+  enablePerpetualCogs?: boolean;
 }
 
 export type ViewType = 'login' | 'select-branch' | 'dashboard' | 'checkout' | 'inventory' | 'reports' | 'settings' | 'receipt' | 'stock-in' | 'suppliers' | 'users' | 'profile' | 'customers' | 'finance';
@@ -552,5 +553,41 @@ export interface AccountLedgerStatementReport {
   totalCredit: number;
   closingBalance: number;
   transactions: LedgerTransactionLine[];
+}
+
+// ==========================================
+// NOTIFICATIONS MODULE TYPES
+// ==========================================
+
+export type NotificationType =
+  | 'SYSTEM_UPDATE'
+  | 'LICENSE_EXPIRATION'
+  | 'FRAUD_ALERT'
+  | 'CASHIER_ACTIVITY'
+  | 'GENERAL_ANNOUNCEMENT'
+  | string;
+
+export type NotificationPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL';
+
+export interface NotificationInboxItem {
+  recipientId: string;
+  notificationId: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  priority: NotificationPriority;
+  actionUrl?: string;
+  metadata?: Record<string, any>;
+  isRead: boolean;
+  read?: boolean;
+  readAt?: string;
+  createdAt: string;
+  storeId?: string;
+  branchId?: string;
+  branchName?: string;
+}
+
+export interface UnreadCountResponse {
+  unreadCount: number;
 }
 
