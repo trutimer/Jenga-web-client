@@ -142,7 +142,7 @@
           </div>
           <div class="w-1 h-1 rounded-full bg-outline-variant" />
           <div class="flex items-center gap-1.5">
-            <span>v1.0.6</span>
+            <span>{{ appVersion }}</span>
           </div>
         </footer>
         
@@ -231,6 +231,8 @@ import {
 } from 'lucide-vue-next';
 
 const vm = useAppViewModel();
+
+const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v2.5.0';
 
 const phone = ref(localStorage.getItem('lastPhone') || '');
 const password = ref('');

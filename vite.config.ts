@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from 'node:url'
+import packageJson from './package.json'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -7,6 +8,9 @@ import electron from 'vite-plugin-electron/simple'
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+  },
   plugins: [
     vue(),
     tailwindcss(),

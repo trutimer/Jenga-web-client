@@ -309,7 +309,7 @@ export interface ShiftDetail {
   cashMovements: CashMovement[];
 }
 
-export type StockMovementType = 'PURCHASE' | 'ADJUSTMENT' | 'SALE' | 'TRANSFER' | 'RETURN' | string;
+export type StockMovementType = 'PURCHASE' | 'ADJUSTMENT' | 'SALE' | 'TRANSFER' | 'RETURN' | 'DAMAGED' | string;
 
 export interface StockMovement {
   id: string;

@@ -669,8 +669,8 @@
                           {{ (sm.type || 'PURCHASE').toUpperCase() }}
                         </span>
                       </td>
-                      <td class="p-4 text-center font-mono font-bold text-emerald-600">
-                        +{{ sm.quantity }}
+                      <td class="p-4 text-center font-mono font-bold" :class="sm.type === 'DAMAGED' || sm.type === 'SALE' ? 'text-error' : 'text-emerald-600'">
+                        {{ sm.type === 'DAMAGED' || sm.type === 'SALE' ? '-' : '+' }}{{ sm.quantity }}
                       </td>
                       <td class="p-4 text-right font-mono text-on-surface-variant">
                         {{ formatCurrency(sm.costPrice || 0, currency) }}
@@ -1010,10 +1010,14 @@ const getMovementTypeBadgeClass = (type: string) => {
   const t = (type || '').toUpperCase();
   if (t === 'PURCHASE' || t === 'IN' || t === 'ADD') {
     return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+  } else if (t === 'DAMAGED') {
+    return 'bg-error/10 text-error border-error/20';
   } else if (t === 'ADJUSTMENT') {
     return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
   } else if (t === 'TRANSFER') {
     return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+  } else if (t === 'RETURN') {
+    return 'bg-purple-500/10 text-purple-600 border-purple-500/20';
   } else if (t === 'SALE' || t === 'OUT') {
     return 'bg-slate-500/10 text-slate-600 border-slate-500/20';
   }

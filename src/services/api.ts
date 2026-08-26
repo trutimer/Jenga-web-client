@@ -14,8 +14,8 @@ import {
   getCachedAuth
 } from './offlineSalesService';
 
+export const BASE_URL = 'http://localhost:9090';
 // export const BASE_URL = 'https://jenga-api.sintax.tz';
-export const BASE_URL = 'http://localhost:9090'
 
 export interface ApiOptions extends RequestInit {
   suppressToast?: boolean;

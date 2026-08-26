@@ -996,8 +996,8 @@
   <!-- MODAL 4: RESTOCK PRODUCT FORM -->
   <Modal 
     :isOpen="showRestockModal" 
-    title="Restock Inventory" 
-    subtitle="Add stock units to existing catalog item" 
+    :title="restockType === 'DAMAGED' ? 'Record Damaged Stock' : 'Restock Inventory'" 
+    :subtitle="restockType === 'DAMAGED' ? 'Deduct damaged/spoiled items and record loss' : 'Add stock units to existing catalog item'" 
     :onClose="closeRestockModal"
     maxWidth="max-w-md"
   >
@@ -1007,8 +1007,8 @@
         v-if="isRestocking" 
         overlay 
         size="md" 
-        label="Processing Stock Entry" 
-        sublabel="Updating inventory ledger & supplier balances..." 
+        :label="restockType === 'DAMAGED' ? 'Processing Damaged Stock Entry' : 'Processing Stock Entry'" 
+        :sublabel="restockType === 'DAMAGED' ? 'Writing off stock & recording ledger loss...' : 'Updating inventory ledger & supplier balances...'" 
       />
 
       <div class="space-y-4">
@@ -1021,16 +1021,22 @@
             <span class="text-on-surface-variant font-medium">Current Stock Level:</span>
             <span class="font-mono font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded text-xs">{{ restockingProduct.stock }} units</span>
           </div>
+          <div v-if="restockType === 'DAMAGED'" class="flex justify-between text-sm pt-1 border-t border-outline-variant/30">
+            <span class="text-on-surface-variant font-medium">Unit Buying Price:</span>
+            <span class="font-mono font-bold text-on-surface">{{ formatCurrency(restockingProduct.cost || 0, currency) }}</span>
+          </div>
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">New Stock Units to Add *</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
+            {{ restockType === 'DAMAGED' ? 'Units Damaged (To Deduct) *' : 'New Stock Units to Add *' }}
+          </label>
           <input 
             type="number"
             min="1"
             v-model="restockQty"
             :disabled="isRestocking"
-            placeholder="E.g. 50"
+            :placeholder="restockType === 'DAMAGED' ? 'E.g. 5' : 'E.g. 50'"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-mono outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
           />
         </div>
@@ -1043,10 +1049,37 @@
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
           >
             <option value="PURCHASE">Purchase (New Stock)</option>
-            <option value="SALE">Sale (Deduction)</option>
             <option value="ADJUSTMENT">Adjustment (Stock Correction)</option>
             <option value="RETURN">Return (Customer Return)</option>
+            <option value="DAMAGED">Damaged (Loss / Write-off)</option>
           </select>
+        </div>
+
+        <!-- Notes / Reason - Shown for DAMAGED and ADJUSTMENT -->
+        <div v-if="restockType === 'DAMAGED' || restockType === 'ADJUSTMENT'" class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
+            {{ restockType === 'DAMAGED' ? 'Damage Reason / Notes' : 'Adjustment Reason / Notes' }} (Optional)
+          </label>
+          <input 
+            type="text"
+            v-model="restockNotes"
+            :disabled="isRestocking"
+            :placeholder="restockType === 'DAMAGED' ? 'e.g. Broken packaging, Expired during transit' : 'e.g. Physical inventory count recount'"
+            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
+          />
+        </div>
+
+        <!-- Loss Warning Banner when DAMAGED is selected -->
+        <div v-if="restockType === 'DAMAGED' && restockingProduct" class="p-3 bg-error/10 border border-error/20 rounded-xl text-xs text-error flex items-start gap-2.5">
+          <AlertTriangle class="w-4 h-4 shrink-0 mt-0.5" />
+          <div class="space-y-0.5">
+            <span class="font-bold block">Damaged Stock Write-Off Loss</span>
+            <span class="leading-relaxed text-[11.5px]">
+              Deducting <strong class="font-mono">{{ Number(restockQty) || 0 }} units</strong> will record a total loss of 
+              <strong class="font-mono font-bold underline">{{ formatCurrency(((Number(restockQty) || 0) * (restockingProduct.cost || 0)), currency) }}</strong>
+              to the financial loss journal.
+            </span>
+          </div>
         </div>
 
         <!-- Payment Method - Only when restockType is PURCHASE -->
@@ -1092,10 +1125,11 @@
             type="button"
             @click="handleRestockProduct"
             :disabled="isRestocking"
-            class="px-5 py-2.5 rounded-lg font-bold text-xs text-white transition-all cursor-pointer text-center border-0 shadow-sm bg-primary text-on-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            class="px-5 py-2.5 rounded-lg font-bold text-xs text-white transition-all cursor-pointer text-center border-0 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            :class="restockType === 'DAMAGED' ? 'bg-error hover:bg-error/90 text-on-error' : 'bg-primary text-on-primary'"
           >
             <RotateCw v-if="isRestocking" class="w-3.5 h-3.5 animate-spin text-white" />
-            <span>{{ isRestocking ? 'Restocking...' : 'Add to Stock' }}</span>
+            <span>{{ isRestocking ? 'Processing...' : (restockType === 'DAMAGED' ? 'Write Off Damaged Stock' : 'Add to Stock') }}</span>
           </button>
         </div>
       </div>
@@ -1155,7 +1189,7 @@ import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { showToast } from '../services/toastService';
 import { useBarcodeScanner } from '../composables/useBarcodeScanner';
 import type { Product } from '../models/types';
-import { formatCurrencyWithoutSymbol } from '../models/mockData';
+import { formatCurrency, formatCurrencyWithoutSymbol } from '../models/mockData';
 import { api } from '../services/api';
 import Modal from '../components/common/Modal.vue';
 import JengaLoader from '../components/common/JengaLoader.vue';
@@ -1623,7 +1657,8 @@ const showRestockModal = ref(false);
 const isRestocking = ref(false);
 const restockingProduct = ref<Product | null>(null);
 const restockQty = ref('');
-const restockType = ref<'PURCHASE' | 'SALE' | 'ADJUSTMENT' | 'RETURN'>('PURCHASE');
+const restockNotes = ref('');
+const restockType = ref<'PURCHASE' | 'ADJUSTMENT' | 'RETURN' | 'DAMAGED'>('PURCHASE');
 const restockPaymentMethod = ref<'CASH' | 'ONCREDIT' | 'BANK_TRANSFER' | 'MOBILE_TRANSFER'>('CASH');
 const restockSupplierId = ref<string>('');
 
@@ -1779,6 +1814,7 @@ const closeRestockModal = () => {
 const openRestockModal = (p: Product) => {
   restockingProduct.value = p;
   restockQty.value = '';
+  restockNotes.value = '';
   restockType.value = 'PURCHASE';
   restockPaymentMethod.value = 'CASH';
   restockSupplierId.value = '';
@@ -1790,13 +1826,29 @@ const handleRestockProduct = async () => {
   if (!restockingProduct.value || isRestocking.value) return;
   const rawQtyStr = String(restockQty.value ?? '').trim();
   if (!rawQtyStr) {
-    showToast('Please enter the stock units to add', 'error');
+    showToast(
+      restockType.value === 'DAMAGED' 
+        ? 'Please enter the number of damaged units to write off' 
+        : 'Please enter the stock units quantity', 
+      'error'
+    );
     return;
   }
   const addedQty = parseInt(rawQtyStr);
   if (isNaN(addedQty) || addedQty <= 0) {
-    showToast('Stock units to add must be a valid number greater than zero', 'error');
+    showToast('Stock units must be a valid number greater than zero', 'error');
     return;
+  }
+
+  if (restockType.value === 'DAMAGED') {
+    if (addedQty > restockingProduct.value.stock) {
+      showToast(`Cannot write off ${addedQty} units: current stock is only ${restockingProduct.value.stock}`, 'error');
+      return;
+    }
+    if (!restockingProduct.value.cost || restockingProduct.value.cost <= 0) {
+      showToast(`Product '${restockingProduct.value.name}' has no valid buying price (cost price). A cost price is required to book the financial loss.`, 'error');
+      return;
+    }
   }
 
   isRestocking.value = true;
@@ -1805,6 +1857,10 @@ const handleRestockProduct = async () => {
       type: restockType.value,
       quantity: addedQty
     };
+
+    if (restockNotes.value && restockNotes.value.trim()) {
+      payload.notes = restockNotes.value.trim();
+    }
 
     if (restockType.value === 'PURCHASE') {
       payload.paymentType = restockPaymentMethod.value;
@@ -1819,14 +1875,22 @@ const handleRestockProduct = async () => {
     const index = vm.products.value.findIndex(p => p.id === restockingProduct.value?.id);
     if (index !== -1) {
       const existingProduct = vm.products.value[index]!;
-      const change = (restockType.value === 'SALE') ? -addedQty : addedQty;
-      const newStock = existingProduct.stock + change;
+      const isDeduction = restockType.value === 'DAMAGED';
+      const change = isDeduction ? -addedQty : addedQty;
+      const newStock = Math.max(0, existingProduct.stock + change);
       vm.products.value[index] = {
         ...existingProduct,
         stock: newStock,
         status: newStock === 0 ? 'Out of Stock' : (newStock <= existingProduct.minStock ? 'Low Stock' : 'In Stock')
       };
     }
+
+    showToast(
+      restockType.value === 'DAMAGED' 
+        ? `Successfully recorded ${addedQty} units damaged write-off.`
+        : 'Stock movement recorded successfully', 
+      'success'
+    );
 
     // Fetch fresh values from API to ensure database integrity
     await vm.fetchProducts();
