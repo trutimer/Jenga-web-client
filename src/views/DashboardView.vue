@@ -3,12 +3,12 @@
     <!-- Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-2">
       <div>
-        <h2 class="text-3xl font-black text-on-background tracking-tight">Dashboard Overview</h2>
-        <p class="text-sm font-semibold text-on-surface-variant mt-1">Welcome back. Here is your store's performance today.</p>
+        <h2 class="text-3xl font-black text-on-background tracking-tight">{{ $t('dashboard.title') }}</h2>
+        <p class="text-sm font-semibold text-on-surface-variant mt-1">{{ $t('dashboard.subtitle') }}</p>
       </div>
       <div class="mt-4 sm:mt-0 flex items-center text-xs font-semibold font-mono text-on-surface-variant bg-surface-container-low px-4 py-2.5 rounded-lg border border-outline-variant shadow-sm gap-2">
         <Calendar class="w-4 h-4 text-primary" />
-        <span>Today, {{ formattedDate }}</span>
+        <span>{{ $t('dashboard.todayDate', { date: formattedDate }) }}</span>
       </div>
     </div>
 
@@ -18,7 +18,7 @@
       <div class="bg-surface-container-lowest rounded-xl p-6 md:p-7 border border-outline-variant shadow-md flex flex-col justify-between relative overflow-hidden group hover:border-primary transition-all duration-300 cursor-default">
         <div class="absolute -right-6 -top-6 w-20 h-20 bg-primary-container rounded-full opacity-20 group-hover:scale-110 transition-transform duration-350"></div>
         <div class="flex justify-between items-start mb-4 relative z-10">
-          <span class="text-xs font-mono font-bold uppercase tracking-widest text-on-surface-variant">Today's Sales</span>
+          <span class="text-xs font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('dashboard.todaySales') }}</span>
           <span class="p-1.5 rounded-lg bg-primary-container/30 text-primary">
             <Coins class="w-5 h-5 stroke-[2px]" />
           </span>
@@ -27,7 +27,7 @@
           <div class="text-3xl font-black text-on-surface tracking-tight">{{ formatCurrency(todaySales, currency) }}</div>
           <div class="flex items-center text-primary text-xs mt-1.5 font-bold gap-1">
             <TrendingUp class="w-3.5 h-3.5" />
-            <span>Real-time POS activity</span>
+            <span>{{ $t('dashboard.realtimeActivity') }}</span>
           </div>
         </div>
       </div>
@@ -35,7 +35,7 @@
       <!-- KPI 2: Transaction Count -->
       <div class="bg-surface-container-lowest rounded-xl p-6 md:p-7 border border-outline-variant shadow-md flex flex-col justify-between hover:border-primary transition-all duration-300 cursor-default">
         <div class="flex justify-between items-start mb-4">
-          <span class="text-xs font-mono font-bold uppercase tracking-widest text-on-surface-variant">Today's Transactions</span>
+          <span class="text-xs font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('dashboard.todayTransactions') }}</span>
           <span class="p-1.5 rounded-lg bg-secondary-container text-on-secondary-container">
             <Receipt class="w-5 h-5 stroke-[2px]" />
           </span>
@@ -43,7 +43,7 @@
         <div>
           <div class="text-3xl font-black text-on-surface tracking-tight">{{ todayTransactionsCount }}</div>
           <div class="text-xs text-on-surface-variant font-medium mt-1.5">
-            Avg. Ticket: {{ formatCurrency(avgTicket, currency) }}
+            {{ $t('dashboard.avgTicket', { amount: formatCurrency(avgTicket, currency) }) }}
           </div>
         </div>
       </div>
@@ -51,7 +51,7 @@
       <!-- KPI 3: Weekly Sales -->
       <div class="bg-surface-container-lowest rounded-xl p-6 md:p-7 border border-outline-variant shadow-md flex flex-col justify-between hover:border-primary transition-all duration-300 cursor-default">
         <div class="flex justify-between items-start mb-4">
-          <span class="text-xs font-mono font-bold uppercase tracking-widest text-on-surface-variant">Weekly Revenue</span>
+          <span class="text-xs font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('dashboard.weeklyRevenue') }}</span>
           <span class="p-1.5 rounded-lg bg-primary-container/25 text-primary">
             <ShoppingBag class="w-5 h-5 stroke-[2px]" />
           </span>
@@ -60,7 +60,7 @@
           <div class="text-3xl font-black text-on-surface tracking-tight">{{ formatCurrency(weeklyRevenue, currency) }}</div>
           <div class="flex items-center text-primary text-xs mt-1.5 font-bold gap-1">
             <TrendingUp class="w-3.5 h-3.5" />
-            <span>Rolling 7 Days</span>
+            <span>{{ $t('dashboard.rolling7Days') }}</span>
           </div>
         </div>
       </div>
@@ -68,7 +68,7 @@
       <!-- KPI 4: Gross Profit -->
       <div class="bg-surface-container-lowest rounded-xl p-6 md:p-7 border border-outline-variant shadow-md flex flex-col justify-between hover:border-primary transition-all duration-300 cursor-default">
         <div class="flex justify-between items-start mb-4">
-          <span class="text-xs font-mono font-bold uppercase tracking-widest text-on-surface-variant">Gross Profit (WTD)</span>
+          <span class="text-xs font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('dashboard.grossProfitWtd') }}</span>
           <span class="p-1.5 rounded-lg bg-surface-container-high text-on-surface-variant">
             <TrendingUp class="w-5 h-5 stroke-[2px]" />
           </span>
@@ -76,7 +76,7 @@
         <div>
           <div class="text-3xl font-black text-on-surface tracking-tight">{{ formatCurrency(weeklyGrossProfit, currency) }}</div>
           <div class="text-xs text-on-surface-variant font-medium mt-1.5">
-            {{ weeklyMarginPercent }}% Store Margin
+            {{ $t('dashboard.storeMargin', { margin: weeklyMarginPercent }) }}
           </div>
         </div>
       </div>
@@ -94,7 +94,7 @@
             <AlertTriangle class="w-6 h-6 animate-bounce" />
           </div>
           <div>
-            <div class="text-xs font-mono font-bold text-on-surface-variant tracking-wider uppercase mb-0.5">Low Stock Items</div>
+            <div class="text-xs font-mono font-bold text-on-surface-variant tracking-wider uppercase mb-0.5">{{ $t('dashboard.lowStockItems') }}</div>
             <div class="text-2xl font-black text-on-surface group-hover:text-[#d97706] transition-colors leading-none">{{ lowStockCount }}</div>
           </div>
         </div>
@@ -111,7 +111,7 @@
             <AlertTriangle class="w-6 h-6" />
           </div>
           <div>
-            <div class="text-xs font-mono font-bold text-on-surface-variant tracking-wider uppercase mb-0.5">Out of Stock Warnings</div>
+            <div class="text-xs font-mono font-bold text-on-surface-variant tracking-wider uppercase mb-0.5">{{ $t('dashboard.outOfStockWarnings') }}</div>
             <div class="text-2xl font-black text-error leading-none">{{ outOfStockCount }}</div>
           </div>
         </div>
@@ -128,7 +128,7 @@
             <Clock class="w-6 h-6 animate-pulse" />
           </div>
           <div>
-            <div class="text-xs font-mono font-bold text-on-surface-variant tracking-wider uppercase mb-0.5">Expiring Soon</div>
+            <div class="text-xs font-mono font-bold text-on-surface-variant tracking-wider uppercase mb-0.5">{{ $t('dashboard.expiringSoon') }}</div>
             <div class="text-2xl font-black text-on-surface group-hover:text-[#7e22ce] transition-colors leading-none">{{ soonToExpireCount }}</div>
           </div>
         </div>
@@ -141,14 +141,14 @@
       <!-- SVG Sales Trend graph -->
       <div class="lg:col-span-2 bg-surface-container-lowest rounded-xl border border-outline-variant shadow-md p-6 md:p-7 flex flex-col">
         <div class="flex justify-between items-center mb-6">
-          <h3 class="text-lg font-bold text-on-surface">Revenue Trend</h3>
+          <h3 class="text-lg font-bold text-on-surface">{{ $t('dashboard.revenueTrend') }}</h3>
           <select 
             v-model="trendPeriod"
             class="bg-surface-container-low border border-outline-variant text-on-surface font-mono text-xs font-bold rounded-lg px-3 py-1.5 focus:ring-1 focus:ring-primary outline-none cursor-pointer"
           >
-            <option value="Last 7 Days">Last 7 Days</option>
-            <option value="This Month">This Month</option>
-            <option value="This Year">This Year</option>
+            <option value="Last 7 Days">{{ $t('dashboard.last7Days') }}</option>
+            <option value="This Month">{{ $t('dashboard.thisMonth') }}</option>
+            <option value="This Year">{{ $t('dashboard.thisYear') }}</option>
           </select>
         </div>
 
@@ -270,14 +270,14 @@
       <div class="flex flex-col gap-6">
         <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-md p-6 md:p-7 flex flex-col justify-between flex-1">
           <div>
-            <h3 class="text-md font-bold text-on-surface mb-4">Payment Breakdown</h3>
+            <h3 class="text-md font-bold text-on-surface mb-4">{{ $t('dashboard.paymentBreakdown') }}</h3>
             <div class="space-y-4">
               <!-- Cash -->
               <div>
                 <div class="flex justify-between text-xs font-semibold mb-1">
                   <span class="text-on-surface flex items-center font-bold">
                     <span class="w-2.5 h-2.5 rounded-full bg-[#F4511E] mr-2"></span>
-                    Cash (Register)
+                    {{ $t('dashboard.cashRegister') }}
                   </span>
                   <span class="font-mono text-on-surface-variant font-bold">{{ paymentPercentages.cash }}%</span>
                 </div>
@@ -291,7 +291,7 @@
                 <div class="flex justify-between text-xs font-semibold mb-1">
                   <span class="text-on-surface flex items-center font-bold">
                     <span class="w-2.5 h-2.5 rounded-full bg-[#3b82f6] mr-2"></span>
-                    M-Pesa (Mobile)
+                    {{ $t('dashboard.mpesaMobile') }}
                   </span>
                   <span class="font-mono text-on-surface-variant font-bold">{{ paymentPercentages.mobile }}%</span>
                 </div>
@@ -305,7 +305,7 @@
                 <div class="flex justify-between text-xs font-semibold mb-1">
                   <span class="text-on-surface flex items-center font-bold">
                     <span class="w-2.5 h-2.5 rounded-full bg-[#8b5cf6] mr-2"></span>
-                    Card Terminal
+                    {{ $t('dashboard.cardTerminal') }}
                   </span>
                   <span class="font-mono text-on-surface-variant font-bold">{{ paymentPercentages.card }}%</span>
                 </div>
@@ -318,8 +318,8 @@
 
           <div class="border-t border-outline-variant pt-4 mt-6">
             <div class="text-xs text-on-surface-variant flex items-center justify-between font-mono">
-              <span>Verified End-of-Day Ledger</span>
-              <span class="text-primary font-bold">ONLINE</span>
+              <span>{{ $t('dashboard.verifiedLedger') }}</span>
+              <span class="text-primary font-bold">{{ $t('dashboard.online') }}</span>
             </div>
           </div>
         </div>
@@ -332,12 +332,12 @@
       <!-- Top Products section (takes 2 columns) -->
       <div class="lg:col-span-2 bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col">
         <div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
-          <h3 class="text-md font-bold text-on-surface">Top Selling Products Today</h3>
+          <h3 class="text-md font-bold text-on-surface">{{ $t('dashboard.topSellingToday') }}</h3>
           <button 
             @click="router.push('/top-selling-products')"
             class="text-primary text-xs font-bold hover:underline cursor-pointer flex items-center gap-1"
           >
-            <span>View Full Catalog</span>
+            <span>{{ $t('dashboard.viewFullCatalog') }}</span>
             <ArrowRight class="w-3.5 h-3.5" />
           </button>
         </div>
@@ -355,11 +355,11 @@
               <div class="flex-1 min-w-0 mr-4">
                 <p class="text-sm font-bold text-on-surface truncate">{{ item.name }}</p>
                 <p class="text-xs text-on-surface-variant truncate font-mono">
-                  Category: Top Seller
+                  {{ $t('dashboard.categoryTopSeller') }}
                 </p>
               </div>
               <div class="text-right">
-                <p class="text-sm font-mono font-black text-on-surface">{{ item.quantity }} Units Sold</p>
+                <p class="text-sm font-mono font-black text-on-surface">{{ $t('dashboard.unitsSold', { count: item.quantity }) }}</p>
                 <p class="text-primary text-xs font-bold font-mono">{{ formatCurrency(item.revenue, currency) }}</p>
               </div>
             </div>
@@ -367,8 +367,8 @@
           <template v-else>
             <div class="p-8 text-center text-on-surface-variant font-medium text-sm flex flex-col items-center justify-center">
               <ShoppingBag class="w-8 h-8 text-outline-variant mb-2 animate-bounce" />
-              <p>No sales recorded today.</p>
-              <p class="text-xs text-outline mt-1">Check out items to register sales activity.</p>
+              <p>{{ $t('dashboard.noSalesToday') }}</p>
+              <p class="text-xs text-outline mt-1">{{ $t('dashboard.noSalesDesc') }}</p>
             </div>
           </template>
         </div>
@@ -377,7 +377,7 @@
       <!-- Quick Actions tile -->
       <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-md p-6 md:p-7 flex flex-col justify-between">
         <div>
-          <h3 class="text-md font-bold text-on-surface mb-4">Quick Shortcuts</h3>
+          <h3 class="text-md font-bold text-on-surface mb-4">{{ $t('dashboard.quickShortcuts') }}</h3>
           <div class="grid grid-cols-2 gap-3">
             <!-- Action: New Sale -->
             <button 
@@ -385,7 +385,7 @@
               class="bg-surface-container-low hover:bg-primary-container/20 border border-outline-variant rounded-xl p-4 flex flex-col items-center justify-center text-center transition-colors group cursor-pointer"
             >
               <ShoppingBag class="w-6 h-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
-              <span class="text-xs font-bold text-on-surface">New Sale</span>
+              <span class="text-xs font-bold text-on-surface">{{ $t('dashboard.newSale') }}</span>
             </button>
 
             <!-- Action: Add Product -->
@@ -394,7 +394,7 @@
               class="bg-surface-container-low hover:bg-primary-container/20 border border-outline-variant rounded-xl p-4 flex flex-col items-center justify-center text-center transition-colors group cursor-pointer"
             >
               <PlusSquare class="w-6 h-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
-              <span class="text-xs font-bold text-on-surface">Inventory List</span>
+              <span class="text-xs font-bold text-on-surface">{{ $t('dashboard.inventoryList') }}</span>
             </button>
 
             <!-- Action: Receive Stock -->
@@ -403,7 +403,7 @@
               class="bg-surface-container-low hover:bg-primary-container/20 border border-outline-variant rounded-xl p-4 flex flex-col items-center justify-center text-center transition-colors group cursor-pointer"
             >
               <Package class="w-6 h-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
-              <span class="text-xs font-bold text-on-surface">Receive Stock</span>
+              <span class="text-xs font-bold text-on-surface">{{ $t('dashboard.receiveStock') }}</span>
             </button>
 
             <!-- Action: Customers info -->
@@ -412,7 +412,7 @@
               class="bg-surface-container-low hover:bg-primary-container/20 border border-outline-variant rounded-xl p-4 flex flex-col items-center justify-center text-center transition-colors group cursor-pointer"
             >
               <Users class="w-6 h-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
-              <span class="text-xs font-bold text-on-surface">Customers</span>
+              <span class="text-xs font-bold text-on-surface">{{ $t('dashboard.customers') }}</span>
             </button>
 
             <!-- EOD report builder -->
@@ -421,7 +421,7 @@
               class="bg-surface-container-low hover:bg-primary text-on-surface hover:text-on-primary border border-outline-variant rounded-xl p-3 flex flex-col items-center justify-center text-center transition-all duration-200 group cursor-pointer col-span-2"
             >
               <FileSpreadsheet class="w-5 h-5 mb-1 group-hover:scale-110 transition-transform" />
-              <span class="text-xs font-bold">Compile End of Day Ledger</span>
+              <span class="text-xs font-bold">{{ $t('dashboard.compileEod') }}</span>
             </button>
           </div>
         </div>
@@ -446,14 +446,13 @@ import {
   FileSpreadsheet,
   Users,
   Coffee,
-  GlassWater,
-  Sparkles,
   Clock,
   ArrowRight
 } from 'lucide-vue-next';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { formatCurrency } from '../models/mockData';
 import { api } from '../services/api';
+import { t, currentLocale } from '../i18n';
 
 const vm = useAppViewModel();
 const router = useRouter();
@@ -697,7 +696,8 @@ const handleMouseLeave = () => {
 };
 
 const formattedDate = computed(() => {
-  return new Date().toLocaleDateString('en-US', { 
+  const locale = currentLocale.value === 'sw' ? 'sw-TZ' : 'en-US';
+  return new Date().toLocaleDateString(locale, { 
     weekday: 'short', 
     year: 'numeric', 
     month: 'short', 
@@ -706,10 +706,14 @@ const formattedDate = computed(() => {
 });
 
 const handleEodReport = () => {
-  alert(`EOD Report successfully compiled!\n- Today's Store Revenue: ${formatCurrency(todaySales.value, currency.value)}\n- Today's Transactions: ${todayTransactionsCount.value}\n- Gross margins consolidated: ${weeklyMarginPercent.value}%\nFile downloaded as "JENGA-EOD-REPORT.csv" (simulated)`);
+  alert(t('dashboard.eodCompiledAlert', {
+    revenue: formatCurrency(todaySales.value, currency.value),
+    txns: todayTransactionsCount.value,
+    margin: weeklyMarginPercent.value
+  }));
 };
 
 const alertCustomers = () => {
-  alert("Customers list: Managed securely. Authenticated access needed.");
+  alert(t('dashboard.customersAlert'));
 };
 </script>

@@ -24,7 +24,7 @@
           class="flex items-center gap-2 px-3.5 py-1.5 bg-primary-container/30 border border-primary/30 text-primary rounded-xl font-bold text-xs hover:bg-primary-container/50 transition-all cursor-pointer shadow-xs"
         >
           <LayoutGrid class="w-4 h-4" />
-          <span>Modules & Access</span>
+          <span>{{ $t('topNav.modulesAndAccess') }}</span>
           <ChevronDown class="w-3.5 h-3.5 transition-transform" :class="modulesMenuOpen ? 'rotate-180' : ''" />
         </button>
 
@@ -39,14 +39,14 @@
           <div class="flex items-center justify-between border-b border-outline-variant/60 pb-2.5">
             <div class="flex items-center gap-2">
               <Shield class="w-4 h-4 text-primary" />
-              <span class="text-xs font-black uppercase tracking-wider text-on-surface font-mono">Assigned Modules</span>
+              <span class="text-xs font-black uppercase tracking-wider text-on-surface font-mono">{{ $t('topNav.assignedModules') }}</span>
             </div>
             <button 
               @click="navigateToModule('/checkout')"
               class="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
             >
               <ShoppingCart class="w-3.5 h-3.5" />
-              <span>Checkout POS</span>
+              <span>{{ $t('topNav.checkoutPos') }}</span>
             </button>
           </div>
 
@@ -60,11 +60,11 @@
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
                   <ShoppingCart class="w-3.5 h-3.5 text-primary" />
-                  Checkout POS
+                  {{ $t('topNav.checkoutPos') }}
                 </span>
                 <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">POS</span>
               </div>
-              <span class="text-[11px] text-on-surface-variant/70 line-clamp-1">Process sales terminal</span>
+              <span class="text-[11px] text-on-surface-variant/70 line-clamp-1">{{ $t('topNav.processSalesTerminal') }}</span>
             </button>
 
             <!-- Inventory Module -->
@@ -77,14 +77,14 @@
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
                   <Package class="w-3.5 h-3.5 text-primary" />
-                  Inventory
+                  {{ $t('sidebar.inventory') }}
                 </span>
               </div>
               <div class="flex flex-wrap gap-1 mt-1">
-                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">VIEW</span>
-                <span v-if="vm.hasPermission('inventory:create')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-container/40 text-primary">ADD</span>
-                <span v-if="vm.hasPermission('inventory:edit')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">EDIT</span>
-                <span v-if="vm.hasPermission('inventory:delete')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-error/10 text-error">DELETE</span>
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">{{ $t('common.view').toUpperCase() }}</span>
+                <span v-if="vm.hasPermission('inventory:create')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-container/40 text-primary">{{ $t('common.add').toUpperCase() }}</span>
+                <span v-if="vm.hasPermission('inventory:edit')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">{{ $t('common.edit').toUpperCase() }}</span>
+                <span v-if="vm.hasPermission('inventory:delete')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-error/10 text-error">{{ $t('common.delete').toUpperCase() }}</span>
               </div>
             </button>
 
@@ -98,14 +98,14 @@
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
                   <Users class="w-3.5 h-3.5 text-primary" />
-                  Customers
+                  {{ $t('sidebar.customers') }}
                 </span>
               </div>
               <div class="flex flex-wrap gap-1 mt-1">
-                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">VIEW</span>
-                <span v-if="vm.hasPermission('customers:create')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-container/40 text-primary">ADD</span>
-                <span v-if="vm.hasPermission('customers:edit')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">EDIT</span>
-                <span v-if="vm.hasPermission('customers:delete')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-error/10 text-error">DELETE</span>
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">{{ $t('common.view').toUpperCase() }}</span>
+                <span v-if="vm.hasPermission('customers:create')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-container/40 text-primary">{{ $t('common.add').toUpperCase() }}</span>
+                <span v-if="vm.hasPermission('customers:edit')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">{{ $t('common.edit').toUpperCase() }}</span>
+                <span v-if="vm.hasPermission('customers:delete')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-error/10 text-error">{{ $t('common.delete').toUpperCase() }}</span>
               </div>
             </button>
 
@@ -119,14 +119,14 @@
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
                   <Truck class="w-3.5 h-3.5 text-primary" />
-                  Suppliers
+                  {{ $t('sidebar.suppliers') }}
                 </span>
               </div>
               <div class="flex flex-wrap gap-1 mt-1">
-                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">VIEW</span>
-                <span v-if="vm.hasPermission('suppliers:create')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-container/40 text-primary">ADD</span>
-                <span v-if="vm.hasPermission('suppliers:edit')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">EDIT</span>
-                <span v-if="vm.hasPermission('suppliers:delete')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-error/10 text-error">DELETE</span>
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">{{ $t('common.view').toUpperCase() }}</span>
+                <span v-if="vm.hasPermission('suppliers:create')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-container/40 text-primary">{{ $t('common.add').toUpperCase() }}</span>
+                <span v-if="vm.hasPermission('suppliers:edit')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">{{ $t('common.edit').toUpperCase() }}</span>
+                <span v-if="vm.hasPermission('suppliers:delete')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-error/10 text-error">{{ $t('common.delete').toUpperCase() }}</span>
               </div>
             </button>
 
@@ -140,12 +140,12 @@
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
                   <BarChart3 class="w-3.5 h-3.5 text-primary" />
-                  Reports
+                  {{ $t('sidebar.reports') }}
                 </span>
               </div>
               <div class="flex flex-wrap gap-1 mt-1">
-                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">VIEW</span>
-                <span v-if="vm.hasPermission('reports:export')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">EXPORT</span>
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">{{ $t('common.view').toUpperCase() }}</span>
+                <span v-if="vm.hasPermission('reports:export')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">{{ $t('common.export').toUpperCase() }}</span>
               </div>
             </button>
 
@@ -159,23 +159,43 @@
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
                   <UserCog class="w-3.5 h-3.5 text-primary" />
-                  Users
+                  {{ $t('sidebar.users') }}
                 </span>
               </div>
               <div class="flex flex-wrap gap-1 mt-1">
-                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">VIEW</span>
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">{{ $t('common.view').toUpperCase() }}</span>
+              </div>
+            </button>
+
+            <!-- Finance Module -->
+            <button 
+              v-if="vm.hasPermission('finance:view')"
+              @click="navigateToModule('/finance')"
+              class="flex flex-col gap-1 p-3 rounded-xl border transition-colors text-left group cursor-pointer"
+              :class="currentView === 'finance' ? 'border-primary bg-primary-container/20' : 'border-outline-variant/60 bg-surface-container-lowest hover:border-primary'"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
+                  <Landmark class="w-3.5 h-3.5 text-primary" />
+                  {{ $t('sidebar.finance') }}
+                </span>
+              </div>
+              <div class="flex flex-wrap gap-1 mt-1">
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">{{ $t('common.view').toUpperCase() }}</span>
+                <span v-if="vm.hasPermission('finance:add_account')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-container/40 text-primary">ADD ACCOUNT</span>
+                <span v-if="vm.hasPermission('finance:new_journal_entry')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">NEW JOURNAL</span>
               </div>
             </button>
           </div>
 
           <!-- Footer Shortcut -->
           <div class="pt-2 border-t border-outline-variant/60 flex justify-between items-center text-xs">
-            <span class="text-on-surface-variant/70 text-[11px]">Desktop POS Terminal</span>
+            <span class="text-on-surface-variant/70 text-[11px]">{{ $t('topNav.desktopPosTerminal') }}</span>
             <button 
               @click="navigateToModule('/checkout')"
               class="font-bold text-primary hover:underline cursor-pointer flex items-center gap-1"
             >
-              <span>Return to Checkout POS &rarr;</span>
+              <span>{{ $t('topNav.returnToCheckout') }}</span>
             </button>
           </div>
         </div>
@@ -183,22 +203,25 @@
     </div>
 
     <!-- Trailing Actions -->
-    <div class="flex items-center gap-4 ml-auto">
+    <div class="flex items-center gap-3 ml-auto">
+      <!-- Language Selector Dropdown -->
+      <LanguageSelector variant="dropdown" />
+
       <!-- Notifications (Admins & Managers only) -->
       <NotificationDropdown v-if="isStoreAdminOrManager" />
 
-      <!-- License Expiry Display Button (Replaces Low Stock) -->
+      <!-- License Expiry Display Button -->
       <button 
         @click="handleExpiryClick"
         class="hidden lg:flex items-center px-4 h-10 rounded-full border text-xs font-semibold transition-all cursor-pointer gap-2 shadow-xs"
         :class="isWithin3Months 
           ? 'border-error text-error bg-error-container/20 hover:bg-error-container/30 animate-zoom-pulse shadow-error/10' 
           : 'border-outline-variant text-on-surface hover:bg-surface-container'"
-        :title="isWithin1Month ? 'Urgent: License expiring soon! Click for renewal info.' : 'View license expiry & details'"
+        :title="isWithin1Month ? $t('topNav.licenseUrgentTooltip') : $t('topNav.licenseDetailsTooltip')"
       >
         <Clock class="w-4 h-4" :class="isWithin3Months ? 'text-error' : 'text-primary'" />
         <span>
-          {{ daysUntilExpiry !== null && daysUntilExpiry <= 30 ? `Expires in ${daysUntilExpiry} days` : `Expires: ${formattedExpiryDate}` }}
+          {{ daysUntilExpiry !== null && daysUntilExpiry <= 30 ? $t('topNav.licenseExpiresIn', { days: daysUntilExpiry }) : $t('topNav.licenseExpiresOn', { date: formattedExpiryDate }) }}
         </span>
       </button>
 
@@ -209,7 +232,7 @@
         class="hidden sm:flex items-center px-4 h-10 rounded-full bg-primary text-on-primary font-semibold text-xs hover:bg-opacity-90 active:scale-95 transition-all cursor-pointer gap-2 shadow-sm"
       >
         <List class="w-4 h-4" />
-        <span>Shift sales</span>
+        <span>{{ $t('topNav.shiftSales') }}</span>
       </button>
 
       <!-- Switch Branch Button (ADMIN only) -->
@@ -217,10 +240,10 @@
         v-if="isAdmin"
         @click="router.push('/select-branch')"
         class="hidden sm:flex items-center px-4 h-10 rounded-full bg-primary-container/30 border border-primary/30 text-primary font-bold text-xs hover:bg-primary-container/50 active:scale-95 transition-all cursor-pointer gap-2 shadow-sm"
-        title="Switch Active Branch"
+        :title="$t('topNav.switchBranchTooltip')"
       >
         <Building2 class="w-4 h-4" />
-        <span>Switch Branch</span>
+        <span>{{ $t('topNav.switchBranch') }}</span>
       </button>
 
       <!-- Download Desktop App (Web only) -->
@@ -228,10 +251,10 @@
         v-if="!isElectron"
         @click="showDownloadModal = true"
         class="hidden sm:flex items-center px-4 h-10 rounded-full bg-surface-container border border-outline-variant/60 text-on-surface font-bold text-xs hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer gap-2 shadow-xs"
-        title="Download Desktop Application"
+        :title="$t('topNav.downloadDesktopTooltip')"
       >
         <Download class="w-4 h-4 text-primary" />
-        <span>Desktop App</span>
+        <span>{{ $t('topNav.desktopApp') }}</span>
       </button>
 
       <!-- Cash Movements Button -->
@@ -241,7 +264,7 @@
         class="hidden sm:flex items-center px-4 h-10 rounded-full bg-surface-container text-on-surface font-semibold text-xs hover:bg-surface-variant active:scale-95 transition-all cursor-pointer gap-2 border border-outline-variant"
       >
         <Coins class="w-4 h-4 text-primary" />
-        <span>Cash Movements</span>
+        <span>{{ $t('topNav.cashMovements') }}</span>
       </button>
 
       <!-- Status Actions -->
@@ -254,7 +277,7 @@
           v-if="userRole === 'CASHIER'"
           @click="$emit('logout')"
           class="p-2 hover:bg-error-container rounded-full transition-colors flex items-center justify-center cursor-pointer text-error"
-          title="Logout"
+          :title="$t('topNav.logout')"
         >
           <LogOut class="w-5 h-5 stroke-[2px]" />
         </button>
@@ -264,7 +287,7 @@
     <!-- Download Desktop App Modal -->
     <Modal 
       :isOpen="showDownloadModal" 
-      title="Download Desktop App" 
+      :title="$t('topNav.downloadAppTitle')" 
       :onClose="() => showDownloadModal = false"
       maxWidth="max-w-md"
     >
@@ -272,19 +295,19 @@
         <div class="w-16 h-16 bg-primary-container/20 rounded-full flex items-center justify-center mb-2">
           <Download class="w-8 h-8 text-primary" />
         </div>
-        <h3 class="text-xl font-black text-on-surface">Experience the Full Power</h3>
+        <h3 class="text-xl font-black text-on-surface">{{ $t('topNav.downloadAppHeader') }}</h3>
         <p class="text-sm text-on-surface-variant leading-relaxed">
-          Get the ultimate point-of-sale experience with our dedicated Desktop Application. Enjoy enhanced performance, hardware integration (barcode scanners, receipt printers), and offline resilience.
+          {{ $t('topNav.downloadAppDesc') }}
         </p>
         
         <div class="bg-surface-container-low w-full rounded-xl p-4 mt-2 border border-outline-variant/50">
           <div class="flex justify-between items-center text-sm font-mono">
-            <span class="text-on-surface-variant uppercase font-bold text-xs">Current Version</span>
-            <span class="text-primary font-bold">Latest Release</span>
+            <span class="text-on-surface-variant uppercase font-bold text-xs">{{ $t('topNav.currentVersion') }}</span>
+            <span class="text-primary font-bold">{{ $t('topNav.latestRelease') }}</span>
           </div>
           <div class="flex justify-between items-center text-sm font-mono mt-2 pt-2 border-t border-outline-variant/30">
-            <span class="text-on-surface-variant uppercase font-bold text-xs">Platform</span>
-            <span class="text-on-surface font-bold">Windows (x64)</span>
+            <span class="text-on-surface-variant uppercase font-bold text-xs">{{ $t('topNav.platform') }}</span>
+            <span class="text-on-surface font-bold">{{ $t('topNav.windowsPlatform') }}</span>
           </div>
         </div>
 
@@ -295,24 +318,24 @@
           class="w-full mt-4 bg-primary text-on-primary py-3.5 rounded-xl font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
         >
           <Download class="w-5 h-5" />
-          <span>Download .exe Installer</span>
+          <span>{{ $t('topNav.downloadInstaller') }}</span>
         </a>
       </div>
     </Modal>
 
     <!-- License Information Modal -->
     <LicenseModal 
-      :isOpen="showLicenseModal"
+      :isOpen="showLicenseModal" 
       :onClose="() => showLicenseModal = false"
     />
 
     <!-- License Expiry Renewal Alert Modal Popup -->
     <LicenseExpiryAlertModal 
-      :isOpen="showExpiryAlertModal"
-      :daysLeft="daysUntilExpiry || 0"
-      :expiresAt="licenseData?.expiresAt"
-      :onClose="closeExpiryAlertModal"
-      :onViewDetails="openFullLicenseFromAlert"
+      :isOpen="showExpiryAlertModal" 
+      :daysLeft="daysUntilExpiry || 0" 
+      :expiresAt="licenseData?.expiresAt" 
+      :onClose="closeExpiryAlertModal" 
+      :onViewDetails="openFullLicenseFromAlert" 
     />
   </header>
 </template>
@@ -325,14 +348,12 @@ import LicenseModal from '../common/LicenseModal.vue';
 import LicenseExpiryAlertModal from '../common/LicenseExpiryAlertModal.vue';
 import SyncStatusBadge from '../SyncStatusBadge.vue';
 import NotificationDropdown from '../notifications/NotificationDropdown.vue';
+import LanguageSelector from '../common/LanguageSelector.vue';
+import { t } from '../../i18n';
 
 import { api } from '../../services/api';
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
 import { 
-  Search, 
-  Cloud, 
-  User, 
-  AlertTriangle, 
   Menu,
   LogOut,
   Coins,
@@ -348,10 +369,11 @@ import {
   Users,
   Truck,
   BarChart3,
-  UserCog
+  UserCog,
+  Landmark
 } from 'lucide-vue-next';
 
-const props = defineProps<{
+defineProps<{
   brandName: string;
   lowStockCount: number;
   searchQuery: string;
@@ -424,7 +446,7 @@ const isWithin1Month = computed(() => {
 });
 
 const formattedExpiryDate = computed(() => {
-  if (!licenseData.value?.expiresAt) return 'Active';
+  if (!licenseData.value?.expiresAt) return t('topNav.licenseExpiresActive');
   try {
     const d = new Date(licenseData.value.expiresAt);
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -457,26 +479,16 @@ const isElectron = computed(() => {
 });
 
 const isAdmin = computed(() => {
-  const role = props.userRole || localStorage.getItem('cashierRole');
+  const role = vm.userRole.value || localStorage.getItem('cashierRole');
   return role === 'ADMIN' || role === 'SUPER_ADMIN';
 });
 
 const isStoreAdminOrManager = computed(() => {
-  const role = props.userRole || localStorage.getItem('cashierRole');
+  const role = vm.userRole.value || localStorage.getItem('cashierRole');
   return role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'MANAGER';
 });
 
 const currentView = computed(() => {
   return route.path.substring(1) || 'dashboard';
 });
-
-const searchPlaceholder = computed(() => {
-  if (currentView.value === 'checkout') return 'Scan barcode or type name...';
-  if (currentView.value === 'inventory') return 'Search product or category...';
-  return 'Search catalog, tickets, reports...';
-});
-
-const alertSync = () => {
-  alert("Terminal database is currently synchronized client-side with full persistence.");
-};
 </script>

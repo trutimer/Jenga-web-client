@@ -1,8 +1,8 @@
 <template>
   <Modal 
     :isOpen="isOpen" 
-    title="License & Authorization" 
-    subtitle="Enterprise License & System Credentials"
+    :title="$t('license.title')" 
+    :subtitle="$t('license.subtitle')"
     :onClose="onClose"
     maxWidth="max-w-2xl"
   >
@@ -10,7 +10,7 @@
     <div v-if="isLoading" class="py-12 flex flex-col items-center justify-center space-y-4">
       <div class="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
       <p class="text-xs font-mono font-bold text-on-surface-variant uppercase tracking-wider animate-pulse">
-        Validating License Cryptography...
+        {{ $t('license.validating') }}
       </p>
     </div>
 
@@ -20,7 +20,7 @@
         <ShieldAlert class="w-8 h-8 stroke-[2px]" />
       </div>
       <div class="space-y-1.5 max-w-md mx-auto">
-        <h4 class="text-lg font-bold text-on-surface">No Branch License Found</h4>
+        <h4 class="text-lg font-bold text-on-surface">{{ $t('license.noLicenseFound') }}</h4>
         <p class="text-xs text-on-surface-variant font-mono leading-relaxed bg-surface-container-low p-3.5 rounded-xl border border-outline-variant/50 select-all">
           {{ error }}
         </p>
@@ -30,7 +30,7 @@
           @click="fetchLicense"
           class="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-xl hover:bg-primary/90 transition-all cursor-pointer shadow-sm"
         >
-          Retry Validation
+          {{ $t('license.retryValidation') }}
         </button>
       </div>
     </div>
@@ -87,10 +87,10 @@
         <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-3.5 flex flex-col justify-between">
           <div class="flex items-center gap-2 text-on-surface-variant mb-1">
             <Smartphone class="w-4 h-4 text-primary" />
-            <span class="text-[11px] font-mono font-bold uppercase tracking-wider">Device Limit</span>
+            <span class="text-[11px] font-mono font-bold uppercase tracking-wider">{{ $t('license.deviceLimit') }}</span>
           </div>
           <div class="text-base font-extrabold text-on-surface">
-            {{ license.maxDevices || 10 }} Max Terminals
+            {{ $t('license.maxTerminals', { count: license.maxDevices || 10 }) }}
           </div>
         </div>
 
@@ -98,7 +98,7 @@
         <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-3.5 flex flex-col justify-between">
           <div class="flex items-center gap-2 text-on-surface-variant mb-1">
             <Calendar class="w-4 h-4 text-primary" />
-            <span class="text-[11px] font-mono font-bold uppercase tracking-wider">Issued Date</span>
+            <span class="text-[11px] font-mono font-bold uppercase tracking-wider">{{ $t('license.issuedDate') }}</span>
           </div>
           <div class="text-base font-extrabold text-on-surface">
             {{ formatDate(license.issuedAt || license.startsAt) }}
@@ -109,7 +109,7 @@
         <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-3.5 flex flex-col justify-between col-span-2 sm:col-span-1">
           <div class="flex items-center gap-2 text-on-surface-variant mb-1">
             <Clock class="w-4 h-4 text-primary" />
-            <span class="text-[11px] font-mono font-bold uppercase tracking-wider">Valid Until</span>
+            <span class="text-[11px] font-mono font-bold uppercase tracking-wider">{{ $t('license.validUntil') }}</span>
           </div>
           <div class="text-base font-extrabold text-on-surface">
             {{ formatDate(license.expiresAt) }}
@@ -120,7 +120,7 @@
       <!-- Features & Upgrades -->
       <div v-if="license.features && license.features.length > 0" class="space-y-2">
         <h4 class="text-xs font-mono font-bold text-on-surface-variant uppercase tracking-widest">
-          Active Features & Modules
+          {{ $t('license.activeFeatures') }}
         </h4>
         <div class="flex flex-wrap gap-2">
           <div 
@@ -138,9 +138,9 @@
       <div v-if="license.devices && license.devices.length > 0" class="space-y-2">
         <div class="flex items-center justify-between">
           <h4 class="text-xs font-mono font-bold text-on-surface-variant uppercase tracking-widest">
-            Registered Terminals ({{ license.devices.length }})
+            {{ $t('license.registeredTerminals', { count: license.devices.length }) }}
           </h4>
-          <span class="text-[11px] font-mono text-outline">Hardware Fingerprints</span>
+          <span class="text-[11px] font-mono text-outline">{{ $t('license.hardwareFingerprints') }}</span>
         </div>
         <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl divide-y divide-outline-variant/30 max-h-36 overflow-y-auto">
           <div 
@@ -166,10 +166,10 @@
       <div class="bg-surface-container-low rounded-xl p-3.5 border border-outline-variant/50 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-on-surface-variant gap-2">
         <div class="flex items-center gap-2 font-mono">
           <Lock class="w-4 h-4 text-primary shrink-0" />
-          <span>Validated {{ license.validationCount || 1 }} times • RSA-2048 Signed</span>
+          <span>{{ $t('license.validatedTimes', { count: license.validationCount || 1 }) }}</span>
         </div>
         <div class="font-mono text-[11px] text-outline">
-          Last Check: {{ formatDate(license.lastValidationAt) }}
+          {{ $t('license.lastCheck', { date: formatDate(license.lastValidationAt) }) }}
         </div>
       </div>
     </div>
@@ -180,7 +180,7 @@
         @click="onClose"
         class="w-full sm:w-auto px-6 py-2.5 bg-primary text-on-primary font-bold text-xs rounded-xl hover:bg-primary/90 transition-all cursor-pointer shadow-sm"
       >
-        Close License Info
+        {{ $t('license.closeLicenseInfo') }}
       </button>
     </template>
   </Modal>
@@ -193,13 +193,12 @@ import { api } from '../../services/api';
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
 import { 
   ShieldCheck, 
-  ShieldAlert,
+  ShieldAlert, 
   Copy, 
   Check, 
   Calendar, 
   Clock, 
   Smartphone, 
-  AlertTriangle, 
   CheckCircle2, 
   Lock, 
   Laptop 

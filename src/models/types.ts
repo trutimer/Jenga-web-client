@@ -16,6 +16,9 @@ export interface Product {
   conversionFactor?: number;
   unitOfMeasure?: 'PCS' | 'KG' | 'LTR';
   expiryDate?: string;
+  isActive?: boolean;
+  categoryName?: string;
+  supplierName?: string;
 }
 
 export interface CartItem {
@@ -242,6 +245,30 @@ export interface AppUser {
   createdAt: string;
   shifts?: CashierShift[];
   permissions?: string[];
+  twoFactorEnabled?: boolean;
+  twoFactorRemindAt?: string;
+  twoFactorPrompt?: boolean;
+}
+
+export interface TwoFactorSetupResponse {
+  secret: string;
+  otpAuthUri: string;
+  accountIdentifier: string;
+  issuer: string;
+}
+
+export interface TwoFactorVerifyRequest {
+  totpCode: string;
+}
+
+export interface TwoFactorDisableRequest {
+  password: string;
+  totpCode?: string;
+}
+
+export interface TwoFactorReminderRequest {
+  remindAt?: string;
+  days?: number;
 }
 
 export interface UserCreateRequest {

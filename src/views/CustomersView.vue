@@ -10,9 +10,9 @@
     <!-- HEADER BAR -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <h1 class="text-2xl md:text-3xl font-black text-primary tracking-tight">Customer Management</h1>
+        <h1 class="text-2xl md:text-3xl font-black text-primary tracking-tight">{{ $t('customers.title') }}</h1>
         <p class="text-sm text-on-surface-variant font-medium mt-1">
-          Manage customer accounts, credit terms, contact persons, payments, and financial statements.
+          {{ $t('customers.subtitle') }}
         </p>
       </div>
 
@@ -22,7 +22,7 @@
           class="h-11 px-5 rounded-xl border border-outline-variant text-on-surface hover:bg-surface-container-high active:scale-[0.98] font-bold text-sm flex items-center gap-2 cursor-pointer transition-all bg-white shadow-xs"
         >
           <Download class="w-4 h-4" />
-          <span>Export</span>
+          <span>{{ $t('common.export') }}</span>
         </button>
 
         <button 
@@ -30,7 +30,7 @@
           class="h-11 px-5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 active:scale-[0.98] font-bold text-sm flex items-center gap-2 cursor-pointer transition-all shadow-sm"
         >
           <CreditCard class="w-4 h-4" />
-          <span>Record Payment</span>
+          <span>{{ $t('customers.recordPayment') }}</span>
         </button>
 
         <button 
@@ -39,7 +39,7 @@
           class="h-11 px-5 rounded-xl bg-primary text-on-primary hover:bg-opacity-95 active:scale-[0.98] font-bold text-sm flex items-center gap-2 cursor-pointer transition-all shadow-sm"
         >
           <Plus class="w-4 h-4" />
-          <span>Add New Customer</span>
+          <span>{{ $t('customers.addNewCustomer') }}</span>
         </button>
       </div>
     </div>
@@ -48,20 +48,20 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs flex flex-col justify-between">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Total Customers</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('customers.totalCustomers') }}</span>
           <div class="p-2 rounded-xl bg-primary/10 text-primary">
             <Users class="w-5 h-5" />
           </div>
         </div>
         <div class="mt-3">
           <span class="text-2xl font-black text-primary">{{ stats.totalCount }}</span>
-          <span class="text-xs font-semibold text-on-surface-variant/70 ml-2">({{ stats.activeCount }} Active)</span>
+          <span class="text-xs font-semibold text-on-surface-variant/70 ml-2">{{ $t('customers.activeCount', { count: stats.activeCount }) }}</span>
         </div>
       </div>
 
       <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs flex flex-col justify-between">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Total Outstanding</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('customers.totalOutstanding') }}</span>
           <div class="p-2 rounded-xl bg-error/10 text-error">
             <DollarSign class="w-5 h-5" />
           </div>
@@ -73,7 +73,7 @@
 
       <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs flex flex-col justify-between">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Total Credit Limit</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('customers.totalCreditLimit') }}</span>
           <div class="p-2 rounded-xl bg-tertiary/10 text-tertiary">
             <ShieldCheck class="w-5 h-5" />
           </div>
@@ -85,7 +85,7 @@
 
       <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs flex flex-col justify-between">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Company Accounts</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('customers.companyAccounts') }}</span>
           <div class="p-2 rounded-xl bg-secondary/10 text-secondary">
             <Building2 class="w-5 h-5" />
           </div>
@@ -104,7 +104,7 @@
           type="text"
           v-model="searchQuery"
           @input="debouncedFetch"
-          placeholder="Search by name, code, phone, email, TIN..."
+          :placeholder="$t('customers.searchPlaceholder')"
           class="w-full h-11 pl-11 pr-4 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm transition-all text-on-surface placeholder:text-on-surface-variant/40"
         />
       </div>
@@ -117,9 +117,9 @@
             @change="fetchCustomers"
             class="w-full h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-semibold appearance-none cursor-pointer text-on-surface"
           >
-            <option value="ALL">All Types</option>
-            <option value="PERSON">Person / Individual</option>
-            <option value="COMPANY">Company</option>
+            <option value="ALL">{{ $t('customers.allTypes') }}</option>
+            <option value="PERSON">{{ $t('customers.individual') }}</option>
+            <option value="COMPANY">{{ $t('customers.company') }}</option>
           </select>
           <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant/60 text-xs font-bold font-mono">▼</div>
         </div>
@@ -131,9 +131,9 @@
             @change="fetchCustomers"
             class="w-full h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-semibold appearance-none cursor-pointer text-on-surface"
           >
-            <option value="ALL">All Status</option>
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
+            <option value="ALL">{{ $t('customers.allStatus') }}</option>
+            <option value="ACTIVE">{{ $t('common.active') }}</option>
+            <option value="INACTIVE">{{ $t('common.inactive') }}</option>
           </select>
           <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant/60 text-xs font-bold font-mono">▼</div>
         </div>
@@ -143,10 +143,10 @@
           v-if="searchQuery || selectedType !== 'ALL' || selectedStatus !== 'ALL'"
           @click="resetFilters"
           class="h-11 px-4 rounded-xl text-primary border border-primary/20 hover:bg-primary/5 text-sm font-bold flex items-center gap-1.5 cursor-pointer shrink-0 transition-all bg-white"
-          title="Reset Filters"
+          :title="$t('suppliers.resetFilters')"
         >
           <FilterIcon class="w-4 h-4" />
-          <span>Reset</span>
+          <span>{{ $t('common.reset') }}</span>
         </button>
       </div>
     </div>
@@ -155,21 +155,21 @@
     <div class="rounded-2xl border border-outline-variant bg-surface-container-lowest overflow-hidden shadow-xs">
       <div v-if="isLoading" class="p-12 text-center">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
-        <p class="mt-3 text-sm font-bold text-on-surface-variant">Loading customers...</p>
+        <p class="mt-3 text-sm font-bold text-on-surface-variant">{{ $t('customers.loadingCustomers') }}</p>
       </div>
 
       <div v-else class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="bg-surface-container-low border-b border-outline-variant text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">
-              <th class="py-4.5 px-6 min-w-[220px]">Customer</th>
-              <th class="py-4.5 px-6 min-w-[120px]">Type</th>
-              <th class="py-4.5 px-6 min-w-[200px]">Contact Info</th>
-              <th class="py-4.5 px-6 min-w-[140px]">TIN / VRN</th>
-              <th class="py-4.5 px-6 min-w-[150px]">Credit Limit</th>
-              <th class="py-4.5 px-6 min-w-[160px]">Outstanding Balance</th>
-              <th class="py-4.5 px-6 min-w-[100px]">Status</th>
-              <th class="py-4.5 px-6 text-right min-w-[140px]">Actions</th>
+              <th class="py-4.5 px-6 min-w-[220px]">{{ $t('customers.tableCustomer') }}</th>
+              <th class="py-4.5 px-6 min-w-[120px]">{{ $t('customers.tableType') }}</th>
+              <th class="py-4.5 px-6 min-w-[200px]">{{ $t('customers.tableContactInfo') }}</th>
+              <th class="py-4.5 px-6 min-w-[140px]">{{ $t('customers.tableTinVrn') }}</th>
+              <th class="py-4.5 px-6 min-w-[150px]">{{ $t('customers.tableCreditLimit') }}</th>
+              <th class="py-4.5 px-6 min-w-[160px]">{{ $t('customers.tableOutstanding') }}</th>
+              <th class="py-4.5 px-6 min-w-[100px]">{{ $t('customers.tableStatus') }}</th>
+              <th class="py-4.5 px-6 text-right min-w-[140px]">{{ $t('customers.tableActions') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-outline-variant/60">
@@ -185,7 +185,7 @@
                     <span>{{ customer.displayName || (customer.firstName ? `${customer.firstName} ${customer.lastName || ''}` : customer.companyName) }}</span>
                   </div>
                   <div class="text-xs font-mono text-on-surface-variant/70 mt-0.5 flex items-center gap-2">
-                    <span>Code: {{ customer.code || 'N/A' }}</span>
+                    <span>{{ $t('customers.codeLabel') }}: {{ customer.code || 'N/A' }}</span>
                     <span v-if="customer.companyName && customer.customerType === 'COMPANY'" class="text-[10px] font-sans bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface-variant">
                       {{ customer.companyName }}
                     </span>
@@ -199,7 +199,7 @@
                   class="px-2.5 py-1 rounded-full text-xs font-extrabold inline-flex items-center gap-1"
                   :class="getTypeBadgeClass(customer.customerType)"
                 >
-                  {{ customer.customerType }}
+                  {{ getCustomerTypeLabel(customer.customerType) }}
                 </span>
               </td>
 
@@ -215,7 +215,7 @@
                     <span class="truncate max-w-[160px]">{{ customer.email }}</span>
                   </div>
                   <div v-if="!customer.phone && !customer.email" class="text-on-surface-variant/50 italic">
-                    No contact info
+                    {{ $t('customers.noContactInfo') }}
                   </div>
                 </div>
               </td>
@@ -286,8 +286,8 @@
               <td colspan="8" class="py-12 text-center">
                 <div class="flex flex-col items-center justify-center gap-2">
                   <Users class="w-10 h-10 text-on-surface-variant/30" />
-                  <p class="text-sm font-bold text-on-surface-variant">No customers found</p>
-                  <p class="text-xs text-on-surface-variant/60">Try adjusting your filters or add a new customer</p>
+                  <p class="text-sm font-bold text-on-surface-variant">{{ $t('customers.noCustomersFound') }}</p>
+                  <p class="text-xs text-on-surface-variant/60">{{ $t('customers.noCustomersFoundDesc') }}</p>
                 </div>
               </td>
             </tr>
@@ -298,7 +298,11 @@
       <!-- PAGINATION FOOTER -->
       <div v-if="totalElements > 0" class="py-4 px-6 border-t border-outline-variant bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-4 select-none">
         <span class="text-xs font-semibold text-on-surface-variant">
-          Showing {{ currentPage * pageSize + 1 }}-{{ Math.min((currentPage + 1) * pageSize, totalElements) }} of {{ totalElements }} customers
+          {{ $t('customers.showingCount', {
+            from: currentPage * pageSize + 1,
+            to: Math.min((currentPage + 1) * pageSize, totalElements),
+            total: totalElements
+          }) }}
         </span>
 
         <div class="flex items-center gap-1.5">
@@ -337,20 +341,20 @@
     <Modal
       :isOpen="showCustomerModal"
       :onClose="() => showCustomerModal = false"
-      :title="isEditing ? 'Edit Customer' : 'Add New Customer'"
-      subtitle="Fill in the customer information below."
+      :title="isEditing ? $t('customers.editCustomerModalTitle') : $t('customers.addCustomerModalTitle')"
+      :subtitle="$t('customers.addCustomerModalSubtitle')"
       maxWidth="max-w-2xl"
     >
       <form @submit.prevent="saveCustomer" novalidate class="space-y-4">
         <!-- Customer Type Selection -->
         <div>
-          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1.5">Customer Type *</label>
+          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1.5">{{ $t('customers.customerTypeRequired') }}</label>
           <div class="grid grid-cols-2 gap-3">
             <button
               type="button"
               v-for="t in [
-                { key: 'PERSON', label: 'Person / Individual' },
-                { key: 'COMPANY', label: 'Company' }
+                { key: 'PERSON', label: $t('customers.individual') },
+                { key: 'COMPANY', label: $t('customers.company') }
               ]"
               :key="t.key"
               @click="setCustomerType(t.key as CustomerType)"
@@ -365,7 +369,7 @@
         <!-- Name Fields (Person vs Company) -->
         <div v-if="customerForm.customerType === 'PERSON'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">First Name *</label>
+            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.firstNameRequired') }}</label>
             <input 
               type="text"
               v-model="customerForm.firstName"
@@ -380,7 +384,7 @@
             </p>
           </div>
           <div>
-            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Last Name *</label>
+            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.lastNameRequired') }}</label>
             <input 
               type="text"
               v-model="customerForm.lastName"
@@ -398,7 +402,7 @@
 
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Company Name *</label>
+            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.companyNameRequired') }}</label>
             <input 
               type="text"
               v-model="customerForm.companyName"
@@ -413,7 +417,7 @@
             </p>
           </div>
           <div>
-            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Display Name</label>
+            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.displayName') }}</label>
             <input 
               type="text"
               v-model="customerForm.displayName"
@@ -426,7 +430,7 @@
         <!-- Contact Info -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Phone Number *</label>
+            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.phoneNumberRequired') }}</label>
             <input 
               type="text"
               v-model="customerForm.phone"
@@ -442,7 +446,7 @@
           </div>
           <div>
             <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">
-              Email Address <span v-if="isCompany" class="text-error">*</span>
+              {{ $t('customers.emailAddress') }} <span v-if="isCompany" class="text-error">*</span>
             </label>
             <input 
               type="email"
@@ -463,7 +467,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">
-              TIN Number <span v-if="isCompany" class="text-error">*</span>
+              {{ $t('customers.tinNumber') }} <span v-if="isCompany" class="text-error">*</span>
             </label>
             <input 
               type="text"
@@ -480,7 +484,7 @@
           </div>
           <div>
             <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">
-              VRN Number <span v-if="isCompany" class="text-error">*</span>
+              {{ $t('customers.vrnNumber') }} <span v-if="isCompany" class="text-error">*</span>
             </label>
             <input 
               type="text"
@@ -500,7 +504,7 @@
         <!-- Address & Credit -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Physical Address *</label>
+            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.physicalAddressRequired') }}</label>
             <input 
               type="text"
               v-model="customerForm.address"
@@ -515,7 +519,7 @@
             </p>
           </div>
           <div>
-            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Credit Limit (TZS) *</label>
+            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.creditLimitRequired', { currency: 'TZS' }) }}</label>
             <input 
               type="number"
               v-model.number="customerForm.creditLimit"
@@ -535,13 +539,13 @@
 
         <!-- Status -->
         <div>
-          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Status</label>
+          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.tableStatus') }}</label>
           <select 
             v-model="customerForm.status"
             class="w-full h-10 px-3 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-semibold"
           >
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
+            <option value="ACTIVE">{{ $t('common.active') }}</option>
+            <option value="INACTIVE">{{ $t('common.inactive') }}</option>
           </select>
         </div>
 
@@ -551,14 +555,14 @@
             @click="showCustomerModal = false"
             class="h-10 px-4 rounded-xl border border-outline-variant text-sm font-bold hover:bg-surface-container-high cursor-pointer"
           >
-            Cancel
+            {{ $t('common.cancel') }}
           </button>
           <button 
             type="submit" 
             :disabled="isSubmitting"
             class="h-10 px-5 rounded-xl bg-primary text-on-primary text-sm font-bold hover:bg-opacity-90 disabled:opacity-50 cursor-pointer"
           >
-            {{ isSubmitting ? 'Saving...' : (isEditing ? 'Update Customer' : 'Create Customer') }}
+            {{ isSubmitting ? $t('common.loading') : (isEditing ? $t('customers.updateCustomerBtn') : $t('customers.createCustomerBtn')) }}
           </button>
         </div>
       </form>
@@ -568,21 +572,21 @@
     <Modal
       :isOpen="showPaymentModal"
       :onClose="() => showPaymentModal = false"
-      title="Record Customer Payment"
-      subtitle="Record payment received from a customer."
+      :title="$t('customers.recordPaymentModalTitle')"
+      :subtitle="$t('customers.recordPaymentModalSubtitle')"
       maxWidth="max-w-lg"
     >
       <form @submit.prevent="savePayment" class="space-y-4">
         <!-- Customer Select -->
         <div>
-          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Customer *</label>
+          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.customerRequired') }}</label>
           <select 
             v-model="paymentForm.customerId"
             required
             @change="onPaymentCustomerChange"
             class="w-full h-10 px-3 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-semibold"
           >
-            <option value="" disabled>Select Customer</option>
+            <option value="" disabled>{{ $t('checkout.selectCustomer') }}</option>
             <option v-for="c in customers" :key="c.id" :value="c.id">
               {{ c.displayName || c.companyName || (c.firstName + ' ' + (c.lastName || '')) }} (Bal: {{ formatCurrency(c.outstandingBalance || 0) }})
             </option>
@@ -591,12 +595,12 @@
 
         <!-- Optional Invoice Select -->
         <div v-if="unpaidCustomerInvoices.length > 0">
-          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Invoice (Optional)</label>
+          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.invoiceOptional') }}</label>
           <select 
             v-model="paymentForm.invoiceId"
             class="w-full h-10 px-3 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-semibold"
           >
-            <option value="">General Account Payment</option>
+            <option value="">{{ $t('customers.generalAccountPayment') }}</option>
             <option v-for="inv in unpaidCustomerInvoices" :key="inv.id" :value="inv.id">
               Invoice #{{ inv.invoiceNumber }} - Due: {{ formatCurrency(inv.dueAmount) }} (Status: {{ inv.status }})
             </option>
@@ -606,7 +610,7 @@
         <!-- Amount & Payment Method -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Amount (TZS) *</label>
+            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.amountRequired', { currency: 'TZS' }) }}</label>
             <input 
               type="number"
               v-model.number="paymentForm.amount"
@@ -619,24 +623,24 @@
           </div>
 
           <div>
-            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Payment Method *</label>
+            <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('checkout.selectMethod') }}</label>
             <select 
               v-model="paymentForm.paymentMethod"
               required
               class="w-full h-10 px-3 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-semibold"
             >
-              <option value="CASH">Cash</option>
-              <option value="CARD">Card</option>
-              <option value="MOBILE_MONEY">Mobile Money</option>
-              <option value="BANK_TRANSFER">Bank Transfer</option>
-              <option value="CHEQUE">Cheque</option>
+              <option value="CASH">{{ $t('checkout.cash') }}</option>
+              <option value="CARD">{{ $t('checkout.card') }}</option>
+              <option value="MOBILE_MONEY">{{ $t('checkout.mpesa') }}</option>
+              <option value="BANK_TRANSFER">{{ $t('inventory.bankTransfer') }}</option>
+              <option value="CHEQUE">{{ $t('customers.cheque') }}</option>
             </select>
           </div>
         </div>
 
         <!-- Reference Number -->
         <div>
-          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Reference Number / Transaction ID</label>
+          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.referenceNumber') }}</label>
           <input 
             type="text"
             v-model="paymentForm.referenceNumber"
@@ -647,11 +651,11 @@
 
         <!-- Notes -->
         <div>
-          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Notes</label>
+          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.notes') }}</label>
           <textarea 
             v-model="paymentForm.notes"
             rows="2"
-            placeholder="Optional payment notes..."
+            :placeholder="$t('customers.notesPlaceholder')"
             class="w-full p-3 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm"
           ></textarea>
         </div>
@@ -662,7 +666,7 @@
             @click="showPaymentModal = false"
             class="h-10 px-4 rounded-xl border border-outline-variant text-sm font-bold hover:bg-surface-container-high cursor-pointer"
           >
-            Cancel
+            {{ $t('common.cancel') }}
           </button>
           <button 
             type="submit" 
@@ -670,7 +674,7 @@
             class="h-10 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold active:scale-[0.98] disabled:opacity-50 cursor-pointer transition-all shadow-sm flex items-center justify-center gap-2"
           >
             <CreditCard v-if="!isSubmitting" class="w-4 h-4" />
-            <span>{{ isSubmitting ? 'Recording Payment...' : 'Record Payment' }}</span>
+            <span>{{ isSubmitting ? $t('customers.recordingPayment') : $t('customers.recordPayment') }}</span>
           </button>
         </div>
       </form>
@@ -680,7 +684,7 @@
     <Modal
       :isOpen="showDetailsModal"
       :onClose="() => showDetailsModal = false"
-      :title="selectedCustomer ? (selectedCustomer.displayName || selectedCustomer.companyName || (selectedCustomer.firstName + ' ' + (selectedCustomer.lastName || ''))) : 'Customer Details'"
+      :title="selectedCustomer ? (selectedCustomer.displayName || selectedCustomer.companyName || (selectedCustomer.firstName + ' ' + (selectedCustomer.lastName || ''))) : $t('customers.customerDetailsTitle')"
       :subtitle="`Code: ${selectedCustomer?.code || 'N/A'} | Type: ${selectedCustomer?.customerType || ''}`"
       maxWidth="max-w-4xl"
     >
@@ -689,11 +693,11 @@
         <div class="flex items-center border-b border-outline-variant gap-2 overflow-x-auto">
           <button 
             v-for="tab in [
-              { id: 'overview', label: 'Overview', icon: Building2 },
-              { id: 'contacts', label: 'Contact Persons', icon: UserCheck },
-              { id: 'invoices', label: 'Invoices', icon: FileText },
-              { id: 'payments', label: 'Payments', icon: CreditCard },
-              { id: 'statement', label: 'Financial Statement', icon: PieChart }
+              { id: 'overview', label: $t('customers.tabOverview'), icon: Building2 },
+              { id: 'contacts', label: $t('customers.tabContactPersons'), icon: UserCheck },
+              { id: 'invoices', label: $t('customers.tabInvoices'), icon: FileText },
+              { id: 'payments', label: $t('customers.tabPayments'), icon: CreditCard },
+              { id: 'statement', label: $t('customers.tabStatement'), icon: PieChart }
             ]"
             :key="tab.id"
             @click="activeTab = tab.id"
@@ -709,17 +713,17 @@
         <div v-if="activeTab === 'overview'" class="space-y-6">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-surface-container-low border border-outline-variant">
             <div>
-              <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">Credit Limit</span>
+              <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">{{ $t('customers.tableCreditLimit') }}</span>
               <p class="text-lg font-black text-on-surface font-mono">{{ formatCurrency(selectedCustomer.creditLimit || 0) }}</p>
             </div>
             <div>
-              <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">Outstanding Balance</span>
+              <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">{{ $t('customers.tableOutstanding') }}</span>
               <p class="text-lg font-black font-mono" :class="(selectedCustomer.outstandingBalance || 0) > 0 ? 'text-error' : 'text-success'">
                 {{ formatCurrency(selectedCustomer.outstandingBalance || 0) }}
               </p>
             </div>
             <div>
-              <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">Account Status</span>
+              <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">{{ $t('customers.tableStatus') }}</span>
               <p class="mt-1">
                 <span class="px-2.5 py-0.5 rounded-full text-xs font-bold inline-block" :class="selectedCustomer.status === 'ACTIVE' ? 'bg-success/10 text-success' : 'bg-on-surface-variant/10 text-on-surface-variant'">
                   {{ selectedCustomer.status }}
@@ -730,17 +734,17 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div class="p-4 rounded-xl border border-outline-variant space-y-2">
-              <h4 class="font-bold text-xs font-mono text-on-surface-variant uppercase">Basic Details</h4>
-              <p><span class="text-on-surface-variant">Full Name:</span> <strong class="text-on-surface">{{ selectedCustomer.firstName }} {{ selectedCustomer.lastName }}</strong></p>
-              <p><span class="text-on-surface-variant">Company:</span> <strong class="text-on-surface">{{ selectedCustomer.companyName || '-' }}</strong></p>
-              <p><span class="text-on-surface-variant">Registered Branch:</span> <strong class="text-on-surface">{{ selectedCustomer.registeredBranchName || 'Main' }}</strong></p>
+              <h4 class="font-bold text-xs font-mono text-on-surface-variant uppercase">{{ $t('customers.basicDetails') }}</h4>
+              <p><span class="text-on-surface-variant">{{ $t('customers.contactFullName') }}:</span> <strong class="text-on-surface">{{ selectedCustomer.firstName }} {{ selectedCustomer.lastName }}</strong></p>
+              <p><span class="text-on-surface-variant">{{ $t('customers.company') }}:</span> <strong class="text-on-surface">{{ selectedCustomer.companyName || '-' }}</strong></p>
+              <p><span class="text-on-surface-variant">{{ $t('topNav.branch') }}:</span> <strong class="text-on-surface">{{ selectedCustomer.registeredBranchName || 'Main' }}</strong></p>
             </div>
 
             <div class="p-4 rounded-xl border border-outline-variant space-y-2">
-              <h4 class="font-bold text-xs font-mono text-on-surface-variant uppercase">Tax & Location</h4>
-              <p><span class="text-on-surface-variant">TIN Number:</span> <strong class="font-mono text-on-surface">{{ selectedCustomer.tinNumber || '-' }}</strong></p>
-              <p><span class="text-on-surface-variant">VRN Number:</span> <strong class="font-mono text-on-surface">{{ selectedCustomer.vrnNumber || '-' }}</strong></p>
-              <p><span class="text-on-surface-variant">Address:</span> <strong class="text-on-surface">{{ selectedCustomer.address || '-' }}</strong></p>
+              <h4 class="font-bold text-xs font-mono text-on-surface-variant uppercase">{{ $t('customers.taxAndLocation') }}</h4>
+              <p><span class="text-on-surface-variant">{{ $t('customers.tinNumber') }}:</span> <strong class="font-mono text-on-surface">{{ selectedCustomer.tinNumber || '-' }}</strong></p>
+              <p><span class="text-on-surface-variant">{{ $t('customers.vrnNumber') }}:</span> <strong class="font-mono text-on-surface">{{ selectedCustomer.vrnNumber || '-' }}</strong></p>
+              <p><span class="text-on-surface-variant">{{ $t('common.address') }}:</span> <strong class="text-on-surface">{{ selectedCustomer.address || '-' }}</strong></p>
             </div>
           </div>
         </div>
@@ -748,13 +752,13 @@
         <!-- TAB 2: CONTACT PERSONS -->
         <div v-if="activeTab === 'contacts'" class="space-y-4">
           <div class="flex items-center justify-between">
-            <h4 class="font-bold text-sm text-primary">Key Contact Persons</h4>
+            <h4 class="font-bold text-sm text-primary">{{ $t('customers.tabContactPersons') }}</h4>
             <button 
               @click="openAddContactModal"
               class="h-9 px-3 rounded-lg bg-primary text-on-primary text-xs font-bold flex items-center gap-1.5 cursor-pointer"
             >
               <Plus class="w-3.5 h-3.5" />
-              <span>Add Contact Person</span>
+              <span>{{ $t('customers.addContactTitle') }}</span>
             </button>
           </div>
 
@@ -767,9 +771,9 @@
               <div>
                 <div class="flex items-center justify-between">
                   <h5 class="font-bold text-sm text-on-surface">{{ contact.fullName }}</h5>
-                  <span v-if="contact.primary" class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase">Primary</span>
+                  <span v-if="contact.primary" class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase">{{ $t('customers.primaryTag') }}</span>
                 </div>
-                <p class="text-xs text-on-surface-variant mt-0.5">{{ contact.designation || 'Contact Person' }}</p>
+                <p class="text-xs text-on-surface-variant mt-0.5">{{ contact.designation || $t('customers.contactPerson') }}</p>
                 <div class="mt-3 text-xs space-y-1">
                   <p v-if="contact.phone" class="flex items-center gap-1.5"><Phone class="w-3.5 h-3.5 text-on-surface-variant" /> {{ contact.phone }}</p>
                   <p v-if="contact.email" class="flex items-center gap-1.5"><Mail class="w-3.5 h-3.5 text-on-surface-variant" /> {{ contact.email }}</p>
@@ -780,14 +784,14 @@
                   @click="deleteContactPerson(contact.id!)"
                   class="text-xs text-error font-semibold hover:underline cursor-pointer"
                 >
-                  Remove
+                  {{ $t('common.delete') }}
                 </button>
               </div>
             </div>
           </div>
 
           <div v-else class="py-8 text-center border border-dashed border-outline-variant rounded-xl">
-            <p class="text-xs font-semibold text-on-surface-variant">No contact persons recorded for this customer.</p>
+            <p class="text-xs font-semibold text-on-surface-variant">{{ $t('customers.noContactPersons') }}</p>
           </div>
         </div>
 
@@ -797,13 +801,13 @@
             <table class="w-full text-left text-xs">
               <thead class="bg-surface-container-low border-b border-outline-variant font-mono font-bold text-on-surface-variant">
                 <tr>
-                  <th class="p-3">Invoice #</th>
-                  <th class="p-3">Total</th>
-                  <th class="p-3">Paid</th>
-                  <th class="p-3">Due</th>
-                  <th class="p-3">Status</th>
-                  <th class="p-3">Created</th>
-                  <th class="p-3 text-right">Actions</th>
+                  <th class="p-3">{{ $t('customers.invoiceNumber') }}</th>
+                  <th class="p-3">{{ $t('checkout.lineTotal') }}</th>
+                  <th class="p-3">{{ $t('customers.totalPaid') }}</th>
+                  <th class="p-3">{{ $t('checkout.outstanding') }}</th>
+                  <th class="p-3">{{ $t('customers.tableStatus') }}</th>
+                  <th class="p-3">{{ $t('receipt.date') }}</th>
+                  <th class="p-3 text-right">{{ $t('customers.tableActions') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-outline-variant">
@@ -827,12 +831,12 @@
                     >
                       <LoaderCircle v-if="downloadingInvoiceId === inv.id" class="w-3.5 h-3.5 animate-spin text-primary shrink-0" />
                       <Download v-else class="w-3.5 h-3.5 shrink-0" />
-                      <span>{{ downloadingInvoiceId === inv.id ? 'Loading items...' : 'Download PDF' }}</span>
+                      <span>{{ downloadingInvoiceId === inv.id ? $t('common.loading') : $t('customers.downloadPdf') }}</span>
                     </button>
                   </td>
                 </tr>
                 <tr v-if="customerInvoices.length === 0">
-                  <td colspan="7" class="p-6 text-center text-on-surface-variant">No invoices found for this customer.</td>
+                  <td colspan="7" class="p-6 text-center text-on-surface-variant">{{ $t('customers.noInvoicesFound') }}</td>
                 </tr>
               </tbody>
             </table>
@@ -845,11 +849,11 @@
             <table class="w-full text-left text-xs">
               <thead class="bg-surface-container-low border-b border-outline-variant font-mono font-bold text-on-surface-variant">
                 <tr>
-                  <th class="p-3">Payment #</th>
-                  <th class="p-3">Amount</th>
-                  <th class="p-3">Method</th>
-                  <th class="p-3">Reference</th>
-                  <th class="p-3">Date</th>
+                  <th class="p-3">{{ $t('customers.paymentNumber') }}</th>
+                  <th class="p-3">{{ $t('customers.amount') }}</th>
+                  <th class="p-3">{{ $t('checkout.selectMethod') }}</th>
+                  <th class="p-3">{{ $t('customers.referenceNumber') }}</th>
+                  <th class="p-3">{{ $t('receipt.date') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-outline-variant">
@@ -861,7 +865,7 @@
                   <td class="p-3 text-on-surface-variant">{{ pmt.paymentDate ? formatDate(pmt.paymentDate) : '-' }}</td>
                 </tr>
                 <tr v-if="customerPayments.length === 0">
-                  <td colspan="5" class="p-6 text-center text-on-surface-variant">No payment records found for this customer.</td>
+                  <td colspan="5" class="p-6 text-center text-on-surface-variant">{{ $t('customers.noPaymentsFound') }}</td>
                 </tr>
               </tbody>
             </table>
@@ -873,15 +877,15 @@
           <div v-if="customerStatement" class="space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-surface-container-low border border-outline-variant">
               <div>
-                <span class="text-xs font-mono font-bold text-on-surface-variant uppercase">Total Billed</span>
+                <span class="text-xs font-mono font-bold text-on-surface-variant uppercase">{{ $t('customers.totalBilled') }}</span>
                 <p class="text-xl font-black text-on-surface font-mono">{{ formatCurrency(customerStatement.totalBilled) }}</p>
               </div>
               <div>
-                <span class="text-xs font-mono font-bold text-on-surface-variant uppercase">Total Paid</span>
+                <span class="text-xs font-mono font-bold text-on-surface-variant uppercase">{{ $t('customers.totalPaid') }}</span>
                 <p class="text-xl font-black text-success font-mono">{{ formatCurrency(customerStatement.totalPaid) }}</p>
               </div>
               <div>
-                <span class="text-xs font-mono font-bold text-on-surface-variant uppercase">Outstanding Balance</span>
+                <span class="text-xs font-mono font-bold text-on-surface-variant uppercase">{{ $t('customers.totalOutstanding') }}</span>
                 <p class="text-xl font-black text-error font-mono">{{ formatCurrency(customerStatement.outstandingBalance) }}</p>
               </div>
             </div>
@@ -892,12 +896,12 @@
                 class="h-9 px-4 rounded-xl bg-primary text-on-primary text-xs font-bold flex items-center gap-1.5 cursor-pointer"
               >
                 <Printer class="w-3.5 h-3.5" />
-                <span>Print Statement</span>
+                <span>{{ $t('customers.printStatement') }}</span>
               </button>
             </div>
           </div>
           <div v-else class="p-6 text-center text-on-surface-variant">
-            Loading statement...
+            {{ $t('common.loading') }}
           </div>
         </div>
       </div>
@@ -907,13 +911,13 @@
     <Modal
       :isOpen="showContactModal"
       :onClose="() => showContactModal = false"
-      title="Add Contact Person"
-      subtitle="Add a new contact person for this customer."
+      :title="$t('customers.addContactTitle')"
+      :subtitle="$t('customers.addContactSubtitle')"
       maxWidth="max-w-md"
     >
       <form @submit.prevent="saveContactPerson" class="space-y-4">
         <div>
-          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Full Name *</label>
+          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.contactFullName') }} *</label>
           <input 
             type="text"
             v-model="contactForm.fullName"
@@ -924,7 +928,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Designation</label>
+          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('customers.contactDesignation') }}</label>
           <input 
             type="text"
             v-model="contactForm.designation"
@@ -934,7 +938,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Phone</label>
+          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('common.phone') }}</label>
           <input 
             type="text"
             v-model="contactForm.phone"
@@ -944,7 +948,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">Email</label>
+          <label class="block text-xs font-mono font-bold text-on-surface-variant uppercase mb-1">{{ $t('common.email') }}</label>
           <input 
             type="email"
             v-model="contactForm.email"
@@ -960,7 +964,7 @@
             v-model="contactForm.primary"
             class="w-4 h-4 text-primary rounded border-outline-variant cursor-pointer"
           />
-          <label for="primaryContact" class="text-sm font-semibold text-on-surface cursor-pointer">Set as Primary Contact</label>
+          <label for="primaryContact" class="text-sm font-semibold text-on-surface cursor-pointer">{{ $t('customers.setPrimaryContact') }}</label>
         </div>
 
         <div class="pt-4 border-t border-outline-variant flex justify-end gap-3">
@@ -969,14 +973,14 @@
             @click="showContactModal = false"
             class="h-10 px-4 rounded-xl border border-outline-variant text-sm font-bold hover:bg-surface-container-high cursor-pointer"
           >
-            Cancel
+            {{ $t('common.cancel') }}
           </button>
           <button 
             type="submit" 
             :disabled="isSubmitting"
             class="h-10 px-5 rounded-xl bg-primary text-on-primary text-sm font-bold hover:bg-opacity-90 disabled:opacity-50 cursor-pointer"
           >
-            Save Contact
+            {{ $t('customers.saveContact') }}
           </button>
         </div>
       </form>
@@ -1014,6 +1018,7 @@ import Modal from '../components/common/Modal.vue';
 import { customerService } from '../services/customerService';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { generateInvoicePdf } from '../utils/invoicePdfGenerator';
+import { t } from '../i18n';
 import type { 
   Customer, 
   CustomerType, 
@@ -1021,7 +1026,6 @@ import type {
   CustomerPayment, 
   Invoice, 
   CustomerStatement,
-  CustomerContactPerson,
   PaymentMethod
 } from '../models/types';
 
@@ -1380,7 +1384,7 @@ const openEditModal = (c: Customer) => {
 
 const saveCustomer = async () => {
   if (!validateCustomerForm()) {
-    showToast('Please fix the validation errors before saving.', 'error');
+    showToast(t('customers.fixValidationErrors'), 'error');
     return;
   }
 
@@ -1403,10 +1407,10 @@ const saveCustomer = async () => {
 
     if (isEditing.value && editingCustomerId.value) {
       await customerService.updateCustomer(editingCustomerId.value, payload);
-      showToast('Customer updated successfully', 'success');
+      showToast(t('customers.customerUpdatedSuccess'), 'success');
     } else {
       await customerService.createCustomer(payload);
-      showToast('Customer created successfully', 'success');
+      showToast(t('customers.customerCreatedSuccess'), 'success');
     }
 
     showCustomerModal.value = false;
@@ -1448,7 +1452,7 @@ const onPaymentCustomerChange = async () => {
 
 const savePayment = async () => {
   if (!paymentForm.value.customerId || paymentForm.value.amount <= 0) {
-    showToast('Please enter a valid customer and payment amount', 'error');
+    showToast(t('customers.enterValidPaymentAmount'), 'error');
     return;
   }
 
@@ -1476,7 +1480,7 @@ const savePayment = async () => {
       notes: paymentForm.value.notes
     });
 
-    showToast('Customer payment recorded successfully', 'success');
+    showToast(t('customers.paymentRecordedSuccess'), 'success');
     showPaymentModal.value = false;
     fetchCustomers();
   } catch (err: any) {
@@ -1491,7 +1495,6 @@ const downloadingInvoiceId = ref<string | null>(null);
 const handleDownloadInvoicePdf = async (inv: Invoice) => {
   if (!inv || !inv.id) return;
 
-  // If invoice bought items are not loaded, fetch them from backend with user indication
   if (!inv.items || inv.items.length === 0) {
     downloadingInvoiceId.value = inv.id;
     showToast(`Fetching invoice #${inv.invoiceNumber} bought items... Please wait.`, 'success');
@@ -1516,7 +1519,6 @@ const openDetailsModal = async (c: Customer) => {
 
   if (c.id) {
     try {
-      // Fetch fresh details, statement, invoices, payments concurrently
       const [fresh, stmt, invs, pmts] = await Promise.all([
         customerService.getCustomerById(c.id).catch(() => c),
         customerService.getCustomerStatement(c.id).catch(() => null),
@@ -1562,7 +1564,7 @@ const saveContactPerson = async () => {
       selectedCustomer.value.contactPersons = [];
     }
     selectedCustomer.value.contactPersons.push(created);
-    showToast('Contact person added', 'success');
+    showToast(t('customers.contactPersonAdded'), 'success');
     showContactModal.value = false;
   } catch (err: any) {
     showToast(err.message || 'Failed to add contact person', 'error');
@@ -1578,7 +1580,7 @@ const deleteContactPerson = async (contactId: string) => {
   try {
     await customerService.deleteContactPerson(selectedCustomer.value.id, contactId);
     selectedCustomer.value.contactPersons = (selectedCustomer.value.contactPersons || []).filter(cp => cp.id !== contactId);
-    showToast('Contact person removed', 'success');
+    showToast(t('customers.contactPersonRemoved'), 'success');
   } catch (err: any) {
     showToast(err.message || 'Failed to remove contact person', 'error');
   }
@@ -1615,7 +1617,7 @@ const handleExportCSV = () => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  showToast('Customers exported to CSV', 'success');
+  showToast(t('customers.customersExportedSuccess'), 'success');
 };
 
 // Utilities
@@ -1647,6 +1649,16 @@ const getTypeBadgeClass = (type: CustomerType) => {
     case 'PERSON':
     default:
       return 'bg-primary/10 text-primary border border-primary/20';
+  }
+};
+
+const getCustomerTypeLabel = (type: CustomerType) => {
+  switch (type) {
+    case 'COMPANY':
+      return t('customers.company');
+    case 'PERSON':
+    default:
+      return t('customers.individual');
   }
 };
 

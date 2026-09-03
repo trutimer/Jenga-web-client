@@ -1,8 +1,8 @@
 <template>
   <Modal 
     :isOpen="isOpen" 
-    title="License Renewal Notice" 
-    subtitle="Urgent Action Required Before Service Expiration"
+    :title="$t('license.renewalNoticeTitle')" 
+    :subtitle="$t('license.renewalSubtitle')"
     :onClose="onClose"
     maxWidth="max-w-md"
   >
@@ -16,13 +16,13 @@
       <!-- Days Countdown Card -->
       <div class="bg-gradient-to-br from-error-container/30 to-surface-container-low border border-error/30 rounded-2xl p-5 shadow-sm space-y-2">
         <span class="text-xs font-mono font-bold uppercase tracking-widest text-error">
-          Expiration Countdown
+          {{ $t('license.countdownTitle') }}
         </span>
         <div class="text-4xl font-black text-error tracking-tight flex items-center justify-center gap-2">
-          <span>{{ daysLeft <= 0 ? 'Expired' : `${daysLeft} Days` }}</span>
+          <span>{{ daysLeft <= 0 ? $t('license.expiredBadge') : $t('license.daysCountdown', { days: daysLeft }) }}</span>
         </div>
         <p class="text-xs text-on-surface-variant font-mono">
-          Valid Until: <span class="font-bold text-on-surface">{{ formatDate(expiresAt) }}</span>
+          {{ $t('license.validUntil') }}: <span class="font-bold text-on-surface">{{ formatDate(expiresAt) }}</span>
         </p>
       </div>
 
@@ -30,10 +30,10 @@
       <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-4 text-left text-xs space-y-2 leading-relaxed">
         <div class="flex items-center gap-2 text-error font-bold">
           <AlertTriangle class="w-4 h-4 shrink-0" />
-          <span>Service Disruption Warning</span>
+          <span>{{ $t('license.disruptionWarning') }}</span>
         </div>
         <p class="text-on-surface-variant">
-          Your enterprise branch license is approaching its expiration date. Please renew your subscription before <strong class="text-on-surface">{{ formatDate(expiresAt) }}</strong> to ensure uninterrupted access to POS checkout, cashier shifts, and analytics.
+          {{ $t('license.disruptionDesc', { date: formatDate(expiresAt) }) }}
         </p>
       </div>
     </div>
@@ -44,14 +44,14 @@
           @click="onClose"
           class="w-full sm:w-1/2 py-2.5 bg-surface-container-high text-on-surface font-bold text-xs rounded-xl hover:bg-surface-container-highest transition-all cursor-pointer"
         >
-          Remind Me Later
+          {{ $t('license.remindLater') }}
         </button>
         <button 
           @click="onViewDetails"
           class="w-full sm:w-1/2 py-2.5 bg-primary text-on-primary font-bold text-xs rounded-xl hover:bg-primary/90 transition-all cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
         >
           <ShieldCheck class="w-4 h-4" />
-          <span>View License Details</span>
+          <span>{{ $t('license.viewLicenseDetails') }}</span>
         </button>
       </div>
     </template>
@@ -62,7 +62,7 @@
 import Modal from './Modal.vue';
 import { Clock, AlertTriangle, ShieldCheck } from 'lucide-vue-next';
 
-const props = defineProps<{
+defineProps<{
   isOpen: boolean;
   onClose: () => void;
   onViewDetails: () => void;

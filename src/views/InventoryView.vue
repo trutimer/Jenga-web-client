@@ -4,20 +4,20 @@
     <!-- HEADER SECTION -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 bg-surface">
       <div>
-        <h1 class="text-[32px] font-bold text-on-surface tracking-tight leading-tight">Product Inventory</h1>
-        <p class="text-sm text-on-surface-variant mt-1">Manage catalog, pricing, and stock levels across branches.</p>
+        <h1 class="text-[32px] font-bold text-on-surface tracking-tight leading-tight">{{ $t('inventory.title') }}</h1>
+        <p class="text-sm text-on-surface-variant mt-1">{{ $t('inventory.subtitle') }}</p>
       </div>
       
       <!-- ACTION BUTTONS -->
       <div class="flex items-center gap-3">
         <button 
-          @click="vm.fetchProducts()"
-          :disabled="vm.isFetchingProducts.value"
+          @click="handleRefresh"
+          :disabled="vm.isFetchingProducts.value || isFetchingInactive"
           class="h-10 px-3.5 rounded-lg border border-outline hover:bg-surface-container-low text-on-surface-variant font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm text-center bg-surface-container-lowest disabled:opacity-60"
-          title="Refresh Product Catalog"
+          :title="$t('inventory.refreshCatalog')"
         >
-          <RotateCw :class="['w-4 h-4 text-on-surface-variant', vm.isFetchingProducts.value ? 'animate-spin text-primary' : '']" />
-          <span>Refresh</span>
+          <RotateCw :class="['w-4 h-4 text-on-surface-variant', (vm.isFetchingProducts.value || isFetchingInactive) ? 'animate-spin text-primary' : '']" />
+          <span>{{ $t('common.refresh') }}</span>
         </button>
 
         <button 
@@ -26,23 +26,16 @@
           class="h-10 px-4 rounded-lg border border-outline hover:bg-surface-container-low text-on-surface-variant font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm text-center bg-surface-container-lowest"
         >
           <Upload class="w-4 h-4 text-on-surface-variant" />
-          <span>Bulk Import</span>
-        </button>
-        
-        <button 
-          @click="alertExport"
-          class="h-10 px-4 rounded-lg border border-outline hover:bg-surface-container-low text-on-surface-variant font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm text-center bg-surface-container-lowest"
-        >
-          <Download class="w-4 h-4 text-on-surface-variant" />
-          <span>Export</span>
+          <span>{{ $t('inventory.bulkImport') }}</span>
         </button>
         
         <button 
           v-if="vm.hasPermission('inventory:create')"
           @click="showAddModal = true"
-          class="h-10 px-4.5 rounded-lg font-bold text-sm text-white flex items-center gap-2 transition-all cursor-pointer shadow-sm text-center border-0 bg-primary text-on-primary bg-primary text-on-primary">
+          class="h-10 px-4.5 rounded-lg font-bold text-sm text-white flex items-center gap-2 transition-all cursor-pointer shadow-sm text-center border-0 bg-primary text-on-primary"
+        >
           <Plus class="w-4.5 h-4.5 text-on-primary" />
-          <span>Add Product</span>
+          <span>{{ $t('inventory.addProduct') }}</span>
         </button>
       </div>
     </div>
@@ -53,25 +46,94 @@
       <!-- LEFT COLUMN: FILTERS SECTION -->
       <div class="w-full lg:w-64 xl:w-72 shrink-0 space-y-6">
         <div class="flex justify-between items-center mb-1">
-          <h2 class="text-xl font-bold text-on-surface">Filters</h2>
+          <h2 class="text-xl font-bold text-on-surface">{{ $t('inventory.filters') }}</h2>
           <button 
             @click="handleResetFilters"
             class="text-sm font-semibold hover:opacity-80 cursor-pointer bg-transparent border-0 text-primary"
           >
-            Reset
+            {{ $t('inventory.resetFilters') }}
           </button>
         </div>
 
+        <!-- FILTER: CATALOG STATUS (Active / Inactive Toggle) -->
+        <div class="space-y-3.5">
+          <div class="flex items-center justify-between">
+            <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">{{ $t('inventory.catalogVisibility') }}</span>
+            <span 
+              v-if="!showInactive && !vm.isFetchingProducts.value"
+              class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/10 text-primary border border-primary/20"
+            >
+              {{ $t('inventory.activeCount', { count: vm.products.value.length }) }}
+            </span>
+            <span 
+              v-else-if="showInactive && hasFetchedInactive && !isFetchingInactive"
+              class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-error/10 text-error border border-error/20"
+            >
+              {{ $t('inventory.inactiveCount', { count: inactiveProducts.length }) }}
+            </span>
+          </div>
+
+          <div 
+            @click="toggleShowInactive(!showInactive)" 
+            class="flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer select-none"
+            :class="showInactive ? 'bg-error/5 border-error/30 text-error hover:bg-error/10' : 'bg-surface-container-low border-outline-variant text-on-surface hover:bg-surface-container'"
+          >
+            <div class="flex items-center gap-2.5">
+              <div 
+                class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                :class="showInactive ? 'bg-error/15 text-error' : 'bg-surface-container-high text-on-surface-variant'"
+              >
+                <EyeOff v-if="showInactive" class="w-4 h-4" />
+                <Eye v-else class="w-4 h-4" />
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <p class="text-xs font-bold leading-tight truncate">{{ showInactive ? $t('inventory.inactiveProducts') : $t('inventory.activeProducts') }}</p>
+                  <span 
+                    v-if="!showInactive" 
+                    class="text-[11px] font-mono font-bold text-primary"
+                  >
+                    ({{ vm.products.value.length }})
+                  </span>
+                  <span 
+                    v-else-if="hasFetchedInactive && !isFetchingInactive" 
+                    class="text-[11px] font-mono font-bold text-error"
+                  >
+                    ({{ inactiveProducts.length }})
+                  </span>
+                  <RotateCw v-else-if="isFetchingInactive" class="w-3 h-3 animate-spin text-error shrink-0" />
+                </div>
+                <p class="text-[11px] text-on-surface-variant/80 mt-0.5 truncate">
+                  {{ showInactive ? $t('inventory.deactivatedItems') : $t('inventory.liveCatalogItems') }}
+                </p>
+              </div>
+            </div>
+            
+            <!-- Switch slider toggle -->
+            <div 
+              class="w-9 h-5 rounded-full transition-colors relative p-0.5 flex items-center shrink-0"
+              :class="showInactive ? 'bg-error' : 'bg-surface-container-highest'"
+            >
+              <div 
+                class="w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200"
+                :class="showInactive ? 'translate-x-4' : 'translate-x-0'"
+              />
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-outline-variant/65" />
+
         <!-- FILTER: PRODUCT NAME SEARCH -->
         <div class="space-y-3.5">
-          <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">Search Product</span>
+          <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">{{ $t('inventory.searchProduct') }}</span>
           <div class="relative">
             <Search class="w-4 h-4 text-outline absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
               type="text"
               v-model="productNameSearch"
               @input="currentPage = 1"
-              placeholder="Search product name..."
+              :placeholder="$t('inventory.searchProductPlaceholder')"
               class="w-full bg-surface-container-low pl-9 pr-8 py-2 border border-outline-variant rounded-lg text-xs outline-none focus:border-primary transition-all font-semibold placeholder:text-outline text-on-surface"
             />
             <button 
@@ -89,7 +151,7 @@
 
         <!-- FILTER: CATEGORY -->
         <div class="space-y-3.5">
-          <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">Category</span>
+          <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">{{ $t('inventory.category') }}</span>
           
           <div class="space-y-2.5">
             <!-- Beverages Category line -->
@@ -101,7 +163,7 @@
               >
                 <Check v-if="selectedCategories.includes('Beverages')" class="w-3.5 h-3.5 text-white" />
               </div>
-              <span>Beverages ({{ countByCategory['Beverages'] || 0 }})</span>
+              <span>{{ $t('inventory.beverages') }} ({{ countByCategory['Beverages'] || 0 }})</span>
             </label>
 
             <!-- Snacks Category line -->
@@ -113,7 +175,7 @@
               >
                 <Check v-if="selectedCategories.includes('Snacks')" class="w-3.5 h-3.5 text-white" />
               </div>
-              <span>Snacks ({{ countByCategory['Snacks'] || 0 }})</span>
+              <span>{{ $t('inventory.snacks') }} ({{ countByCategory['Snacks'] || 0 }})</span>
             </label>
 
             <!-- Dairy Category line -->
@@ -125,7 +187,7 @@
               >
                 <Check v-if="selectedCategories.includes('Dairy Products')" class="w-3.5 h-3.5 text-white" />
               </div>
-              <span>Dairy & Fresh ({{ countByCategory['Dairy Products'] || 0 }})</span>
+              <span>{{ $t('inventory.dairyFresh') }} ({{ countByCategory['Dairy Products'] || 0 }})</span>
             </label>
 
             <!-- Household Category line -->
@@ -137,7 +199,7 @@
               >
                 <Check v-if="selectedCategories.includes('Household')" class="w-3.5 h-3.5 text-white" />
               </div>
-              <span>Household ({{ countByCategory['Household'] || 0 }})</span>
+              <span>{{ $t('inventory.household') }} ({{ countByCategory['Household'] || 0 }})</span>
             </label>
 
             <!-- Show Extra categories if any -->
@@ -163,7 +225,7 @@
               @click="showAllCategories = !showAllCategories"
               class="text-[12px] font-bold text-on-surface-variant hover:text-on-surface flex items-center gap-1 mt-1 cursor-pointer bg-transparent border-0"
             >
-              <span>{{ showAllCategories ? 'Show less' : 'Show all' }}</span>
+              <span>{{ showAllCategories ? $t('inventory.showLess') : $t('inventory.showMore') }}</span>
               <ChevronDown class="w-3.5 h-3.5 transition-transform" :class="showAllCategories ? 'rotate-180' : ''" />
             </button>
           </div>
@@ -173,7 +235,7 @@
 
         <!-- FILTER: STOCK STATUS -->
         <div class="space-y-3.5">
-          <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">Stock Status</span>
+          <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">{{ $t('inventory.stockStatus') }}</span>
           
           <div class="space-y-3">
             <label 
@@ -181,7 +243,7 @@
               :key="st.value"
               @click="selectStockStatus(st.value)"
               class="flex items-center gap-3 text-[13px] font-semibold cursor-pointer"
-              :class="st.highlight ? 'text-error hover:text-error hover:text-error' : 'text-on-surface-variant hover:text-on-surface'"
+              :class="st.highlight ? 'text-error' : 'text-on-surface-variant hover:text-on-surface'"
             >
               <div class="w-5 h-5 rounded-full border border-outline flex items-center justify-center relative bg-surface-container-lowest">
                 <div 
@@ -198,14 +260,14 @@
 
         <!-- FILTER: SUPPLIER SEARCH -->
         <div class="space-y-4">
-          <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">Supplier</span>
+          <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">{{ $t('inventory.supplier') }}</span>
           
           <div class="relative">
             <Search class="w-4 h-4 text-outline absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
               type="text"
               v-model="supplierSearch"
-              placeholder="Find supplier..."
+              :placeholder="$t('inventory.findSupplierPlaceholder')"
               class="w-full bg-surface-container-low pl-9 pr-3 py-2 border border-outline-variant rounded-lg text-xs outline-none focus:border-primary transition-all font-semibold placeholder:text-outline text-on-surface"
             />
           </div>
@@ -227,7 +289,7 @@
             </label>
 
             <span v-if="suppliersList.length === 0" class="text-[11px] text-outline italic font-medium block">
-              No suppliers match
+              {{ $t('inventory.noSuppliersMatch') }}
             </span>
           </div>
         </div>
@@ -239,14 +301,30 @@
         
         <!-- ACTIVE FILTER BADGES ROW -->
         <div class="flex items-center gap-3 text-sm select-none">
-          <span class="text-on-surface-variant font-medium">Active:</span>
+          <span class="text-on-surface-variant font-medium">{{ $t('inventory.activeFilterOverlays') }}</span>
           
           <div class="flex flex-wrap gap-2">
+            <!-- Catalog Mode Badge -->
+            <div 
+              v-if="showInactive" 
+              class="inline-flex items-center gap-1.5 px-3 py-1 bg-error/10 text-error rounded-full text-xs font-bold border border-error/30 animate-fade-in"
+            >
+              <EyeOff class="w-3 h-3 stroke-[2.5px]" />
+              <span>{{ $t('inventory.catalogInactiveBadge') }}</span>
+              <button 
+                @click="toggleShowInactive(false)"
+                class="text-error/70 hover:text-error cursor-pointer ml-0.5 bg-transparent border-0"
+                :title="$t('inventory.showActiveProducts')"
+              >
+                <X class="w-3 h-3 stroke-[2.5px]" />
+              </button>
+            </div>
+
             <div 
               v-if="productNameSearch.trim()" 
               class="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/50"
             >
-              <span>Search: "{{ productNameSearch }}"</span>
+              <span>{{ $t('inventory.searchFilterBadge', { query: productNameSearch }) }}</span>
               <button 
                 @click="productNameSearch = ''; currentPage = 1"
                 class="text-outline hover:text-on-surface-variant cursor-pointer ml-0.5 bg-transparent border-0"
@@ -260,7 +338,7 @@
               :key="cat" 
               class="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/50"
             >
-              <span>Category: {{ cat }}</span>
+              <span>{{ $t('inventory.categoryFilterBadge', { cat }) }}</span>
               <button 
                 @click="toggleCategory(cat)"
                 class="text-outline hover:text-on-surface-variant cursor-pointer ml-0.5 bg-transparent border-0"
@@ -273,7 +351,7 @@
               v-if="stockStatus !== 'All'" 
               class="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/50"
             >
-              <span>Status: {{ stockStatus }}</span>
+              <span>{{ $t('inventory.statusFilterBadge', { status: stockStatus }) }}</span>
               <button 
                 @click="selectStockStatus('All')"
                 class="text-outline hover:text-on-surface-variant cursor-pointer ml-0.5 bg-transparent border-0"
@@ -287,7 +365,7 @@
               :key="sup" 
               class="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/50"
             >
-              <span class="truncate max-w-[120px]">Supplier: {{ sup }}</span>
+              <span class="truncate max-w-[120px]">{{ $t('inventory.supplierFilterBadge', { sup }) }}</span>
               <button 
                 @click="toggleSupplier(sup)"
                 class="text-outline hover:text-on-surface-variant cursor-pointer ml-0.5 bg-transparent border-0"
@@ -297,23 +375,41 @@
             </div>
 
             <span 
-              v-if="!productNameSearch.trim() && selectedCategories.length === 0 && stockStatus === 'All' && selectedSuppliers.length === 0" 
+              v-if="!showInactive && !productNameSearch.trim() && selectedCategories.length === 0 && stockStatus === 'All' && selectedSuppliers.length === 0" 
               class="text-xs text-outline font-medium italic"
             >
-              No active filter overlays
+              {{ $t('inventory.noFilterOverlays') }}
             </span>
           </div>
+        </div>
+
+        <!-- Inactive Mode Notice Banner -->
+        <div v-if="showInactive" class="p-3.5 bg-amber-500/10 border border-amber-500/25 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900 font-medium animate-fade-in">
+          <div class="flex items-center gap-2.5">
+            <AlertTriangle class="w-4.5 h-4.5 text-amber-600 shrink-0" />
+            <div>
+              <span class="font-bold block text-[13px] text-amber-950">{{ $t('inventory.inactiveNoticeTitle') }}</span>
+              <span class="text-amber-800 text-[11.5px]">{{ $t('inventory.inactiveNoticeDesc') }}</span>
+            </div>
+          </div>
+          <button 
+            type="button"
+            @click="toggleShowInactive(false)" 
+            class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 font-bold text-xs cursor-pointer border border-amber-500/30 transition-all self-start sm:self-auto shrink-0"
+          >
+            {{ $t('inventory.showActiveProducts') }}
+          </button>
         </div>
 
         <!-- TABLE CONTAINER CARD -->
         <div class="border border-outline-variant rounded-xl overflow-hidden shadow-sm bg-surface-container-lowest relative min-h-[360px]">
           <!-- Jenga Logo Loading Visual Overlay -->
           <JengaLoader 
-            v-if="vm.isFetchingProducts.value" 
+            v-if="vm.isFetchingProducts.value || isFetchingInactive" 
             overlay 
             size="lg" 
-            label="Fetching Product Inventory" 
-            sublabel="Synchronizing product catalog & branch stock levels..." 
+            :label="showInactive ? $t('inventory.loaderFetchingInactive') : $t('inventory.loaderFetchingProducts')" 
+            :sublabel="showInactive ? $t('inventory.loaderArchivedItems') : $t('inventory.loaderSyncingCatalog')" 
           />
 
           <table class="w-full text-left border-collapse text-[13px] select-all">
@@ -322,14 +418,14 @@
                 <th class="px-3 py-3.5 pl-4 w-10 text-center">
                   <div class="w-[18px] h-[18px] rounded border border-outline flex items-center justify-center cursor-pointer bg-surface-container-lowest" />
                 </th>
-                <th class="px-3.5 py-3.5 font-bold min-w-[200px]">Product Name & Barcode</th>
-                <th class="px-3.5 py-3.5 font-bold">Category</th>
-                <th class="px-3.5 py-3.5 text-center font-bold">QTY</th>
-                <th class="px-3.5 py-3.5 text-center font-bold">Cost ({{ currency }})</th>
-                <th class="px-3.5 py-3.5 text-center font-bold">Price ({{ currency }})</th>
-                <th class="px-3.5 py-3.5 text-center font-bold">Wholesale ({{ currency }})</th>
-                <th class="px-3.5 py-3.5 text-center font-bold">Expiry Date</th>
-                <th class="px-3.5 py-3.5 text-center font-bold">Actions</th>
+                <th class="px-3.5 py-3.5 font-bold min-w-[200px]">{{ $t('inventory.tableProductNameBarcode') }}</th>
+                <th class="px-3.5 py-3.5 font-bold">{{ $t('inventory.tableCategory') }}</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">{{ $t('inventory.tableQty') }}</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">{{ $t('inventory.tableCost', { currency }) }}</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">{{ $t('inventory.tablePrice', { currency }) }}</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">{{ $t('inventory.tableWholesale', { currency }) }}</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">{{ $t('inventory.tableExpiryDate') }}</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">{{ $t('inventory.tableActions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -337,7 +433,7 @@
                 v-for="p in paginatedProducts" 
                 :key="p.id" 
                 class="hover:bg-surface-container-low transition-all font-sans"
-                :class="p.stock === 0 ? 'opacity-85 bg-surface-container/40 text-outline' : ''"
+                :class="p.stock === 0 || showInactive ? 'opacity-85 bg-surface-container/40 text-outline' : ''"
               >
                 <!-- Checkbox -->
                 <td class="px-3 py-3 text-center select-none">
@@ -346,13 +442,21 @@
 
                 <!-- Product Name & SKU Barcode -->
                 <td class="px-3.5 py-3">
-                  <span 
-                    class="font-semibold text-on-surface block leading-snug"
-                    :class="p.stock === 0 ? 'line-through text-outline/90' : ''"
-                  >
-                    {{ p.name }}
-                  </span>
-                  <span class="font-mono text-xs text-outline block mt-0.5">{{ p.barcode }}</span>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span 
+                      class="font-semibold text-on-surface block leading-snug"
+                      :class="p.stock === 0 || showInactive ? 'text-outline/90' : ''"
+                    >
+                      {{ p.name }}
+                    </span>
+                    <span 
+                      v-if="showInactive"
+                      class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-error/10 text-error border border-error/20 uppercase shrink-0"
+                    >
+                      {{ $t('inventory.inactiveTag') }}
+                    </span>
+                  </div>
+                  <span class="font-mono text-xs text-outline block mt-0.5">{{ p.barcode || p.sku || $t('inventory.noBarcode') }}</span>
                 </td>
 
                 <!-- Category -->
@@ -402,13 +506,13 @@
                       v-if="getProductStatus(p) === 'Expired'"
                       class="px-2 py-0.5 rounded text-[10px] font-bold bg-error-container text-error uppercase"
                     >
-                      Expired
+                      {{ $t('inventory.expiredTag') }}
                     </span>
                     <span 
                       v-else-if="getProductStatus(p) === 'Soon to expire'"
                       class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 uppercase"
                     >
-                      Soon to expire
+                      {{ $t('inventory.soonToExpireTag') }}
                     </span>
                   </div>
                 </td>
@@ -420,23 +524,23 @@
                       v-if="vm.hasPermission('inventory:edit')"
                       @click.stop="openEditModal(p)"
                       class="p-1.5 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-on-primary-container transition-colors cursor-pointer border-0 bg-transparent"
-                      title="Edit Product"
+                      :title="$t('inventory.editProductTooltip')"
                     >
                       <Pencil class="w-4.5 h-4.5" />
                     </button>
                     <button 
-                      v-if="vm.hasPermission('inventory:edit')"
+                      v-if="!showInactive && vm.hasPermission('inventory:edit')"
                       @click.stop="openRestockModal(p)"
                       class="p-1.5 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-on-primary-container transition-colors cursor-pointer border-0 bg-transparent"
-                      title="Restock Inventory"
+                      :title="$t('inventory.restockTooltip')"
                     >
                       <PlusCircle class="w-4.5 h-4.5" />
                     </button>
                     <button 
-                      v-if="vm.hasPermission('inventory:delete') || vm.hasPermission('inventory:edit')"
+                      v-if="!showInactive && (vm.hasPermission('inventory:delete') || vm.hasPermission('inventory:edit'))"
                       @click.stop="confirmDeleteProduct(p)"
                       class="p-1.5 hover:bg-error-container/30 rounded-lg text-on-surface-variant hover:text-error transition-colors cursor-pointer border-0 bg-transparent"
-                      title="Delete Product"
+                      :title="$t('inventory.deleteProductTooltip')"
                     >
                       <Trash2 class="w-4.5 h-4.5" />
                     </button>
@@ -447,12 +551,12 @@
               <tr v-if="filteredProducts.length === 0">
                 <td colSpan="9" class="py-20 text-center select-none text-outline">
                   <ImageOff class="w-10 h-10 mx-auto text-outline-variant mb-2 stroke-[1.5px]" />
-                  <p class="font-medium">No inventory rows match chosen conditions</p>
+                  <p class="font-medium">{{ $t('inventory.noRowsMatch') }}</p>
                   <button 
                     @click="handleResetFilters"
                     class="text-sm font-semibold underline mt-1 cursor-pointer bg-transparent border-0 text-primary"
                   >
-                    Clear active filtering rows
+                    {{ $t('inventory.clearActiveFilters') }}
                   </button>
                 </td>
               </tr>
@@ -462,8 +566,11 @@
           <!-- BOTTOM PAGINATION CONTROLLER CARD -->
           <div class="p-4 bg-surface-container-lowest border-t border-outline-variant/50 flex flex-col sm:flex-row justify-between items-center gap-4 select-none">
             <div class="text-sm text-on-surface-variant font-medium">
-              Showing {{ filteredProducts.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1 }} to
-              {{ Math.min(currentPage * itemsPerPage, filteredProducts.length) }} of {{ filteredProducts.length }} entries
+              {{ $t('inventory.paginationShowing', {
+                from: filteredProducts.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1,
+                to: Math.min(currentPage * itemsPerPage, filteredProducts.length),
+                total: filteredProducts.length
+              }) }}
             </div>
 
             <!-- Pagination buttons & Jump to page -->
@@ -474,7 +581,7 @@
                   :disabled="currentPage === 1"
                   @click="currentPage = 1"
                   class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-surface-container-lowest"
-                  title="First Page"
+                  :title="$t('inventory.paginationFirst')"
                 >
                   <ChevronsLeft class="w-4 h-4 text-on-surface-variant" />
                 </button>
@@ -483,7 +590,7 @@
                   :disabled="currentPage === 1"
                   @click="currentPage = Math.max(1, currentPage - 1)"
                   class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-surface-container-lowest"
-                  title="Previous Page"
+                  :title="$t('inventory.paginationPrev')"
                 >
                   <ChevronLeft class="w-4 h-4 text-on-surface-variant" />
                 </button>
@@ -515,7 +622,7 @@
                   :disabled="currentPage === totalPages"
                   @click="currentPage = Math.min(totalPages, currentPage + 1)"
                   class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-surface-container-lowest"
-                  title="Next Page"
+                  :title="$t('inventory.paginationNext')"
                 >
                   <ChevronRight class="w-4 h-4 text-on-surface-variant" />
                 </button>
@@ -524,7 +631,7 @@
                   :disabled="currentPage === totalPages"
                   @click="currentPage = totalPages"
                   class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer bg-surface-container-lowest"
-                  title="Last Page"
+                  :title="$t('inventory.paginationLast')"
                 >
                   <ChevronsRight class="w-4 h-4 text-on-surface-variant" />
                 </button>
@@ -532,7 +639,7 @@
 
               <!-- Jump to page input -->
               <div class="flex items-center gap-1.5 ml-2 border-l border-outline-variant/60 pl-3 text-xs text-on-surface-variant">
-                <span>Page</span>
+                <span>{{ $t('inventory.paginationJumpTo') }}</span>
                 <input 
                   type="number" 
                   :min="1" 
@@ -542,7 +649,7 @@
                   @keyup.enter="handleJumpPage"
                   class="w-12 h-8 text-center bg-surface-container-low border border-outline-variant rounded text-xs font-bold outline-none focus:border-primary text-on-surface font-mono"
                 />
-                <span>of {{ totalPages }}</span>
+                <span>{{ $t('inventory.paginationOfTotal', { total: totalPages }) }}</span>
               </div>
             </div>
           </div>
@@ -557,7 +664,7 @@
     <div v-if="showAddModal" class="fixed inset-0 bg-surface-container-highest/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
       <div class="w-full max-w-lg bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/50 overflow-hidden font-sans">
         <div class="px-6 py-4.5 border-b border-outline-variant/50 flex justify-between items-center">
-          <h2 class="text-[17px] font-bold text-on-surface">Add New Product Catalog</h2>
+          <h2 class="text-[17px] font-bold text-on-surface">{{ $t('inventory.addProductModalTitle') }}</h2>
           <button 
             @click="showAddModal = false"
             class="text-outline hover:text-on-surface-variant cursor-pointer bg-transparent border-0"
@@ -569,58 +676,58 @@
         <form @submit.prevent="handleAddProduct" class="p-6 space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div class="flex flex-col gap-1.5 col-span-2">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Product Display Title *</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.productDisplayTitle') }}</label>
               <input 
                 type="text"
                 required
                 v-model="newProdName"
-                placeholder="Ex. Premium Potato Chips"
+                :placeholder="$t('inventory.productTitlePlaceholder')"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20"
               />
             </div>
 
             <!-- Barcode SKU Code (Left) & Wholesale Barcode (Right) -->
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Barcode SKU Code</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.barcodeSkuCode') }}</label>
               <input 
                 type="text"
                 v-model="newProdBarcode"
-                placeholder="Ex. 847291038472"
+                :placeholder="$t('inventory.barcodePlaceholder')"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-mono outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20"
               />
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Wholesale Barcode</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.wholesaleBarcode') }}</label>
               <input 
                 type="text"
                 v-model="newProdWholesaleBarcode"
-                placeholder="Ex. 847291038999"
+                :placeholder="$t('inventory.wholesaleBarcodePlaceholder')"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-mono outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20"
               />
             </div>
 
             <!-- Buy Cost & Retail Selling Price -->
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Buy cost (Whole) ({{ currency }}) *</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.buyCostWhole', { currency }) }}</label>
               <input 
                 type="number"
                 step="0.01"
                 required
                 v-model="newProdCost"
-                placeholder="Cost price"
+                :placeholder="$t('inventory.costPricePlaceholder')"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
               />
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Retail selling ({{ currency }}) *</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.retailSellingPrice', { currency }) }}</label>
               <input 
                 type="number"
                 step="0.01"
                 required
                 v-model="newProdPrice"
-                placeholder="Selling price"
+                :placeholder="$t('inventory.sellingPricePlaceholder')"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
               />
             </div>
@@ -628,85 +735,85 @@
             <!-- Wholesale Price & Product Size on the SAME row -->
             <div class="flex flex-col gap-1.5">
               <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
-                Wholesale Price ({{ currency }})
+                {{ $t('inventory.wholesalePrice', { currency }) }}
                 <span v-if="newProdConversionFactor && Number(newProdConversionFactor) > 1" class="text-error">*</span>
               </label>
               <input 
                 type="number"
                 step="0.01"
                 v-model="newProdWholesalePrice"
-                placeholder="Wholesale price"
+                :placeholder="$t('inventory.wholesalePricePlaceholder')"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
               />
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Product Size (Units/Pack)</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.productSizeUnitsPack') }}</label>
               <input 
                 type="number"
                 min="1"
                 v-model="newProdConversionFactor"
-                placeholder="E.g. 6, 12, 24"
+                :placeholder="$t('inventory.productSizePlaceholder')"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
               />
             </div>
 
             <!-- Initial Stock Units & Minimum Stock Alert on the SAME row -->
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Initial Stock Units *</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.initialStockUnits') }}</label>
               <input 
                 type="number"
                 required
                 min="1"
                 v-model="newProdStock"
-                placeholder="E.g. 20"
+                :placeholder="$t('inventory.initialStockPlaceholder')"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
               />
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Minimum Stock Alert *</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.minStockAlert') }}</label>
               <input 
                 type="number"
                 required
                 min="1"
                 v-model="newProdMinStock"
-                placeholder="E.g. 10"
+                :placeholder="$t('inventory.minStockPlaceholder')"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
               />
             </div>
 
             <!-- Payment Method & Unit of Measure on the SAME row -->
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Payment Method *</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.paymentMethod') }}</label>
               <select 
                 v-model="newProdPaymentMethod"
                 required
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
               >
-                <option value="CASH">CASH (Cash Payout)</option>
-                <option value="ONCREDIT">ONCREDIT (On Credit)</option>
-                <option value="BANK_TRANSFER">BANK_TRANSFER (Bank Transfer)</option>
-                <option value="MOBILE_TRANSFER">MOBILE_TRANSFER (Mobile Transfer)</option>
+                <option value="CASH">{{ $t('inventory.cashPayout') }}</option>
+                <option value="ONCREDIT">{{ $t('inventory.onCreditPayment') }}</option>
+                <option value="BANK_TRANSFER">{{ $t('inventory.bankTransfer') }}</option>
+                <option value="MOBILE_TRANSFER">{{ $t('inventory.mobileTransfer') }}</option>
               </select>
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Unit of Measure *</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.unitOfMeasure') }}</label>
               <select 
                 v-model="newProdUnitOfMeasure"
                 required
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
               >
-                <option value="PCS">PCS (Pieces)</option>
-                <option value="KG">KG (Kilograms)</option>
-                <option value="LTR">LTR (Liters)</option>
+                <option value="PCS">{{ $t('inventory.pcs') }}</option>
+                <option value="KG">{{ $t('inventory.kg') }}</option>
+                <option value="LTR">{{ $t('inventory.ltr') }}</option>
               </select>
             </div>
 
             <!-- Expiry Date -->
             <div class="flex flex-col gap-1.5 col-span-2 sm:col-span-1">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Expiry Date</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.expiryDate') }}</label>
               <input 
                 type="date"
                 v-model="newProdExpiryDate"
@@ -716,27 +823,27 @@
 
             <!-- Category Segment (Left) & Assigned Supplier (Right) -->
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Category Segment</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.categorySegment') }}</label>
               <select 
                 v-model="newProdCategory"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
               >
-                <option value="Snacks">Snacks</option>
-                <option value="Beverages">Beverages</option>
-                <option value="Dairy Products">Dairy Products</option>
-                <option value="Household">Household</option>
+                <option value="Snacks">{{ $t('inventory.snacks') }}</option>
+                <option value="Beverages">{{ $t('inventory.beverages') }}</option>
+                <option value="Dairy Products">{{ $t('inventory.dairyFresh') }}</option>
+                <option value="Household">{{ $t('inventory.household') }}</option>
                 <option value="Grocery">Grocery</option>
                 <option value="Bakery">Bakery</option>
               </select>
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Assigned Supplier</label>
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.assignedSupplier') }}</label>
               <select 
                 v-model="newProdSupplier"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
               >
-                <option value="">Select Supplier (Optional)</option>
+                <option value="">{{ $t('inventory.selectSupplierOptional') }}</option>
                 <option v-for="sup in filteredAddSuppliers" :key="sup.id" :value="sup.name">
                   {{ sup.name }} <template v-if="sup.category">({{ sup.category }})</template>
                 </option>
@@ -750,13 +857,13 @@
               @click="showAddModal = false"
               class="px-4.5 py-2.5 rounded-lg border border-outline font-bold hover:bg-surface-container-low text-xs cursor-pointer text-on-surface-variant text-center bg-surface-container-lowest"
             >
-              Cancel
+              {{ $t('common.cancel') }}
             </button>
             <button 
               type="submit"
               class="px-5 py-2.5 rounded-lg font-bold text-xs text-white transition-all cursor-pointer text-center border-0 shadow-sm bg-primary text-on-primary"
             >
-              Save Product Record
+              {{ $t('inventory.saveProductRecord') }}
             </button>
           </div>
         </form>
@@ -767,7 +874,7 @@
     <div v-if="showImportModal" class="fixed inset-0 bg-surface-container-highest/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
       <div class="w-full max-w-xl bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/50 overflow-hidden font-sans">
         <div class="px-6 py-4.5 border-b border-outline-variant/50 flex justify-between items-center">
-          <h2 class="text-[17px] font-bold text-on-surface">Bulk Import Products Database</h2>
+          <h2 class="text-[17px] font-bold text-on-surface">{{ $t('inventory.bulkImportTitle') }}</h2>
           <button 
             @click="showImportModal = false"
             class="text-outline hover:text-on-surface-variant cursor-pointer bg-transparent border-0"
@@ -778,15 +885,15 @@
 
         <form @submit.prevent="handleBulkImport" class="p-6 space-y-4">
           <div class="p-4 bg-primary-container border border-primary/20 rounded-xl">
-            <h4 class="text-xs font-bold text-primary uppercase tracking-wide mb-1">CSV/Data Layout Format Guide:</h4>
+            <h4 class="text-xs font-bold text-primary uppercase tracking-wide mb-1">{{ $t('inventory.bulkImportGuideHeader') }}</h4>
             <p class="text-xs text-primary leading-normal">
-              Paste comma-separated items. Format sequence must follow:<br />
-              <code class="font-mono bg-surface-container-lowest/60 px-1 py-0.5 rounded font-semibold text-[11px]">Name,Barcode,Category,Cost,Price,Stock,MinStock,Supplier</code>
+              {{ $t('inventory.bulkImportGuideDesc') }}<br />
+              <code class="font-mono bg-surface-container-lowest/60 px-1 py-0.5 rounded font-semibold text-[11px]">{{ $t('inventory.bulkImportCsvFormat') }}</code>
             </p>
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">CSV Raw Datastream Text</label>
+            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.csvRawDatastream') }}</label>
             <textarea 
               rows="7"
               required
@@ -802,13 +909,13 @@
               @click="showImportModal = false"
               class="px-4.5 py-2.5 rounded-lg border border-outline font-bold hover:bg-surface-container-low text-xs cursor-pointer text-on-surface-variant bg-surface-container-lowest"
             >
-              Cancel
+              {{ $t('common.cancel') }}
             </button>
             <button 
               type="submit"
               class="px-5 py-2.5 rounded-lg font-bold text-xs text-white transition-all cursor-pointer border-0 shadow-sm bg-primary text-on-primary"
             >
-              Process Bulk Import
+              {{ $t('inventory.processBulkImport') }}
             </button>
           </div>
         </form>
@@ -820,8 +927,8 @@
   <!-- MODAL 3: EDIT PRODUCT FORM -->
   <Modal 
     :isOpen="showEditModal" 
-    title="Edit Product Catalog" 
-    subtitle="Modify store product metadata" 
+    :title="$t('inventory.editProductModalTitle')" 
+    :subtitle="$t('inventory.editProductModalSubtitle')" 
     :onClose="() => showEditModal = false"
     maxWidth="max-w-lg"
   >
@@ -829,58 +936,58 @@
       <div class="grid grid-cols-2 gap-4">
         <!-- Product Display Title -->
         <div class="flex flex-col gap-1.5 col-span-2">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Product Display Title *</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.productDisplayTitle') }}</label>
           <input 
             type="text"
             required
             v-model="editProdName"
-            placeholder="Ex. Premium Potato Chips"
+            :placeholder="$t('inventory.productTitlePlaceholder')"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20"
           />
         </div>
 
         <!-- Barcode SKU Code (Left) & Wholesale Barcode (Right) -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Barcode SKU Code</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.barcodeSkuCode') }}</label>
           <input 
             type="text"
             v-model="editProdBarcode"
-            placeholder="Ex. 847291038472"
+            :placeholder="$t('inventory.barcodePlaceholder')"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-mono outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20"
           />
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Wholesale Barcode</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.wholesaleBarcode') }}</label>
           <input 
             type="text"
             v-model="editProdWholesaleBarcode"
-            placeholder="Ex. 847291038999"
+            :placeholder="$t('inventory.wholesaleBarcodePlaceholder')"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-mono outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20"
           />
         </div>
 
         <!-- Buy Cost & Retail Selling Price -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Buy cost (Whole) ({{ currency }}) *</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.buyCostWhole', { currency }) }}</label>
           <input 
             type="number"
             step="0.01"
             required
             v-model="editProdCost"
-            placeholder="Cost price"
+            :placeholder="$t('inventory.costPricePlaceholder')"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
           />
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Retail selling ({{ currency }}) *</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.retailSellingPrice', { currency }) }}</label>
           <input 
             type="number"
             step="0.01"
             required
             v-model="editProdPrice"
-            placeholder="Selling price"
+            :placeholder="$t('inventory.sellingPricePlaceholder')"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
           />
         </div>
@@ -888,42 +995,42 @@
         <!-- Wholesale Price & Product Size on the SAME row -->
         <div class="flex flex-col gap-1.5">
           <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
-            Wholesale Price ({{ currency }})
+            {{ $t('inventory.wholesalePrice', { currency }) }}
             <span v-if="editProdConversionFactor && Number(editProdConversionFactor) > 1" class="text-error">*</span>
           </label>
           <input 
             type="number"
             step="0.01"
             v-model="editProdWholesalePrice"
-            placeholder="Wholesale price"
+            :placeholder="$t('inventory.wholesalePricePlaceholder')"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
           />
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Product Size (Units/Pack)</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.productSizeUnitsPack') }}</label>
           <input 
             type="number"
             min="1"
             v-model="editProdConversionFactor"
-            placeholder="E.g. 6, 12, 24"
+            :placeholder="$t('inventory.productSizePlaceholder')"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
           />
         </div>
 
         <!-- Minimum Stock Alert & Expiry Date on the SAME row -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Minimum Stock Alert</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.minStockAlert') }}</label>
           <input 
             type="number"
             v-model="editProdMinStock"
-            placeholder="E.g. 10"
+            :placeholder="$t('inventory.minStockPlaceholder')"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none font-mono text-on-surface focus:border-primary"
           />
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Expiry Date</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.expiryDate') }}</label>
           <input 
             type="date"
             v-model="editProdExpiryDate"
@@ -933,41 +1040,41 @@
 
         <!-- Unit of Measure -->
         <div class="flex flex-col gap-1.5 col-span-2">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Unit of Measure *</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.unitOfMeasure') }}</label>
           <select 
             v-model="editProdUnitOfMeasure"
             required
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
           >
-            <option value="PCS">PCS (Pieces)</option>
-            <option value="KG">KG (Kilograms)</option>
-            <option value="LTR">LTR (Liters)</option>
+            <option value="PCS">{{ $t('inventory.pcs') }}</option>
+            <option value="KG">{{ $t('inventory.kg') }}</option>
+            <option value="LTR">{{ $t('inventory.ltr') }}</option>
           </select>
         </div>
 
         <!-- Category Segment (Left) & Assigned Supplier (Right) -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Category Segment</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.categorySegment') }}</label>
           <select 
             v-model="editProdCategory"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
           >
-            <option value="Snacks">Snacks</option>
-            <option value="Beverages">Beverages</option>
-            <option value="Dairy Products">Dairy Products</option>
-            <option value="Household">Household</option>
+            <option value="Snacks">{{ $t('inventory.snacks') }}</option>
+            <option value="Beverages">{{ $t('inventory.beverages') }}</option>
+            <option value="Dairy Products">{{ $t('inventory.dairyFresh') }}</option>
+            <option value="Household">{{ $t('inventory.household') }}</option>
             <option value="Grocery">Grocery</option>
             <option value="Bakery">Bakery</option>
           </select>
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Assigned Supplier</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.assignedSupplier') }}</label>
           <select 
             v-model="editProdSupplier"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
           >
-            <option value="">Select Supplier (Optional)</option>
+            <option value="">{{ $t('inventory.selectSupplierOptional') }}</option>
             <option v-for="sup in filteredEditSuppliers" :key="sup.id" :value="sup.name">
               {{ sup.name }} <template v-if="sup.category">({{ sup.category }})</template>
             </option>
@@ -981,13 +1088,13 @@
           @click="showEditModal = false"
           class="px-4.5 py-2.5 rounded-lg border border-outline font-bold hover:bg-surface-container-low text-xs cursor-pointer text-on-surface-variant text-center bg-surface-container-lowest"
         >
-          Cancel
+          {{ $t('common.cancel') }}
         </button>
         <button 
           type="submit"
           class="px-5 py-2.5 rounded-lg font-bold text-xs text-white transition-all cursor-pointer text-center border-0 shadow-sm bg-primary text-on-primary"
         >
-          Save Changes
+          {{ $t('common.saveChanges') }}
         </button>
       </div>
     </form>
@@ -996,8 +1103,8 @@
   <!-- MODAL 4: RESTOCK PRODUCT FORM -->
   <Modal 
     :isOpen="showRestockModal" 
-    :title="restockType === 'DAMAGED' ? 'Record Damaged Stock' : 'Restock Inventory'" 
-    :subtitle="restockType === 'DAMAGED' ? 'Deduct damaged/spoiled items and record loss' : 'Add stock units to existing catalog item'" 
+    :title="restockType === 'DAMAGED' ? $t('inventory.restockDamagedTitle') : $t('inventory.restockTitle')" 
+    :subtitle="restockType === 'DAMAGED' ? $t('inventory.restockDamagedSubtitle') : $t('inventory.restockSubtitle')" 
     :onClose="closeRestockModal"
     maxWidth="max-w-md"
   >
@@ -1007,29 +1114,29 @@
         v-if="isRestocking" 
         overlay 
         size="md" 
-        :label="restockType === 'DAMAGED' ? 'Processing Damaged Stock Entry' : 'Processing Stock Entry'" 
-        :sublabel="restockType === 'DAMAGED' ? 'Writing off stock & recording ledger loss...' : 'Updating inventory ledger & supplier balances...'" 
+        :label="restockType === 'DAMAGED' ? $t('inventory.restockDamagedTitle') : $t('inventory.restockTitle')" 
+        :sublabel="restockType === 'DAMAGED' ? $t('inventory.loaderArchivedItems') : $t('inventory.loaderSyncingCatalog')" 
       />
 
       <div class="space-y-4">
         <div class="bg-surface-container-low p-4.5 rounded-xl border border-outline-variant/50 space-y-2">
           <div class="flex justify-between text-sm">
-            <span class="text-on-surface-variant font-medium">Product Name:</span>
+            <span class="text-on-surface-variant font-medium">{{ $t('inventory.productNameLabel') }}</span>
             <span class="font-bold text-on-surface">{{ restockingProduct.name }}</span>
           </div>
           <div class="flex justify-between text-sm">
-            <span class="text-on-surface-variant font-medium">Current Stock Level:</span>
-            <span class="font-mono font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded text-xs">{{ restockingProduct.stock }} units</span>
+            <span class="text-on-surface-variant font-medium">{{ $t('inventory.currentStockLevelLabel') }}</span>
+            <span class="font-mono font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded text-xs">{{ restockingProduct.stock }} {{ $t('common.units') }}</span>
           </div>
           <div v-if="restockType === 'DAMAGED'" class="flex justify-between text-sm pt-1 border-t border-outline-variant/30">
-            <span class="text-on-surface-variant font-medium">Unit Buying Price:</span>
+            <span class="text-on-surface-variant font-medium">{{ $t('inventory.unitBuyingPriceLabel') }}</span>
             <span class="font-mono font-bold text-on-surface">{{ formatCurrency(restockingProduct.cost || 0, currency) }}</span>
           </div>
         </div>
 
         <div class="flex flex-col gap-1.5">
           <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
-            {{ restockType === 'DAMAGED' ? 'Units Damaged (To Deduct) *' : 'New Stock Units to Add *' }}
+            {{ restockType === 'DAMAGED' ? $t('inventory.unitsDamagedToDeduct') : $t('inventory.newStockUnitsToAdd') }}
           </label>
           <input 
             type="number"
@@ -1042,29 +1149,29 @@
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Restock Type / Reason *</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.restockTypeReason') }}</label>
           <select 
             v-model="restockType"
             :disabled="isRestocking"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
           >
-            <option value="PURCHASE">Purchase (New Stock)</option>
-            <option value="ADJUSTMENT">Adjustment (Stock Correction)</option>
-            <option value="RETURN">Return (Customer Return)</option>
-            <option value="DAMAGED">Damaged (Loss / Write-off)</option>
+            <option value="PURCHASE">{{ $t('inventory.restockPurchase') }}</option>
+            <option value="ADJUSTMENT">{{ $t('inventory.restockAdjustment') }}</option>
+            <option value="RETURN">{{ $t('inventory.restockReturn') }}</option>
+            <option value="DAMAGED">{{ $t('inventory.restockDamaged') }}</option>
           </select>
         </div>
 
         <!-- Notes / Reason - Shown for DAMAGED and ADJUSTMENT -->
         <div v-if="restockType === 'DAMAGED' || restockType === 'ADJUSTMENT'" class="flex flex-col gap-1.5">
           <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
-            {{ restockType === 'DAMAGED' ? 'Damage Reason / Notes' : 'Adjustment Reason / Notes' }} (Optional)
+            {{ restockType === 'DAMAGED' ? $t('inventory.damageReasonNotes') : $t('inventory.adjustmentReasonNotes') }}
           </label>
           <input 
             type="text"
             v-model="restockNotes"
             :disabled="isRestocking"
-            :placeholder="restockType === 'DAMAGED' ? 'e.g. Broken packaging, Expired during transit' : 'e.g. Physical inventory count recount'"
+            :placeholder="restockType === 'DAMAGED' ? $t('inventory.damageNotesPlaceholder') : $t('inventory.adjustmentNotesPlaceholder')"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm outline-none text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
           />
         </div>
@@ -1073,39 +1180,40 @@
         <div v-if="restockType === 'DAMAGED' && restockingProduct" class="p-3 bg-error/10 border border-error/20 rounded-xl text-xs text-error flex items-start gap-2.5">
           <AlertTriangle class="w-4 h-4 shrink-0 mt-0.5" />
           <div class="space-y-0.5">
-            <span class="font-bold block">Damaged Stock Write-Off Loss</span>
+            <span class="font-bold block">{{ $t('inventory.damagedLossWarningTitle') }}</span>
             <span class="leading-relaxed text-[11.5px]">
-              Deducting <strong class="font-mono">{{ Number(restockQty) || 0 }} units</strong> will record a total loss of 
-              <strong class="font-mono font-bold underline">{{ formatCurrency(((Number(restockQty) || 0) * (restockingProduct.cost || 0)), currency) }}</strong>
-              to the financial loss journal.
+              {{ $t('inventory.damagedLossWarningDesc', {
+                qty: Number(restockQty) || 0,
+                amount: formatCurrency(((Number(restockQty) || 0) * (restockingProduct.cost || 0)), currency)
+              }) }}
             </span>
           </div>
         </div>
 
         <!-- Payment Method - Only when restockType is PURCHASE -->
         <div v-if="restockType === 'PURCHASE'" class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Payment Method *</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.paymentMethod') }}</label>
           <select 
             v-model="restockPaymentMethod"
             :disabled="isRestocking"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
           >
-            <option value="CASH">CASH (Cash Payout)</option>
-            <option value="ONCREDIT">ONCREDIT (On Credit)</option>
-            <option value="BANK_TRANSFER">BANK_TRANSFER (Bank Transfer)</option>
-            <option value="MOBILE_TRANSFER">MOBILE_TRANSFER (Mobile Transfer)</option>
+            <option value="CASH">{{ $t('inventory.cashPayout') }}</option>
+            <option value="ONCREDIT">{{ $t('inventory.onCreditPayment') }}</option>
+            <option value="BANK_TRANSFER">{{ $t('inventory.bankTransfer') }}</option>
+            <option value="MOBILE_TRANSFER">{{ $t('inventory.mobileTransfer') }}</option>
           </select>
         </div>
 
         <!-- Supplier Dropdown (Optional) - Only when restockType is PURCHASE -->
         <div v-if="restockType === 'PURCHASE'" class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Supplier (Optional)</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.selectSupplierOptional') }}</label>
           <select 
             v-model="restockSupplierId"
             :disabled="isRestocking"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
           >
-            <option value="">Select Supplier (Optional)</option>
+            <option value="">{{ $t('inventory.selectSupplierOptional') }}</option>
             <option v-for="sup in filteredRestockSuppliers" :key="sup.id" :value="sup.id">
               {{ sup.name }} <template v-if="sup.category">({{ sup.category }})</template>
             </option>
@@ -1119,7 +1227,7 @@
             @click="closeRestockModal"
             class="px-4.5 py-2.5 rounded-lg border border-outline font-bold hover:bg-surface-container-low text-xs cursor-pointer text-on-surface-variant text-center bg-surface-container-lowest disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Cancel
+            {{ $t('common.cancel') }}
           </button>
           <button 
             type="button"
@@ -1129,7 +1237,7 @@
             :class="restockType === 'DAMAGED' ? 'bg-error hover:bg-error/90 text-on-error' : 'bg-primary text-on-primary'"
           >
             <RotateCw v-if="isRestocking" class="w-3.5 h-3.5 animate-spin text-white" />
-            <span>{{ isRestocking ? 'Processing...' : (restockType === 'DAMAGED' ? 'Write Off Damaged Stock' : 'Add to Stock') }}</span>
+            <span>{{ isRestocking ? $t('common.processing') : (restockType === 'DAMAGED' ? $t('inventory.writeOffDamagedBtn') : $t('inventory.addToStockBtn')) }}</span>
           </button>
         </div>
       </div>
@@ -1140,23 +1248,23 @@
   <Modal
     :isOpen="showDeleteModal"
     :onClose="() => showDeleteModal = false"
-    title="Confirm Product Deletion"
-    subtitle="Are you sure you want to delete this product from inventory?"
+    :title="$t('inventory.deleteProductModalTitle')"
+    :subtitle="$t('inventory.deleteProductModalSubtitle')"
     maxWidth="max-w-md"
   >
     <div class="space-y-4">
       <div class="p-4 rounded-xl bg-error-container/20 border border-error/30 flex items-start gap-3">
         <AlertTriangle class="w-6 h-6 text-error shrink-0 mt-0.5" />
         <div>
-          <h4 class="text-sm font-bold text-error">Warning</h4>
+          <h4 class="text-sm font-bold text-error">{{ $t('common.warning') }}</h4>
           <p class="text-xs text-on-surface-variant mt-1">
-            You are about to delete <strong class="text-on-surface">{{ productToDelete?.name }}</strong> (Barcode: {{ productToDelete?.barcode || 'N/A' }}).
+            {{ $t('inventory.deleteWarningText', { name: productToDelete?.name || '', barcode: productToDelete?.barcode || 'N/A' }) }}
           </p>
         </div>
       </div>
 
       <p class="text-xs text-on-surface-variant leading-relaxed">
-        This action will remove the product from your active inventory catalog.
+        {{ $t('inventory.deleteWarningDesc') }}
       </p>
 
       <div class="flex justify-end gap-3 pt-4 border-t border-outline-variant/50">
@@ -1166,7 +1274,7 @@
           :disabled="isDeleting"
           class="px-4.5 py-2.5 rounded-lg border border-outline font-bold hover:bg-surface-container-low text-xs cursor-pointer text-on-surface-variant bg-surface-container-lowest"
         >
-          Cancel
+          {{ $t('common.cancel') }}
         </button>
         <button 
           type="button"
@@ -1175,7 +1283,7 @@
           class="px-5 py-2.5 rounded-lg font-bold text-xs text-white transition-all cursor-pointer border-0 shadow-sm bg-error hover:bg-error/90 disabled:opacity-50 flex items-center gap-1.5"
         >
           <Trash2 v-if="!isDeleting" class="w-4 h-4" />
-          <span>{{ isDeleting ? 'Deleting...' : 'Delete Product' }}</span>
+          <span>{{ isDeleting ? $t('inventory.deletingBtn') : $t('inventory.deleteProductBtn') }}</span>
         </button>
       </div>
     </div>
@@ -1193,10 +1301,10 @@ import { formatCurrency, formatCurrencyWithoutSymbol } from '../models/mockData'
 import { api } from '../services/api';
 import Modal from '../components/common/Modal.vue';
 import JengaLoader from '../components/common/JengaLoader.vue';
+import { t } from '../i18n';
 import { 
   Plus, 
   Upload, 
-  Download, 
   ImageOff, 
   Search, 
   X, 
@@ -1210,13 +1318,14 @@ import {
   PlusCircle,
   Trash2,
   AlertTriangle,
-  RotateCw
+  RotateCw,
+  Eye,
+  EyeOff
 } from 'lucide-vue-next';
 
 const route = useRoute();
 const vm = useAppViewModel();
 
-const brandGreen = '#004d40';
 const categories = ref<any[]>([]);
 
 // Filter States
@@ -1252,7 +1361,113 @@ const newProdPaymentMethod = ref<'CASH' | 'ONCREDIT' | 'BANK_TRANSFER' | 'MOBILE
 const showImportModal = ref(false);
 const rawCsvText = ref('');
 
-const products = computed(() => vm.products.value);
+// Inactive Products & Catalog Toggle State
+const showInactive = ref(false);
+const inactiveProducts = ref<Product[]>([]);
+const hasFetchedInactive = ref(false);
+const isFetchingInactive = ref(false);
+
+const formatDateForInput = (dateStr?: string | null): string => {
+  if (!dateStr) return '';
+  const str = String(dateStr).trim();
+  if (!str) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const d = new Date(str);
+  if (isNaN(d.getTime())) return str.slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const mapApiProduct = (p: any): Product => {
+  let statusType: 'In Stock' | 'Low Stock' | 'Out of Stock' | 'Soon to expire' | 'Expired' = 'In Stock';
+  const stockNum = Number(p.stock) || 0;
+  const formattedExpiry = formatDateForInput(p.expiryDate);
+  if (formattedExpiry) {
+    const exp = new Date(formattedExpiry);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const diffMs = exp.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays <= 0) {
+      statusType = 'Expired';
+    } else if (diffDays <= 90) {
+      statusType = 'Soon to expire';
+    }
+  }
+  if (statusType === 'In Stock') {
+    if (stockNum === 0) {
+      statusType = 'Out of Stock';
+    } else if (stockNum <= (p.reorderLevel || 10)) {
+      statusType = 'Low Stock';
+    }
+  }
+  return {
+    id: p.id,
+    name: p.name,
+    barcode: p.barcode || '',
+    category: p.categoryName || p.category || 'General',
+    cost: Number(p.costPrice || p.cost) || 0,
+    price: Number(p.sellingPrice || p.price) || 0,
+    stock: stockNum,
+    minStock: p.reorderLevel || 10,
+    status: statusType,
+    supplier: p.supplierName || p.supplier || '',
+    sku: p.sku || '',
+    wholesalePrice: p.wholesalePrice ? Number(p.wholesalePrice) : undefined,
+    unitOfMeasure: p.unitOfMeasure || p.UnitOfMeasure || undefined,
+    expiryDate: formattedExpiry || undefined,
+    wholesaleBarcode: p.wholesaleBarcode || undefined,
+    conversionFactor: p.conversionFactor ? Number(p.conversionFactor) : undefined,
+    categoryName: p.categoryName || p.category || 'General',
+    supplierName: p.supplierName || p.supplier || '',
+    isActive: p.isActive !== false,
+  };
+};
+
+const fetchInactiveProducts = async (force: boolean = false) => {
+  if (hasFetchedInactive.value && !force) return;
+  const branchId = localStorage.getItem('branchId');
+  if (!branchId || branchId === 'null' || branchId === 'undefined') return;
+
+  isFetchingInactive.value = true;
+  try {
+    const productsData = await api.get<any>(`/api/products/inactive?storeBranchId=${branchId}`);
+    const productsList: any[] = Array.isArray(productsData) ? productsData : (productsData?.content || []);
+
+    if (productsList && Array.isArray(productsList)) {
+      inactiveProducts.value = productsList.map(mapApiProduct);
+      hasFetchedInactive.value = true;
+    }
+  } catch (err: any) {
+    console.error('Failed to fetch inactive products:', err);
+    showToast('Failed to load inactive products: ' + (err.message || err), 'error');
+  } finally {
+    isFetchingInactive.value = false;
+  }
+};
+
+const toggleShowInactive = async (val?: boolean) => {
+  const nextVal = typeof val === 'boolean' ? val : !showInactive.value;
+  if (showInactive.value === nextVal) return;
+  showInactive.value = nextVal;
+  currentPage.value = 1;
+
+  if (showInactive.value && !hasFetchedInactive.value) {
+    await fetchInactiveProducts();
+  }
+};
+
+const handleRefresh = async () => {
+  if (showInactive.value) {
+    await fetchInactiveProducts(true);
+  } else {
+    await vm.fetchProducts();
+  }
+};
+
+const products = computed(() => showInactive.value ? inactiveProducts.value : vm.products.value);
 const currency = computed(() => vm.settings.value.currency);
 
 onMounted(async () => {
@@ -1266,31 +1481,25 @@ onMounted(async () => {
     console.error('Failed to load categories:', err);
   }
   vm.fetchProducts();
-  // Pre-load suppliers in the background using SupplierController GET /api/suppliers
   vm.fetchSuppliers().catch(err => console.error('Failed to fetch suppliers in background:', err));
 });
 
-// Helper function to strictly match product category with supplier category
 const isCategoryMatch = (productCat: string, supplierCat: string): boolean => {
   if (!productCat || !supplierCat) return false;
   const p = productCat.trim().toLowerCase();
   const s = supplierCat.trim().toLowerCase();
   
-  // Exact match
   if (p === s) return true;
   
-  // Singular / Plural normalization (e.g. "Beverages" vs "Beverage", "Snacks" vs "Snack")
   const pBase = p.endsWith('s') ? p.slice(0, -1) : p;
   const sBase = s.endsWith('s') ? s.slice(0, -1) : s;
   if (pBase === sBase) return true;
 
-  // Substring / keyword inclusion (e.g. "Dairy Products" vs "Dairy")
   if (p.includes(sBase) || s.includes(pBase)) return true;
 
   return false;
 };
 
-// Dynamic Supplier filtering by selected Product Category on Add & Edit forms
 const filteredAddSuppliers = computed(() => {
   const allSups = vm.suppliers.value || [];
   if (!allSups.length) return [];
@@ -1308,7 +1517,6 @@ const filteredEditSuppliers = computed(() => {
 
   const matching = allSups.filter(s => isCategoryMatch(selectedCat, s.category || ''));
 
-  // Always preserve existing assigned supplier if editing
   if (editProdSupplier.value) {
     const existsInMatching = matching.some(s => s.name.toLowerCase() === editProdSupplier.value.toLowerCase());
     if (!existsInMatching) {
@@ -1437,7 +1645,7 @@ const totalPages = computed(() => Math.ceil(filteredProducts.value.length / item
 const visiblePages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
-  const delta = 2; // Pages around current page
+  const delta = 2;
   
   if (total <= 7) {
     return Array.from({ length: total }, (_, i) => i + 1);
@@ -1492,7 +1700,6 @@ const handleAddProduct = async () => {
     return;
   }
 
-  // Validation: if product size is filled, wholesale price is mandatory
   const newSizeVal = newProdConversionFactor.value ? parseInt(String(newProdConversionFactor.value).trim()) : 0;
   const newWholesaleStr = String(newProdWholesalePrice.value || '').trim();
   const hasNewWholesalePrice = newWholesaleStr !== '' && !isNaN(parseFloat(newWholesaleStr));
@@ -1572,6 +1779,7 @@ const handleAddProduct = async () => {
 
     vm.products.value = [newProduct, ...vm.products.value];
     showAddModal.value = false;
+    showToast(t('toasts.productAddedSuccess'), 'success');
 
     // Reset
     newProdName.value = '';
@@ -1624,18 +1832,15 @@ const handleBulkImport = async () => {
   }
 };
 
-const alertExport = () => {
-  alert('Exporting all product rows as Excel CSV...');
-};
+const stockStatuses = computed(() => [
+  { label: t('inventory.allStock'), value: 'All' },
+  { label: t('inventory.inStock'), value: 'In Stock' },
+  { label: t('inventory.lowStock'), value: 'Low Stock', highlight: true },
+  { label: t('inventory.outOfStock'), value: 'Out of Stock' },
+  { label: t('inventory.soonToExpire'), value: 'Soon to expire', highlight: true },
+  { label: t('inventory.expired'), value: 'Expired', highlight: true }
+]);
 
-const stockStatuses = [
-  { label: 'All Statuses', value: 'All' },
-  { label: 'In Stock', value: 'In Stock' },
-  { label: 'Low Stock', value: 'Low Stock', highlight: true },
-  { label: 'Out of Stock', value: 'Out of Stock' },
-  { label: 'Soon to expire', value: 'Soon to expire', highlight: true },
-  { label: 'Expired', value: 'Expired', highlight: true }
-];
 // Edit Modal States
 const showEditModal = ref(false);
 const editingProduct = ref<Product | null>(null);
@@ -1671,7 +1876,7 @@ const filteredRestockSuppliers = computed(() => {
   return allSups.filter(s => isCategoryMatch(selectedCat, s.category || ''));
 });
 
-// Global 2D Barcode Scanner integration (Model X11 / Siyuanchuang Electronics)
+// Global 2D Barcode Scanner integration
 useBarcodeScanner({
   onScan: (scannedCode) => {
     if (showAddModal.value) {
@@ -1686,19 +1891,6 @@ useBarcodeScanner({
   },
   enableAudioFeedback: true,
 });
-
-const formatDateForInput = (dateStr?: string | null): string => {
-  if (!dateStr) return '';
-  const str = String(dateStr).trim();
-  if (!str) return '';
-  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-  const d = new Date(str);
-  if (isNaN(d.getTime())) return str.slice(0, 10);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 // Edit Modal Actions
 const openEditModal = (p: Product) => {
@@ -1729,7 +1921,6 @@ const handleEditProduct = async () => {
   const costNum = parseFloat(editProdCost.value);
   const minStockNum = parseInt(editProdMinStock.value) || 10;
 
-  // Validation: if product size is filled, wholesale price is mandatory
   const editSizeVal = editProdConversionFactor.value ? parseInt(String(editProdConversionFactor.value).trim()) : 0;
   const editWholesaleStr = String(editProdWholesalePrice.value || '').trim();
   const hasEditWholesalePrice = editWholesaleStr !== '' && !isNaN(parseFloat(editWholesaleStr));
@@ -1755,7 +1946,7 @@ const handleEditProduct = async () => {
       costPrice: costNum,
       sellingPrice: priceNum,
       reorderLevel: minStockNum,
-      stock: editingProduct.value.stock, // Preserve current stock
+      stock: editingProduct.value.stock,
       isActive: true,
       UnitOfMeasure: editProdUnitOfMeasure.value,
       expiryDate: editProdExpiryDate.value || undefined
@@ -1775,30 +1966,53 @@ const handleEditProduct = async () => {
 
     const updatedVm = await api.put(`/api/products/${editingProduct.value.id}`, payload);
 
-    // Update state
-    const index = vm.products.value.findIndex(p => p.id === editingProduct.value?.id);
-    if (index !== -1) {
-      const existingProduct = vm.products.value[index]!;
-      vm.products.value[index] = {
-        ...existingProduct,
-        name: updatedVm.name,
-        barcode: updatedVm.barcode || '',
-        category: updatedVm.categoryName || 'General',
-        cost: Number(updatedVm.costPrice) || 0,
-        price: Number(updatedVm.sellingPrice) || 0,
-        minStock: updatedVm.reorderLevel || 10,
-        status: updatedVm.stock === 0 ? 'Out of Stock' : (updatedVm.stock <= updatedVm.reorderLevel ? 'Low Stock' : 'In Stock'),
-        supplier: editProdSupplier.value || '',
-        sku: updatedVm.sku || '',
-        wholesalePrice: updatedVm.wholesalePrice ? Number(updatedVm.wholesalePrice) : undefined,
-        wholesaleBarcode: updatedVm.wholesaleBarcode || editProdWholesaleBarcode.value || undefined,
-        conversionFactor: updatedVm.conversionFactor ? Number(updatedVm.conversionFactor) : undefined,
-        unitOfMeasure: updatedVm.unitOfMeasure || updatedVm.UnitOfMeasure || editProdUnitOfMeasure.value,
-        expiryDate: formatDateForInput(updatedVm.expiryDate || editProdExpiryDate.value) || undefined
-      };
+    if (showInactive.value) {
+      const inactIndex = inactiveProducts.value.findIndex(p => p.id === editingProduct.value?.id);
+      if (inactIndex !== -1) {
+        const existingProduct = inactiveProducts.value[inactIndex]!;
+        inactiveProducts.value[inactIndex] = {
+          ...existingProduct,
+          name: updatedVm.name,
+          barcode: updatedVm.barcode || '',
+          category: updatedVm.categoryName || 'General',
+          cost: Number(updatedVm.costPrice) || 0,
+          price: Number(updatedVm.sellingPrice) || 0,
+          minStock: updatedVm.reorderLevel || 10,
+          supplier: editProdSupplier.value || '',
+          sku: updatedVm.sku || '',
+          wholesalePrice: updatedVm.wholesalePrice ? Number(updatedVm.wholesalePrice) : undefined,
+          wholesaleBarcode: updatedVm.wholesaleBarcode || editProdWholesaleBarcode.value || undefined,
+          conversionFactor: updatedVm.conversionFactor ? Number(updatedVm.conversionFactor) : undefined,
+          unitOfMeasure: updatedVm.unitOfMeasure || updatedVm.UnitOfMeasure || editProdUnitOfMeasure.value,
+          expiryDate: formatDateForInput(updatedVm.expiryDate || editProdExpiryDate.value) || undefined
+        };
+      }
+    } else {
+      const index = vm.products.value.findIndex(p => p.id === editingProduct.value?.id);
+      if (index !== -1) {
+        const existingProduct = vm.products.value[index]!;
+        vm.products.value[index] = {
+          ...existingProduct,
+          name: updatedVm.name,
+          barcode: updatedVm.barcode || '',
+          category: updatedVm.categoryName || 'General',
+          cost: Number(updatedVm.costPrice) || 0,
+          price: Number(updatedVm.sellingPrice) || 0,
+          minStock: updatedVm.reorderLevel || 10,
+          status: updatedVm.stock === 0 ? 'Out of Stock' : (updatedVm.stock <= updatedVm.reorderLevel ? 'Low Stock' : 'In Stock'),
+          supplier: editProdSupplier.value || '',
+          sku: updatedVm.sku || '',
+          wholesalePrice: updatedVm.wholesalePrice ? Number(updatedVm.wholesalePrice) : undefined,
+          wholesaleBarcode: updatedVm.wholesaleBarcode || editProdWholesaleBarcode.value || undefined,
+          conversionFactor: updatedVm.conversionFactor ? Number(updatedVm.conversionFactor) : undefined,
+          unitOfMeasure: updatedVm.unitOfMeasure || updatedVm.UnitOfMeasure || editProdUnitOfMeasure.value,
+          expiryDate: formatDateForInput(updatedVm.expiryDate || editProdExpiryDate.value) || undefined
+        };
+      }
     }
 
     showEditModal.value = false;
+    showToast(t('toasts.productUpdatedSuccess'), 'success');
   } catch (err: any) {
     showToast('Failed to update product: ' + (err.message || err), 'error');
   }
@@ -1871,7 +2085,6 @@ const handleRestockProduct = async () => {
 
     await api.post(`/api/products/${restockingProduct.value.id}/stock-movement`, payload);
 
-    // Update local state
     const index = vm.products.value.findIndex(p => p.id === restockingProduct.value?.id);
     if (index !== -1) {
       const existingProduct = vm.products.value[index]!;
@@ -1887,12 +2100,11 @@ const handleRestockProduct = async () => {
 
     showToast(
       restockType.value === 'DAMAGED' 
-        ? `Successfully recorded ${addedQty} units damaged write-off.`
-        : 'Stock movement recorded successfully', 
+        ? t('toasts.damagedStockSuccess')
+        : t('toasts.stockAddedSuccess'), 
       'success'
     );
 
-    // Fetch fresh values from API to ensure database integrity
     await vm.fetchProducts();
 
     showRestockModal.value = false;
@@ -1908,7 +2120,6 @@ const showDeleteModal = ref(false);
 const productToDelete = ref<Product | null>(null);
 const isDeleting = ref(false);
 
-// Delete Modal Actions
 const confirmDeleteProduct = (p: Product) => {
   productToDelete.value = p;
   showDeleteModal.value = true;
@@ -1919,10 +2130,13 @@ const handleDeleteProduct = async () => {
   isDeleting.value = true;
   try {
     await api.delete(`/api/products/${productToDelete.value.id}`);
-    showToast(`Product "${productToDelete.value.name}" deleted successfully`, 'success');
+    showToast(t('toasts.productDeletedSuccess'), 'success');
     showDeleteModal.value = false;
     productToDelete.value = null;
     await vm.fetchProducts();
+    if (hasFetchedInactive.value) {
+      await fetchInactiveProducts(true);
+    }
   } catch (err: any) {
     console.error('Failed to delete product:', err);
     showToast(err.message || 'Failed to delete product', 'error');

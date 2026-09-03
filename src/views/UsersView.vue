@@ -2,8 +2,8 @@
   <div class="flex flex-col gap-6 font-sans">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-black text-on-surface tracking-tight">User Management</h1>
-        <p class="text-sm text-on-surface-variant mt-1">Manage system access and roles</p>
+        <h1 class="text-2xl font-black text-on-surface tracking-tight">{{ $t('users.title') }}</h1>
+        <p class="text-sm text-on-surface-variant mt-1">{{ $t('users.subtitle') }}</p>
       </div>
       <button 
         v-if="vm.hasPermission('users:create')"
@@ -11,7 +11,7 @@
         class="h-10 px-4 bg-primary text-on-primary rounded-xl flex items-center justify-center font-bold text-sm hover:bg-opacity-90 transition-all cursor-pointer shadow-sm border-0 gap-2"
       >
         <PlusCircle class="w-4 h-4" />
-        <span>Add User</span>
+        <span>{{ $t('users.addUser') }}</span>
       </button>
     </div>
 
@@ -26,15 +26,15 @@
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="bg-surface-container-lowest border-b border-outline-variant text-xs uppercase tracking-wider text-on-surface-variant font-bold">
-              <th class="p-4 px-5">Name & Role</th>
-              <th class="p-4 px-5">Phone</th>
-              <th class="p-4 px-5">Status</th>
-              <th class="p-4 px-5 text-right">Actions</th>
+              <th class="p-4 px-5">{{ $t('users.tableNameRole') }}</th>
+              <th class="p-4 px-5">{{ $t('users.tablePhone') }}</th>
+              <th class="p-4 px-5">{{ $t('users.tableStatus') }}</th>
+              <th class="p-4 px-5 text-right">{{ $t('users.tableActions') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-outline-variant/50">
             <tr v-if="users.length === 0">
-              <td colspan="4" class="p-8 text-center text-on-surface-variant">No users found.</td>
+              <td colspan="4" class="p-8 text-center text-on-surface-variant">{{ $t('users.noUsersFound') }}</td>
             </tr>
             <tr 
               v-for="user in users" 
@@ -60,7 +60,7 @@
                   class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold"
                   :class="user.active ? 'bg-success/10 text-success' : 'bg-error/10 text-error'"
                 >
-                  {{ user.active ? 'Active' : 'Blocked' }}
+                  {{ user.active ? $t('common.active') : $t('users.blocked') }}
                 </span>
               </td>
               <td class="p-4 px-5">
@@ -100,13 +100,13 @@
     <!-- Create User Modal -->
     <Modal 
       :isOpen="showCreateModal" 
-      title="Create New User" 
+      :title="$t('users.createUserTitle')" 
       :onClose="() => showCreateModal = false"
       maxWidth="max-w-lg"
     >
       <div class="flex flex-col gap-4 p-2">
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Full Name</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('users.fullName') }}</label>
           <input 
             v-model="newUser.fullName"
             type="text" 
@@ -115,7 +115,7 @@
           />
         </div>
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Phone</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('users.phone') }}</label>
           <input 
             v-model="newUser.phone"
             type="text" 
@@ -124,7 +124,7 @@
           />
         </div>
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Email (Optional)</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('users.emailOptional') }}</label>
           <input 
             v-model="newUser.email"
             type="email" 
@@ -133,23 +133,23 @@
           />
         </div>
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Role</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('users.role') }}</label>
           <select 
             v-model="newUser.role"
             class="w-full h-11 px-4 bg-surface-container-lowest border border-outline-variant rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
           >
-            <option v-if="userRole === 'SUPER_ADMIN'" value="ADMIN">Admin</option>
-            <option value="MANAGER">Manager</option>
-            <option value="CASHIER">Cashier</option>
+            <option v-if="userRole === 'SUPER_ADMIN'" value="ADMIN">{{ $t('users.adminRole') }}</option>
+            <option value="MANAGER">{{ $t('users.managerRole') }}</option>
+            <option value="CASHIER">{{ $t('users.cashierRole') }}</option>
           </select>
         </div>
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Assign Branch</label>
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('users.assignBranch') }}</label>
           <select 
             v-model="newUser.branchId"
             class="w-full h-11 px-4 bg-surface-container-lowest border border-outline-variant rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
           >
-            <option value="" disabled>Select a branch</option>
+            <option value="" disabled>{{ $t('users.selectBranch') }}</option>
             <option v-for="branch in branches" :key="branch.id" :value="branch.id">
               {{ branch.name }}
             </option>
@@ -161,15 +161,15 @@
           @click="showCreateModal = false" 
           class="flex-1 py-3 text-sm font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-all border border-outline-variant bg-transparent cursor-pointer"
         >
-          Cancel
+          {{ $t('common.cancel') }}
         </button>
         <button 
           @click="handleCreateUser" 
           :disabled="isSubmitting || !newUser.fullName || !newUser.phone || !newUser.branchId"
           class="flex-1 py-3 bg-primary text-on-primary hover:bg-opacity-95 rounded-xl transition-all font-bold text-sm cursor-pointer border-0 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span v-if="isSubmitting">Creating...</span>
-          <span v-else>Create User</span>
+          <span v-if="isSubmitting">{{ $t('users.creating') }}</span>
+          <span v-else>{{ $t('users.createUserBtn') }}</span>
         </button>
       </template>
     </Modal>
@@ -177,28 +177,30 @@
     <!-- Confirmation Modal: Toggle Status -->
     <Modal 
       :isOpen="showToggleModal" 
-      :title="selectedUser?.active ? 'Deactivate User' : 'Activate User'" 
+      :title="selectedUser?.active ? $t('users.deactivateUserTitle') : $t('users.activateUserTitle')" 
       :onClose="() => showToggleModal = false"
       maxWidth="max-w-sm"
     >
       <div class="p-2 text-center text-sm text-on-surface-variant">
-        Are you sure you want to {{ selectedUser?.active ? 'deactivate' : 'activate' }} 
-        <span class="font-bold text-on-surface">{{ selectedUser?.fullName }}</span>?
-        <p v-if="selectedUser?.active" class="mt-2 text-xs text-error">They will no longer be able to log in.</p>
+        {{ $t('users.toggleStatusPrompt', {
+          action: selectedUser?.active ? $t('users.deactivate') : $t('users.activate'),
+          name: selectedUser?.fullName || ''
+        }) }}
+        <p v-if="selectedUser?.active" class="mt-2 text-xs text-error">{{ $t('users.deactivateWarning') }}</p>
       </div>
       <template #footer>
         <button 
           @click="showToggleModal = false" 
           class="flex-1 py-2.5 text-sm font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-all border border-outline-variant bg-transparent cursor-pointer"
         >
-          Cancel
+          {{ $t('common.cancel') }}
         </button>
         <button 
           @click="handleToggleStatus" 
           class="flex-1 py-2.5 rounded-xl transition-all font-bold text-sm cursor-pointer border-0 shadow-sm text-white"
           :class="selectedUser?.active ? 'bg-warning' : 'bg-success'"
         >
-          {{ selectedUser?.active ? 'Deactivate' : 'Activate' }}
+          {{ selectedUser?.active ? $t('users.deactivate') : $t('users.activate') }}
         </button>
       </template>
     </Modal>
@@ -206,27 +208,26 @@
     <!-- Confirmation Modal: Delete -->
     <Modal 
       :isOpen="showDeleteModal" 
-      title="Delete User" 
+      :title="$t('users.deleteUserTitle')" 
       :onClose="() => showDeleteModal = false"
       maxWidth="max-w-sm"
     >
       <div class="p-2 text-center text-sm text-on-surface-variant">
-        Are you sure you want to permanently delete 
-        <span class="font-bold text-on-surface">{{ selectedUser?.fullName }}</span>?
-        <p class="mt-2 text-xs text-error">This action cannot be undone.</p>
+        {{ $t('users.deleteUserPrompt', { name: selectedUser?.fullName || '' }) }}
+        <p class="mt-2 text-xs text-error">{{ $t('users.deleteWarning') }}</p>
       </div>
       <template #footer>
         <button 
           @click="showDeleteModal = false" 
           class="flex-1 py-2.5 text-sm font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-all border border-outline-variant bg-transparent cursor-pointer"
         >
-          Cancel
+          {{ $t('common.cancel') }}
         </button>
         <button 
           @click="handleDeleteUser" 
           class="flex-1 py-2.5 bg-error hover:bg-opacity-95 text-white rounded-xl transition-all font-bold text-sm cursor-pointer border-0 shadow-sm"
         >
-          Delete
+          {{ $t('common.delete') }}
         </button>
       </template>
     </Modal>

@@ -5,7 +5,7 @@
       @click="toggleDropdown"
       class="relative p-2.5 hover:bg-surface-container rounded-full transition-colors flex items-center justify-center cursor-pointer text-on-surface-variant hover:text-on-surface"
       :class="isOpen ? 'bg-surface-container text-primary' : ''"
-      title="Notifications & Alerts"
+      :title="$t('notifications.title')"
       type="button"
     >
       <Bell class="w-5 h-5 stroke-[2px]" :class="hasUnread ? 'text-on-surface' : ''" />
@@ -39,15 +39,15 @@
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <h3 class="text-sm font-black text-on-surface tracking-tight">Notifications</h3>
+              <h3 class="text-sm font-black text-on-surface tracking-tight">{{ $t('notifications.title') }}</h3>
               <span
                 v-if="unreadCount > 0"
                 class="px-2 py-0.2 bg-primary/10 text-primary border border-primary/20 text-[10px] font-mono font-bold rounded-full"
               >
-                {{ unreadCount }} new
+                {{ $t('notifications.newBadge', { count: unreadCount }) }}
               </span>
             </div>
-            <p class="text-[11px] text-on-surface-variant font-medium">Store administrator & manager alerts</p>
+            <p class="text-[11px] text-on-surface-variant font-medium">{{ $t('notifications.subtitle') }}</p>
           </div>
         </div>
 
@@ -57,10 +57,10 @@
           @click="handleMarkAllAsRead"
           :disabled="isActionLoading"
           class="text-[11px] font-bold text-primary hover:text-primary/80 hover:underline flex items-center gap-1 cursor-pointer transition-colors disabled:opacity-50"
-          title="Mark all notifications as read"
+          :title="$t('notifications.markAllRead')"
         >
           <CheckCheck class="w-3.5 h-3.5" />
-          <span>Mark all read</span>
+          <span>{{ $t('notifications.markAllRead') }}</span>
         </button>
       </div>
 
@@ -71,7 +71,7 @@
           class="px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5"
           :class="!unreadOnlyFilter ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:bg-surface-container'"
         >
-          <span>All</span>
+          <span>{{ $t('notifications.all') }}</span>
           <span class="text-[10px] font-mono opacity-80" v-if="notifications.length">({{ notifications.length }})</span>
         </button>
 
@@ -80,7 +80,7 @@
           class="px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5"
           :class="unreadOnlyFilter ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:bg-surface-container'"
         >
-          <span>Unread</span>
+          <span>{{ $t('notifications.unread') }}</span>
           <span
             v-if="unreadCount > 0"
             class="text-[10px] font-mono px-1.5 py-0.2 rounded-full"
@@ -93,7 +93,7 @@
         <button
           @click="refreshInbox"
           class="ml-auto p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
-          title="Refresh notifications"
+          :title="$t('notifications.refresh')"
         >
           <RefreshCw class="w-3.5 h-3.5" :class="isLoading ? 'animate-spin text-primary' : ''" />
         </button>
@@ -104,7 +104,7 @@
         <!-- Loading State -->
         <div v-if="isLoading && notifications.length === 0" class="py-12 flex flex-col items-center justify-center gap-2 text-on-surface-variant">
           <Loader2 class="w-6 h-6 animate-spin text-primary" />
-          <span class="text-xs font-semibold">Loading notifications...</span>
+          <span class="text-xs font-semibold">{{ $t('notifications.loading') }}</span>
         </div>
 
         <!-- Empty State -->
@@ -117,10 +117,10 @@
           </div>
           <div>
             <h4 class="text-xs font-bold text-on-surface">
-              {{ unreadOnlyFilter ? 'No Unread Notifications' : 'Inbox is Clean' }}
+              {{ unreadOnlyFilter ? $t('notifications.noUnread') : $t('notifications.inboxClean') }}
             </h4>
             <p class="text-[11px] text-on-surface-variant mt-0.5 max-w-[220px]">
-              {{ unreadOnlyFilter ? 'You have caught up with all active alerts.' : 'No alerts have been dispatched for your account.' }}
+              {{ unreadOnlyFilter ? $t('notifications.allCaughtUp') : $t('notifications.noAlerts') }}
             </p>
           </div>
         </div>
@@ -148,7 +148,7 @@
                 class="px-2 py-0.5 rounded text-[9px] font-mono font-extrabold uppercase tracking-wider shrink-0"
                 :class="getPriorityBadgeClass(item.priority)"
               >
-                {{ item.priority || 'NORMAL' }}
+                {{ getPriorityText(item.priority) }}
               </span>
 
               <!-- Branch Tag -->
@@ -169,7 +169,7 @@
               <span
                 v-if="isItemUnread(item)"
                 class="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20 shrink-0"
-                title="Unread alert"
+                :title="$t('notifications.unread')"
               ></span>
             </div>
           </div>
@@ -199,7 +199,7 @@
                 @click="handleActionNavigate(item)"
                 class="text-primary font-bold hover:underline flex items-center gap-1 cursor-pointer"
               >
-                <span>View Details</span>
+                <span>{{ $t('common.viewDetails') }}</span>
                 <ArrowRight class="w-3 h-3" />
               </button>
             </div>
@@ -210,19 +210,19 @@
                 v-if="isItemUnread(item)"
                 @click="handleMarkRead(item.recipientId)"
                 class="text-on-surface-variant hover:text-primary flex items-center gap-1 cursor-pointer font-medium"
-                title="Mark as read"
+                :title="$t('notifications.markReadTooltip')"
               >
                 <Check class="w-3 h-3" />
-                <span>Mark read</span>
+                <span>{{ $t('common.read') || 'Soma' }}</span>
               </button>
 
               <button
                 @click="handleArchive(item.recipientId)"
                 class="text-on-surface-variant hover:text-error flex items-center gap-1 cursor-pointer font-medium"
-                title="Dismiss notification"
+                :title="$t('common.delete')"
               >
                 <Trash2 class="w-3 h-3" />
-                <span>Dismiss</span>
+                <span>{{ $t('common.delete') }}</span>
               </button>
             </div>
           </div>
@@ -232,13 +232,13 @@
       <!-- Footer -->
       <div class="p-3 bg-surface-container-lowest border-t border-outline-variant/60 flex items-center justify-between text-xs text-on-surface-variant font-medium">
         <span class="text-[11px] font-mono">
-          Total: <strong class="text-on-surface">{{ notifications.length }}</strong>
+          {{ $t('common.total') }}: <strong class="text-on-surface">{{ notifications.length }}</strong>
         </span>
         <button
           @click="isOpen = false"
           class="font-bold text-primary hover:underline cursor-pointer text-[11px]"
         >
-          Close Panel
+          {{ $t('common.close') }}
         </button>
       </div>
     </div>
@@ -250,6 +250,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useNotificationViewModel } from '../../viewmodels/useNotificationViewModel';
 import type { NotificationType, NotificationPriority, NotificationInboxItem } from '../../models/types';
+import { t } from '../../i18n';
 import {
   Bell,
   BellRing,
@@ -265,8 +266,6 @@ import {
   UserCheck,
   Sparkles,
   Megaphone,
-  AlertTriangle,
-  AlertOctagon,
   Info
 } from 'lucide-vue-next';
 
@@ -281,7 +280,6 @@ const {
   isLoading,
   isActionLoading,
   unreadOnlyFilter,
-  fetchUnreadCount,
   fetchNotifications,
   markAsRead,
   markAllAsRead,
@@ -390,6 +388,17 @@ const getPriorityBadgeClass = (priority: NotificationPriority) => {
     case 'NORMAL':
     default:
       return 'bg-primary-container/50 text-primary border border-primary/20';
+  }
+};
+
+const getPriorityText = (priority?: string) => {
+  switch (priority?.toUpperCase()) {
+    case 'CRITICAL': return t('notifications.critical');
+    case 'HIGH': return t('notifications.high');
+    case 'LOW': return t('notifications.low');
+    case 'NORMAL':
+    default:
+      return t('notifications.normal');
   }
 };
 

@@ -13,18 +13,21 @@
         </div>
         <div>
           <h1 class="text-xl font-black text-primary tracking-tight">Jenga POS</h1>
-          <p class="text-xs font-semibold text-on-surface-variant font-mono uppercase tracking-wider">Store Administration</p>
+          <p class="text-xs font-semibold text-on-surface-variant font-mono uppercase tracking-wider">{{ $t('selectBranch.storeAdmin') }}</p>
         </div>
       </div>
 
-      <button 
-        @click="handleLogout"
-        class="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant hover:bg-error-container/20 hover:border-error/30 hover:text-error text-on-surface-variant text-xs font-bold transition-all cursor-pointer shadow-sm"
-        title="Sign Out"
-      >
-        <LogOut class="w-4 h-4" />
-        <span>Logout</span>
-      </button>
+      <div class="flex items-center gap-3">
+        <LanguageSelector variant="dropdown" />
+        <button 
+          @click="handleLogout"
+          class="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant hover:bg-error-container/20 hover:border-error/30 hover:text-error text-on-surface-variant text-xs font-bold transition-all cursor-pointer shadow-sm"
+          :title="$t('sidebar.logout')"
+        >
+          <LogOut class="w-4 h-4" />
+          <span>{{ $t('sidebar.logout') }}</span>
+        </button>
+      </div>
     </header>
 
     <!-- Main Content Container -->
@@ -33,13 +36,13 @@
       <div class="text-center max-w-2xl mx-auto space-y-3 mb-10 animate-fade-down">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary-container/30 border border-primary/20 text-primary text-xs font-bold font-mono uppercase tracking-widest mb-1">
           <Building2 class="w-3.5 h-3.5" />
-          <span>Branch Selection</span>
+          <span>{{ $t('selectBranch.title') }}</span>
         </div>
         <h2 class="text-3xl md:text-4xl font-black text-on-surface tracking-tight leading-tight">
-          Welcome, {{ adminName || 'Admin' }} 👋
+          {{ $t('selectBranch.welcomeAdmin', { name: adminName || 'Admin' }) }}
         </h2>
         <p class="text-sm text-on-surface-variant leading-relaxed">
-          Please choose which store branch you would like to view and manage for this session. You can switch branches anytime from your dashboard.
+          {{ $t('selectBranch.chooseBranchDesc') }}
         </p>
 
         <!-- Branch Search Bar (shown if multiple branches) -->
@@ -49,7 +52,7 @@
             <input 
               v-model="searchQuery"
               type="text" 
-              placeholder="Search branch name or location..." 
+              :placeholder="$t('selectBranch.searchPlaceholder')" 
               class="w-full h-11 pl-11 pr-4 bg-surface-container-lowest border border-outline-variant rounded-xl text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-medium"
             />
           </div>
@@ -80,7 +83,7 @@
           <!-- Active Indicator Badge -->
           <div v-if="activeBranchId === b.id" class="absolute top-4 right-4 bg-primary text-on-primary text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
             <CheckCircle2 class="w-3 h-3" />
-            <span>Current</span>
+            <span>{{ $t('selectBranch.currentBadge') }}</span>
           </div>
 
           <div>
@@ -94,7 +97,7 @@
                 class="text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
                 :class="b.status === 'Active' || !b.status ? 'bg-success-container/30 text-success' : 'bg-surface-container-high text-on-surface-variant'"
               >
-                {{ b.status || 'Active' }}
+                {{ b.status || $t('common.active') }}
               </span>
             </div>
 
@@ -106,7 +109,7 @@
             <div class="space-y-1.5 text-xs text-on-surface-variant font-medium">
               <div class="flex items-center gap-2">
                 <MapPin class="w-3.5 h-3.5 text-primary shrink-0" />
-                <span class="truncate">{{ b.location || 'Main Premises' }}</span>
+                <span class="truncate">{{ b.location || $t('selectBranch.mainPremises') }}</span>
               </div>
               <div v-if="b.phone" class="flex items-center gap-2">
                 <Phone class="w-3.5 h-3.5 text-on-surface-variant/70 shrink-0" />
@@ -123,13 +126,13 @@
           <div class="mt-6 pt-4 border-t border-outline-variant/40 flex items-center justify-between">
             <span class="text-xs font-bold text-primary group-hover:underline">
               <template v-if="selectingBranchId === b.id">
-                Verifying License...
+                {{ $t('selectBranch.verifyingLicense') }}
               </template>
               <template v-else-if="activeBranchId === b.id">
-                Already Selected
+                {{ $t('selectBranch.alreadySelected') }}
               </template>
               <template v-else>
-                Select this Branch
+                {{ $t('selectBranch.selectThisBranch') }}
               </template>
             </span>
             <div class="w-8 h-8 rounded-full bg-surface-container group-hover:bg-primary group-hover:text-on-primary flex items-center justify-center text-on-surface-variant transition-all group-hover:translate-x-1">
@@ -146,30 +149,30 @@
           <Building2 class="w-7 h-7" />
         </div>
         <div>
-          <h3 class="text-lg font-bold text-on-surface">No Branches Found</h3>
+          <h3 class="text-lg font-bold text-on-surface">{{ $t('selectBranch.noBranchesFound') }}</h3>
           <p class="text-xs text-on-surface-variant mt-1">
-            {{ searchQuery ? 'No branch matching your search term.' : 'Your store does not have any branches setup yet.' }}
+            {{ searchQuery ? $t('selectBranch.noBranchesMatchQuery') : $t('selectBranch.noBranchesSetup') }}
           </p>
         </div>
         <button 
           @click="loadBranches" 
           class="px-4 py-2 bg-primary text-on-primary rounded-xl text-xs font-bold hover:bg-primary/90 transition-all cursor-pointer"
         >
-          Refresh List
+          {{ $t('selectBranch.refreshList') }}
         </button>
       </div>
     </main>
 
     <!-- Footer -->
     <footer class="relative z-10 w-full py-4 text-center text-xs text-on-surface-variant/70 font-mono">
-      Jenga POS Management • Admin Control Portal
+      {{ $t('selectBranch.portalFooter') }}
     </footer>
 
     <!-- License Information Modal Popup -->
     <LicenseModal 
-      :isOpen="showLicenseModal"
-      :branchId="modalBranchId"
-      :onClose="() => showLicenseModal = false"
+      :isOpen="showLicenseModal" 
+      :branchId="modalBranchId" 
+      :onClose="() => showLicenseModal = false" 
     />
   </div>
 </template>
@@ -181,7 +184,9 @@ import { api } from '../services/api';
 import { showToast } from '../services/toastService';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import LicenseModal from '../components/common/LicenseModal.vue';
+import LanguageSelector from '../components/common/LanguageSelector.vue';
 import type { StoreBranch } from '../models/types';
+import { t } from '../i18n';
 import { 
   Store, 
   Building2, 
@@ -256,7 +261,7 @@ const selectBranch = async (b: StoreBranch) => {
       return;
     }
 
-    showToast(`Branch '${b.name}' verified with active license.`, 'success');
+    showToast(t('selectBranch.branchVerifiedToast', { name: b.name }), 'success');
     await setActiveBranch(b.id);
     router.push('/dashboard');
   } catch (err: any) {

@@ -12,7 +12,7 @@
           <input 
             type="text"
             v-model="searchQuery"
-            placeholder="Scan barcode or type name to search catalog..."
+            :placeholder="$t('checkout.scanPlaceholder')"
             class="block w-full pl-12 pr-4 py-4 bg-surface rounded-xl border border-outline-variant text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all shadow-sm placeholder-on-surface-variant font-medium outline-none"
           />
         </form>
@@ -25,15 +25,15 @@
             : 'bg-surface-container text-on-surface hover:bg-surface-container-high border-outline-variant'"
         >
           <Grid class="w-4 h-4" />
-          <span>Browse Grid</span>
+          <span>{{ $t('checkout.browseGrid') }}</span>
         </button>
       </div>
 
       <!-- Conditional Catalog Quick-Grids -->
       <div v-if="showBrowse" class="bg-surface-container-low rounded-xl p-4 border border-outline-variant/60 flex flex-col gap-3 shrink-0 h-44 overflow-y-auto">
         <div class="flex justify-between items-center pb-2 border-b border-outline-variant/30">
-          <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">Tap Catalog Tiles to Add</h4>
-          <span class="text-[10px] font-mono text-outline font-semibold">({{ filteredProducts.length }} items formatted)</span>
+          <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">{{ $t('checkout.tapTilesToAdd') }}</h4>
+          <span class="text-[10px] font-mono text-outline font-semibold">{{ $t('checkout.itemsFormatted', { count: filteredProducts.length }) }}</span>
         </div>
         <div class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-8 gap-3">
           <button
@@ -49,7 +49,7 @@
           >
             <p class="text-xs font-bold text-on-surface truncate w-full leading-tight">{{ p.name }}</p>
             <div class="flex justify-between items-center w-full mt-1">
-              <span class="text-[10px] text-outline font-semibold">Stock: {{ p.stock }}</span>
+              <span class="text-[10px] text-outline font-semibold">{{ $t('checkout.stockLabel', { count: p.stock }) }}</span>
               <span class="text-[10.5px] font-mono font-black text-primary">{{ formatCurrency(p.price, currency) }}</span>
             </div>
           </button>
@@ -63,18 +63,18 @@
       <div class="w-2/3 bg-surface rounded-xl border border-outline-variant flex flex-col overflow-hidden shadow-sm">
         <!-- Custom Grid Table Header -->
         <div class="grid grid-cols-12 gap-4 p-4 bg-surface-container-low border-b border-outline-variant text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">
-          <div class="col-span-5">Product Details</div>
-          <div class="col-span-3 text-center">Quantity</div>
-          <div class="col-span-2 text-right">Unit Price</div>
-          <div class="col-span-2 text-right">Total</div>
+          <div class="col-span-5">{{ $t('checkout.productDetails') }}</div>
+          <div class="col-span-3 text-center">{{ $t('checkout.quantity') }}</div>
+          <div class="col-span-2 text-right">{{ $t('checkout.unitPrice') }}</div>
+          <div class="col-span-2 text-right">{{ $t('checkout.lineTotal') }}</div>
         </div>
 
         <!-- Cart Table Body -->
         <div class="flex-1 overflow-y-auto bg-surface-container-lowest divide-y divide-surface-variant">
           <div v-if="cart.length === 0" class="h-full w-full flex flex-col justify-center items-center p-8 text-center bg-surface-container-lowest/50 text-outline">
             <AlertCircle class="w-12 h-12 text-outline-variant mb-4 stroke-[1.5px]" />
-            <h4 class="text-sm font-bold text-on-surface mb-1">Cart is Empty</h4>
-            <p class="text-xs text-on-surface-variant max-w-sm">Scan barcode codes or click tiles from the Quick-Browse grid above to draft active purchases.</p>
+            <h4 class="text-sm font-bold text-on-surface mb-1">{{ $t('checkout.cartIsEmpty') }}</h4>
+            <p class="text-xs text-on-surface-variant max-w-sm">{{ $t('checkout.cartEmptyDesc') }}</p>
           </div>
           <div 
             v-else
@@ -87,13 +87,13 @@
               <button 
                 @click="removeLineItem(item.product.id)"
                 class="text-error opacity-80 group-hover:opacity-100 hover:bg-error-container hover:text-on-error-container p-1 rounded-lg transition-colors cursor-pointer"
-                title="Remove product"
+                :title="$t('checkout.removeProduct')"
               >
                 <Trash2 class="w-4 h-4" />
               </button>
               <div class="min-w-0">
                 <p class="text-sm font-bold text-on-surface truncate leading-tight">{{ item.product.name }}</p>
-                <span class="text-[10px] font-mono font-semibold text-on-surface-variant">BAR: {{ item.product.barcode }}</span>
+                <span class="text-[10px] font-mono font-semibold text-on-surface-variant">{{ $t('checkout.barcodePrefix', { barcode: item.product.barcode || $t('inventory.noBarcode') }) }}</span>
               </div>
             </div>
 
@@ -130,13 +130,13 @@
                   ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100' 
                   : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'"
               >
-                {{ item.isWholesale ? 'Wholesale' : 'Retail' }}
+                {{ item.isWholesale ? $t('checkout.wholesale') : $t('checkout.retail') }}
               </button>
               <span 
                 v-else
                 class="mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-gray-100 text-gray-400 border border-gray-200 select-none cursor-default"
               >
-                Retail Only
+                {{ $t('checkout.retailOnly') }}
               </span>
             </div>
 
@@ -155,19 +155,19 @@
         <!-- Subtotal metadata details -->
         <div class="flex flex-col gap-2 pb-4 border-b border-outline-variant/60">
           <div class="flex justify-between items-center text-sm font-semibold text-on-surface-variant">
-            <span>Subtotal ({{ cartItemsCount }} items)</span>
+            <span>{{ $t('checkout.subtotalItems', { count: cartItemsCount }) }}</span>
             <span class="font-mono text-on-surface font-bold">{{ formatCurrency(subtotal, currency) }}</span>
           </div>
           <div class="flex justify-between items-center text-sm font-semibold text-tertiary">
-            <span>Discounts</span>
+            <span>{{ $t('checkout.discounts') }}</span>
             <span class="font-mono font-bold">-{{ formatCurrency(discount, currency) }}</span>
           </div>
           <div class="flex justify-between items-center text-sm font-semibold text-on-surface-variant">
-            <span>Tax (18% VAT Incl.)</span>
+            <span>{{ $t('checkout.taxVat') }}</span>
             <span class="font-mono text-on-surface font-bold">{{ formatCurrency(tax, currency) }}</span>
           </div>
           <div class="flex justify-between items-end pt-2 mt-1 border-t border-outline-variant/40">
-            <span class="text-base font-black uppercase tracking-tight text-on-surface">Total Invoice</span>
+            <span class="text-base font-black uppercase tracking-tight text-on-surface">{{ $t('checkout.totalInvoice') }}</span>
             <span class="text-xl font-black text-primary font-mono tracking-tight">
               {{ formatCurrency(total, currency) }}
             </span>
@@ -176,7 +176,7 @@
 
         <!-- Payment Methods switcher panel -->
         <div class="flex flex-col gap-1.5">
-          <h3 class="text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-widest">Select Method</h3>
+          <h3 class="text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('checkout.selectMethod') }}</h3>
           <div class="grid grid-cols-3 gap-2">
             <!-- Cash button -->
             <button 
@@ -187,7 +187,7 @@
                 ? 'bg-primary text-on-primary border-primary shadow-md shadow-primary/10' 
                 : 'bg-surface-container-lowest text-on-surface border-outline-variant hover:border-primary/50'"
             >
-              <span class="text-xs font-bold">Cash</span>
+              <span class="text-xs font-bold">{{ $t('checkout.cash') }}</span>
             </button>
 
             <!-- On Credit button -->
@@ -199,7 +199,7 @@
                 ? 'bg-primary text-on-primary border-primary shadow-md shadow-primary/10' 
                 : 'bg-surface-container-lowest text-on-surface border-outline-variant hover:border-primary/50'"
             >
-              <span class="text-xs font-bold">On Credit</span>
+              <span class="text-xs font-bold">{{ $t('checkout.onCredit') }}</span>
             </button>
 
             <!-- M-Pesa mobile money button -->
@@ -211,7 +211,7 @@
                 ? 'bg-primary text-on-primary border-primary shadow-md shadow-primary/10' 
                 : 'bg-surface-container-lowest text-on-surface border-outline-variant hover:border-primary/50'"
             >
-              <span class="text-xs font-bold">M-Pesa</span>
+              <span class="text-xs font-bold">{{ $t('checkout.mpesa') }}</span>
             </button>
           </div>
 
@@ -225,9 +225,9 @@
                   <span class="text-[10px] font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">{{ selectedCustomer.code || 'CUST' }}</span>
                 </div>
                 <div class="text-[11px] text-on-surface-variant font-mono mt-1 space-y-0.5">
-                  <div>Credit Limit: <span class="font-bold text-on-surface">{{ formatCurrency(selectedCustomer.creditLimit || 0, currency) }}</span></div>
-                  <div>Outstanding: <span class="font-bold text-amber-600">{{ formatCurrency(selectedCustomer.outstandingBalance || 0, currency) }}</span></div>
-                  <div>Available Credit: <span class="font-bold" :class="((selectedCustomer.creditLimit || 0) - (selectedCustomer.outstandingBalance || 0)) >= total ? 'text-success' : 'text-error'">{{ formatCurrency((selectedCustomer.creditLimit || 0) - (selectedCustomer.outstandingBalance || 0), currency) }}</span></div>
+                  <div>{{ $t('checkout.creditLimit') }}: <span class="font-bold text-on-surface">{{ formatCurrency(selectedCustomer.creditLimit || 0, currency) }}</span></div>
+                  <div>{{ $t('checkout.outstanding') }}: <span class="font-bold text-amber-600">{{ formatCurrency(selectedCustomer.outstandingBalance || 0, currency) }}</span></div>
+                  <div>{{ $t('checkout.availableCredit') }}: <span class="font-bold" :class="((selectedCustomer.creditLimit || 0) - (selectedCustomer.outstandingBalance || 0)) >= total ? 'text-success' : 'text-error'">{{ formatCurrency((selectedCustomer.creditLimit || 0) - (selectedCustomer.outstandingBalance || 0), currency) }}</span></div>
                 </div>
               </div>
               <button 
@@ -235,19 +235,19 @@
                 @click="openCustomerPicker" 
                 class="px-2.5 py-1 text-[11px] font-bold text-primary bg-surface hover:bg-surface-container-high rounded-lg border border-primary/30 transition-all cursor-pointer"
               >
-                Change
+                {{ $t('checkout.changeCustomer') }}
               </button>
             </div>
             <div v-else class="flex justify-between items-center py-1">
               <span class="text-xs font-semibold text-error flex items-center gap-1.5">
-                <AlertCircle class="w-4 h-4" /> No customer selected
+                <AlertCircle class="w-4 h-4" /> {{ $t('checkout.noCustomerSelected') }}
               </span>
               <button 
                 type="button" 
                 @click="openCustomerPicker" 
                 class="px-3 py-1.5 text-xs font-bold text-on-primary bg-primary hover:bg-primary/95 rounded-lg transition-all cursor-pointer shadow-xs"
               >
-                Select Customer
+                {{ $t('checkout.selectCustomer') }}
               </button>
             </div>
           </div>
@@ -257,7 +257,7 @@
         <div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/60 flex flex-col gap-4 mt-auto">
           <div>
             <label class="block text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-              {{ paymentMethod === 'Cash' ? 'Amount Cash Received' : 'Integrated Gateway Total' }}
+              {{ paymentMethod === 'Cash' ? $t('checkout.amountCashReceived') : $t('checkout.integratedGatewayTotal') }}
             </label>
             
             <div class="relative">
@@ -276,7 +276,7 @@
 
           <!-- Change Due summary -->
           <div class="mt-1 p-3.5 bg-primary-container/15 rounded-lg flex justify-between items-center border border-primary-container/20">
-            <span class="text-sm font-semibold text-primary">Change Due</span>
+            <span class="text-sm font-semibold text-primary">{{ $t('checkout.changeDue') }}</span>
             <span class="text-xl font-black text-primary font-mono select-all">
               {{ formatCurrency(changeDue, currency) }}
             </span>
@@ -295,7 +295,7 @@
             class="h-12 px-4 bg-surface-container text-on-surface font-bold text-xs rounded-xl hover:bg-surface-variant transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 shrink-0 border border-outline-variant/60"
           >
             <Pause class="w-4 h-4 stroke-[2.5px]" />
-            <span>Hold</span>
+            <span>{{ $t('checkout.hold') }}</span>
           </button>
 
           <!-- Complete Sale & Print Button -->
@@ -306,7 +306,7 @@
             class="flex-1 h-12 bg-primary text-on-primary rounded-xl text-sm font-bold hover:bg-primary/95 active:scale-[0.99] transition-all flex items-center justify-center gap-2.5 shadow-md shadow-primary/15 cursor-pointer disabled:opacity-50"
           >
             <CheckCircle class="w-5 h-5 stroke-[2.5px]" />
-            <span>Complete Sale & Print</span>
+            <span>{{ $t('checkout.completeSalePrint') }}</span>
           </button>
         </div>
       </div>
@@ -327,7 +327,7 @@
       </div>
       
       <div class="space-y-2">
-        <h4 class="text-md font-bold text-on-surface">Verification Alert</h4>
+        <h4 class="text-md font-bold text-on-surface">{{ $t('checkout.verificationAlert') }}</h4>
         <p class="text-xs text-on-surface-variant leading-relaxed">
           {{ stockModalMessage }}
         </p>
@@ -339,7 +339,7 @@
         @click="showStockModal = false" 
         class="w-full py-3 bg-primary text-on-primary hover:bg-opacity-95 rounded-xl transition-all font-bold text-xs cursor-pointer border-0 shadow-md shadow-primary/15 text-white"
       >
-        Acknowledge
+        {{ $t('checkout.acknowledge') }}
       </button>
     </template>
   </Modal>
@@ -347,23 +347,23 @@
   <!-- Open Shift Modal for Cashiers -->
   <Modal 
     :isOpen="vm.userRole.value === 'CASHIER' && vm.currentShift.value === null" 
-    title="Open Shift" 
+    :title="$t('checkout.openShiftTitle')" 
     :onClose="() => {}"
     maxWidth="max-w-sm"
   >
     <div class="flex flex-col space-y-4">
       <div class="space-y-2 text-center pb-2">
-        <h4 class="text-md font-bold text-on-surface">Start Register Session</h4>
+        <h4 class="text-md font-bold text-on-surface">{{ $t('checkout.startRegisterSession') }}</h4>
         <p class="text-xs text-on-surface-variant leading-relaxed">
-          You must declare your starting cash float before processing any sales.
+          {{ $t('checkout.openShiftPrompt') }}
         </p>
       </div>
       <div class="space-y-2">
-        <label class="text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">Opening Cash ({{ currency }})</label>
+        <label class="text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('checkout.openingCashFloat', { currency }) }}</label>
         <input 
           type="number" 
           v-model="openingCashInput"
-          placeholder="e.g. 50000"
+          :placeholder="$t('checkout.openingCashPlaceholder')"
           class="w-full bg-surface-container border border-outline-variant rounded-lg p-3.5 text-lg text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-mono text-center font-black shadow-inner"
         />
       </div>
@@ -375,7 +375,7 @@
         :disabled="isOpeningShift || !openingCashInput"
         class="w-full py-3.5 bg-primary text-on-primary hover:bg-opacity-95 active:scale-95 rounded-xl transition-all font-bold text-sm cursor-pointer border-0 shadow-lg shadow-primary/20 text-white disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {{ isOpeningShift ? 'Opening...' : 'Open Shift' }}
+        {{ isOpeningShift ? $t('common.loading') : $t('checkout.openingShiftBtn') }}
       </button>
     </template>
   </Modal>
@@ -383,7 +383,7 @@
   <!-- Customer Selection Modal for Credit Sales -->
   <Modal 
     :isOpen="showCustomerPickerModal" 
-    title="Select Customer for Credit Sale" 
+    :title="$t('checkout.selectCustomerModalTitle')" 
     :onClose="() => showCustomerPickerModal = false"
     maxWidth="max-w-xl"
   >
@@ -393,22 +393,22 @@
         <input 
           type="text" 
           v-model="customerSearchQuery"
-          placeholder="Search customer by name, code, phone, or TIN..."
+          :placeholder="$t('checkout.searchCustomerPlaceholder')"
           class="w-full pl-10 pr-4 py-2.5 bg-surface rounded-xl border border-outline-variant text-xs font-medium focus:border-primary focus:outline-none text-on-surface"
         />
       </div>
 
       <div class="flex justify-between items-center text-xs text-on-surface-variant px-1 font-mono">
-        <span>Required Amount: <strong class="text-primary font-bold">{{ formatCurrency(total, currency) }}</strong></span>
-        <span>Available Customers: {{ filteredCustomers.length }}</span>
+        <span>{{ $t('checkout.requiredAmount') }}: <strong class="text-primary font-bold">{{ formatCurrency(total, currency) }}</strong></span>
+        <span>{{ $t('checkout.availableCustomers', { count: filteredCustomers.length }) }}</span>
       </div>
 
       <div class="max-h-80 overflow-y-auto space-y-2 pr-1">
         <div v-if="isLoadingCustomers" class="p-8 text-center text-xs text-on-surface-variant">
-          Loading customers...
+          {{ $t('checkout.loadingCustomers') }}
         </div>
         <div v-else-if="filteredCustomers.length === 0" class="p-8 text-center text-xs text-on-surface-variant">
-          No active customers found matching "{{ customerSearchQuery }}".
+          {{ $t('checkout.noCustomersFound', { query: customerSearchQuery }) }}
         </div>
         <div 
           v-else
@@ -432,9 +432,9 @@
               </span>
             </div>
             <div class="text-[11px] text-on-surface-variant font-mono mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
-              <span>Phone: {{ c.phone || 'N/A' }}</span>
-              <span>Limit: {{ formatCurrency(c.creditLimit || 0, currency) }}</span>
-              <span>Available: <strong :class="((c.creditLimit || 0) - (c.outstandingBalance || 0)) >= total ? 'text-success' : 'text-error'">{{ formatCurrency((c.creditLimit || 0) - (c.outstandingBalance || 0), currency) }}</strong></span>
+              <span>{{ $t('common.phone') }}: {{ c.phone || 'N/A' }}</span>
+              <span>{{ $t('checkout.creditLimit') }}: {{ formatCurrency(c.creditLimit || 0, currency) }}</span>
+              <span>{{ $t('checkout.availableCredit') }}: <strong :class="((c.creditLimit || 0) - (c.outstandingBalance || 0)) >= total ? 'text-success' : 'text-error'">{{ formatCurrency((c.creditLimit || 0) - (c.outstandingBalance || 0), currency) }}</strong></span>
             </div>
           </div>
 
@@ -446,7 +446,7 @@
               ? 'bg-primary text-on-primary hover:bg-primary/95 shadow-xs'
               : 'bg-error/20 text-error hover:bg-error/30'"
           >
-            {{ ((c.creditLimit || 0) - (c.outstandingBalance || 0)) >= total ? 'Select' : 'Exceeded' }}
+            {{ ((c.creditLimit || 0) - (c.outstandingBalance || 0)) >= total ? $t('checkout.selectCustomerBtn') : $t('checkout.exceeded') }}
           </button>
         </div>
       </div>
@@ -463,17 +463,14 @@ import { useBarcodeScanner, playPOSSound } from '../composables/useBarcodeScanne
 import type { Product, CartItem, Transaction, Customer } from '../models/types';
 import { formatCurrency, formatCurrencyWithoutSymbol } from '../models/mockData';
 import Modal from '../components/common/Modal.vue';
+import { t } from '../i18n';
 import { 
   Trash2, 
   Minus, 
   Plus, 
   QrCode, 
   CheckCircle, 
-  Smartphone, 
-  Coins, 
-  X, 
   Pause, 
-  Printer, 
   AlertCircle,
   Grid,
   UserCheck,
@@ -545,13 +542,18 @@ const filteredCustomers = computed(() => {
 const selectCustomerForCredit = (customer: Customer) => {
   const avail = (customer.creditLimit || 0) - (customer.outstandingBalance || 0);
   if (total.value > avail) {
-    showToast(`Credit limit exceeded! Available credit: ${formatCurrency(avail, currency.value)}, Sale total: ${formatCurrency(total.value, currency.value)}.`, 'error');
+    showToast(t('checkout.customerCreditLimitExceededToast', {
+      avail: formatCurrency(avail, currency.value),
+      total: formatCurrency(total.value, currency.value)
+    }), 'error');
     return;
   }
 
   selectedCustomer.value = customer;
   showCustomerPickerModal.value = false;
-  showToast(`Selected customer: ${customer.displayName || customer.companyName || customer.firstName}`, 'success');
+  showToast(t('checkout.selectedCustomerToast', {
+    name: customer.displayName || customer.companyName || customer.firstName || 'Customer'
+  }), 'success');
 };
 
 const products = computed(() => vm.products.value);
@@ -563,7 +565,7 @@ const isOpeningShift = ref(false);
 const handleOpenShift = async () => {
   const amount = parseFloat(openingCashInput.value);
   if (isNaN(amount) || amount < 0) {
-    showToast('Please enter a valid positive amount', 'error');
+    showToast(t('checkout.enterValidOpeningCash'), 'error');
     return;
   }
   isOpeningShift.value = true;
@@ -588,10 +590,10 @@ const handleBarcodeScan = (scannedCode: string) => {
 
   if (matched) {
     addProductToCart(matched);
-    showToast(`Scanned: ${matched.name}`, 'success');
+    showToast(t('checkout.scannedProduct', { name: matched.name }), 'success');
   } else {
     playPOSSound('error');
-    showToast(`No product found for barcode: "${code}"`, 'error');
+    showToast(t('checkout.barcodeNotFound', { code }), 'error');
   }
 };
 
@@ -615,13 +617,16 @@ const handleQuerySearch = () => {
     addProductToCart(matched);
     searchQuery.value = '';
   } else {
-    showToast(`No product matched for: "${searchQuery.value}"`, 'error');
+    showToast(t('checkout.noProductMatched', { query: searchQuery.value }), 'error');
   }
 };
 
 const addProductToCart = (product: Product) => {
   if (product.stock === 0) {
-    triggerStockWarning('Product Out of Stock', `Warning: "${product.name}" is currently Out of Stock!`);
+    triggerStockWarning(
+      t('checkout.productOutOfStock'),
+      t('checkout.productOutOfStockMsg', { name: product.name })
+    );
     return;
   }
 
@@ -629,7 +634,10 @@ const addProductToCart = (product: Product) => {
   if (existing) {
     const step = (product.unitOfMeasure === 'LTR' || product.unitOfMeasure === 'KG') ? 0.25 : 1;
     if (existing.quantity + step > product.stock) {
-      triggerStockWarning('Stock Limit Exceeded', `Cannot sell more than the available stock of ${product.stock} units.`);
+      triggerStockWarning(
+        t('checkout.stockLimitExceeded'),
+        t('checkout.stockLimitExceededMsg', { count: product.stock })
+      );
       return;
     }
     existing.quantity = Number((existing.quantity + step).toFixed(2));
@@ -655,7 +663,10 @@ const updateQuantity = (productId: string, val: number) => {
   }
 
   if (newQty > item.product.stock) {
-    triggerStockWarning('Stock Limit Exceeded', `Cannot sell more than the available stock of ${item.product.stock} units.`);
+    triggerStockWarning(
+      t('checkout.stockLimitExceeded'),
+      t('checkout.stockLimitExceededMsg', { count: item.product.stock })
+    );
     return;
   }
 
@@ -664,14 +675,6 @@ const updateQuantity = (productId: string, val: number) => {
 
 const removeLineItem = (productId: string) => {
   cart.value = cart.value.filter(it => it.product.id !== productId);
-};
-
-const clearCart = () => {
-  if (cart.value.length > 0 && window.confirm("Are you sure you want to cancel and clear the active cart?")) {
-    cart.value = [];
-    customCashInput.value = '';
-    selectedCustomer.value = null;
-  }
 };
 
 const cartItemsCount = computed(() => cart.value.reduce((ac, it) => ac + it.quantity, 0));
@@ -691,19 +694,6 @@ const tax = computed(() => {
 
 const total = computed(() => {
   return Math.max(0, subtotal.value - discount.value);
-});
-
-const quickCashOptions = computed(() => {
-  if (currency.value === 'USD') {
-    const val = Math.ceil(total.value / 2600);
-    return [val, val + 5, val + 10, val + 20];
-  }
-  if (currency.value === 'EUR') {
-    const val = Math.ceil(total.value / 2800);
-    return [val, val + 5, val + 10, val + 20];
-  }
-  const currentPrice = Math.ceil(total.value / 1000) * 1000;
-  return [currentPrice, currentPrice + 1000, currentPrice + 5000, currentPrice + 10000];
 });
 
 const cashReceivedValueTransformed = computed(() => {
@@ -736,25 +726,28 @@ const selectPaymentMethod = (method: 'Cash' | 'On Credit' | 'M-Pesa') => {
 
 const handleCompleteSale = () => {
   if (cart.value.length === 0) {
-    showToast("Active cart is empty! Please scan or select products to continue.", 'error');
+    showToast(t('checkout.cartEmptyError'), 'error');
     return;
   }
 
   if (paymentMethod.value === 'On Credit') {
     if (!selectedCustomer.value) {
-      showToast("Please select a customer for On Credit sale.", 'error');
+      showToast(t('checkout.selectCustomerCreditError'), 'error');
       openCustomerPicker();
       return;
     }
     const avail = (selectedCustomer.value.creditLimit || 0) - (selectedCustomer.value.outstandingBalance || 0);
     if (total.value > avail) {
-      showToast(`Sale total (${formatCurrency(total.value, currency.value)}) exceeds customer available credit limit (${formatCurrency(avail, currency.value)}).`, 'error');
+      showToast(t('checkout.creditLimitExceededError', {
+        total: formatCurrency(total.value, currency.value),
+        avail: formatCurrency(avail, currency.value)
+      }), 'error');
       return;
     }
   }
 
   if (paymentMethod.value === 'Cash' && cashReceivedValueTransformed.value < total.value) {
-    showToast("Insufficient cash received. Please collect accurate invoice fees.", 'error');
+    showToast(t('checkout.insufficientCashError'), 'error');
     return;
   }
 
@@ -795,12 +788,8 @@ const handleCompleteSale = () => {
 
 const handleHold = () => {
   if (cart.value.length > 0) {
-    alert("Transaction placed on Hold successfully.");
+    alert(t('checkout.holdSuccessAlert'));
   }
-};
-
-const alertReceiptGuide = () => {
-  alert("Simulation setup. Complete transaction to generate valid receipts.");
 };
 
 const filteredProducts = computed(() => {

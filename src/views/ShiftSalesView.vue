@@ -3,8 +3,8 @@
     <!-- Header -->
     <header class="flex items-center justify-between mb-6">
       <div>
-        <h1 class="text-2xl font-black text-on-surface">Shift Sales</h1>
-        <p class="text-sm text-on-surface-variant mt-1">Transactions completed during your current active shift</p>
+        <h1 class="text-2xl font-black text-on-surface">{{ $t('shiftSales.title') }}</h1>
+        <p class="text-sm text-on-surface-variant mt-1">{{ $t('shiftSales.subtitle') }}</p>
       </div>
       <div class="flex gap-3">
         <button 
@@ -12,7 +12,7 @@
           class="bg-surface-container text-on-surface px-4 py-2 rounded-lg font-bold text-sm hover:bg-surface-variant transition-all flex items-center gap-2 border border-outline-variant cursor-pointer"
         >
           <X class="w-4 h-4" />
-          <span>Close</span>
+          <span>{{ $t('common.close') }}</span>
         </button>
       </div>
     </header>
@@ -29,8 +29,8 @@
                 <ShoppingBag class="w-5 h-5" />
               </div>
               <div>
-                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Total Shift Revenue</span>
-                <span class="text-[11px] font-medium text-on-surface-variant/70">Completed Sales</span>
+                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">{{ $t('shiftSales.totalRevenue') }}</span>
+                <span class="text-[11px] font-medium text-on-surface-variant/70">{{ $t('shiftSales.completedSales') }}</span>
               </div>
             </div>
             <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary font-mono">
@@ -52,8 +52,8 @@
                 <PieChart class="w-5 h-5" />
               </div>
               <div>
-                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Payment Breakdown</span>
-                <span class="text-[11px] font-medium text-on-surface-variant/70">By Payment Channel</span>
+                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">{{ $t('shiftSales.paymentBreakdown') }}</span>
+                <span class="text-[11px] font-medium text-on-surface-variant/70">{{ $t('shiftSales.byPaymentChannel') }}</span>
               </div>
             </div>
           </div>
@@ -62,7 +62,7 @@
             <div class="p-2 rounded-xl bg-surface-container-low border border-outline-variant/60 flex items-center justify-between">
               <div class="flex items-center gap-1.5 min-w-0">
                 <Banknote class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span class="text-xs font-bold text-on-surface truncate">Cash</span>
+                <span class="text-xs font-bold text-on-surface truncate">{{ $t('checkout.cash') }}</span>
               </div>
               <span class="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 pl-1 truncate">
                 {{ formatCurrency(paymentBreakdown.cash, settings.currency) }}
@@ -72,7 +72,7 @@
             <div class="p-2 rounded-xl bg-surface-container-low border border-outline-variant/60 flex items-center justify-between">
               <div class="flex items-center gap-1.5 min-w-0">
                 <Smartphone class="w-3.5 h-3.5 text-purple-600 shrink-0" />
-                <span class="text-xs font-bold text-on-surface truncate">Mobile</span>
+                <span class="text-xs font-bold text-on-surface truncate">{{ $t('checkout.mpesa') }}</span>
               </div>
               <span class="text-xs font-mono font-bold text-purple-700 dark:text-purple-400 pl-1 truncate">
                 {{ formatCurrency(paymentBreakdown.mobile, settings.currency) }}
@@ -82,7 +82,7 @@
             <div class="p-2 rounded-xl bg-surface-container-low border border-outline-variant/60 flex items-center justify-between">
               <div class="flex items-center gap-1.5 min-w-0">
                 <CreditCard class="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span class="text-xs font-bold text-on-surface truncate">Card/Bank</span>
+                <span class="text-xs font-bold text-on-surface truncate">{{ $t('checkout.bank') }}</span>
               </div>
               <span class="text-xs font-mono font-bold text-blue-700 dark:text-blue-400 pl-1 truncate">
                 {{ formatCurrency(paymentBreakdown.card, settings.currency) }}
@@ -92,7 +92,7 @@
             <div class="p-2 rounded-xl bg-surface-container-low border border-outline-variant/60 flex items-center justify-between">
               <div class="flex items-center gap-1.5 min-w-0">
                 <Receipt class="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span class="text-xs font-bold text-on-surface truncate">Credit</span>
+                <span class="text-xs font-bold text-on-surface truncate">{{ $t('checkout.onCredit') }}</span>
               </div>
               <span class="text-xs font-mono font-bold text-amber-700 dark:text-amber-400 pl-1 truncate">
                 {{ formatCurrency(paymentBreakdown.credit, settings.currency) }}
@@ -109,8 +109,8 @@
                 <RotateCcw class="w-5 h-5" />
               </div>
               <div>
-                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Reversed Sales</span>
-                <span class="text-[11px] font-medium text-on-surface-variant/70">Voided Transactions</span>
+                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">{{ $t('shiftSales.reversedSales') }}</span>
+                <span class="text-[11px] font-medium text-on-surface-variant/70">{{ $t('shiftSales.voidedTransactions') }}</span>
               </div>
             </div>
             <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-error/10 text-error font-mono">
@@ -128,7 +128,7 @@
       <!-- ITEMS MODAL -->
       <Modal 
         :isOpen="selectedSale !== null" 
-        :title="selectedSale ? `Sale Receipt ${selectedSale.id.substring(0, 8).toUpperCase()}` : 'Sale Details'" 
+        :title="selectedSale ? `${$t('receipt.receiptNumber')} ${selectedSale.id.substring(0, 8).toUpperCase()}` : $t('shiftDetails.shiftDetails')" 
         :onClose="closeModal"
         maxWidth="max-w-2xl"
       >
@@ -136,11 +136,11 @@
           
           <div class="flex justify-between items-start bg-surface-container-lowest p-4 rounded-xl border border-outline-variant">
             <div class="flex flex-col gap-1">
-              <span class="text-xs font-mono font-bold text-on-surface-variant uppercase">Time</span>
+              <span class="text-xs font-mono font-bold text-on-surface-variant uppercase">{{ $t('cashMovements.time') }}</span>
               <span class="text-sm font-mono text-on-surface">{{ formatTime(selectedSale.createdAt) }}</span>
             </div>
             <div class="flex flex-col gap-1 text-right">
-              <span class="text-xs font-mono font-bold text-on-surface-variant uppercase">Payment</span>
+              <span class="text-xs font-mono font-bold text-on-surface-variant uppercase">{{ $t('receipt.payment') }}</span>
               <span class="text-sm font-bold text-on-surface">{{ selectedSale.paymentMethod }}</span>
             </div>
           </div>
@@ -149,10 +149,10 @@
             <table class="w-full text-left text-sm whitespace-nowrap">
               <thead class="bg-surface-container-low text-xs uppercase text-on-surface-variant font-mono tracking-wider border-b border-outline-variant">
                 <tr>
-                  <th class="px-4 py-3">Item</th>
-                  <th class="px-4 py-3 text-right">Qty</th>
-                  <th class="px-4 py-3 text-right">Price</th>
-                  <th class="px-4 py-3 text-right">Total</th>
+                  <th class="px-4 py-3">{{ $t('checkout.item') }}</th>
+                  <th class="px-4 py-3 text-right">{{ $t('checkout.qty') }}</th>
+                  <th class="px-4 py-3 text-right">{{ $t('checkout.price') }}</th>
+                  <th class="px-4 py-3 text-right">{{ $t('receipt.subtotal') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-outline-variant">
@@ -167,7 +167,7 @@
           </div>
 
           <div class="flex justify-between items-center px-4 py-3 bg-primary-container/20 rounded-xl border border-primary/20">
-            <span class="font-black text-on-surface uppercase tracking-wider text-sm">Grand Total</span>
+            <span class="font-black text-on-surface uppercase tracking-wider text-sm">{{ $t('receipt.grandTotal') }}</span>
             <span class="font-black font-mono text-xl text-primary">{{ formatCurrency(selectedSale.totalAmount, settings.currency) }}</span>
           </div>
 
@@ -179,13 +179,13 @@
               class="px-5 py-2.5 bg-error/10 text-error hover:bg-error hover:text-on-error border border-error/20 rounded-xl font-bold text-sm transition-all flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
             >
               <RotateCcw class="w-4 h-4" />
-              <span>{{ isReversing ? 'Reversing...' : 'Reverse Transaction' }}</span>
+              <span>{{ isReversing ? $t('common.loading') : $t('shiftSales.reverseTransaction') }}</span>
             </button>
           </div>
           <div v-else class="flex justify-center pt-4 border-t border-outline-variant mt-2">
             <span class="text-error font-black uppercase tracking-widest text-sm flex items-center gap-2">
               <AlertCircle class="w-5 h-5" />
-              This transaction is voided
+              {{ $t('shiftSales.transactionVoided') }}
             </span>
           </div>
 
@@ -198,19 +198,19 @@
           <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-surface-container-low text-xs uppercase text-on-surface-variant font-mono tracking-wider border-b border-outline-variant">
               <tr>
-                <th class="px-5 py-4">Time</th>
-                <th class="px-5 py-4">Receipt No</th>
-                <th class="px-5 py-4 text-center">Items</th>
-                <th class="px-5 py-4 text-center">Payment</th>
-                <th class="px-5 py-4">Status</th>
-                <th class="px-5 py-4 text-right">Amount</th>
-                <th class="px-5 py-4 text-right">Options</th>
+                <th class="px-5 py-4">{{ $t('cashMovements.time') }}</th>
+                <th class="px-5 py-4">{{ $t('receipt.receiptNumber') }}</th>
+                <th class="px-5 py-4 text-center">{{ $t('inventory.items') }}</th>
+                <th class="px-5 py-4 text-center">{{ $t('receipt.payment') }}</th>
+                <th class="px-5 py-4">{{ $t('customers.tableStatus') }}</th>
+                <th class="px-5 py-4 text-right">{{ $t('customers.amount') }}</th>
+                <th class="px-5 py-4 text-right">{{ $t('customers.tableActions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-outline-variant bg-surface-container-lowest">
               <tr v-if="!shiftSales.length">
                 <td colspan="7" class="px-5 py-12 text-center text-on-surface-variant text-sm italic">
-                  No sales recorded during this shift.
+                  {{ $t('shiftSales.noSalesRecorded') }}
                 </td>
               </tr>
               <tr v-for="sale in shiftSales" :key="sale.id" class="hover:bg-surface-container/30 transition-colors">
@@ -247,7 +247,7 @@
                     class="px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5 ml-auto"
                   >
                     <Eye class="w-3.5 h-3.5" />
-                    <span>View Items</span>
+                    <span>{{ $t('shiftSales.viewItems') }}</span>
                   </button>
                 </td>
               </tr>
@@ -265,6 +265,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { formatCurrency } from '../models/mockData';
+import { t } from '../i18n';
 import Modal from '../components/common/Modal.vue';
 import { 
   X, 

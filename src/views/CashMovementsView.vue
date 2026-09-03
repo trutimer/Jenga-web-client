@@ -3,8 +3,8 @@
     <!-- Header -->
     <header class="flex items-center justify-between mb-6">
       <div>
-        <h1 class="text-2xl font-black text-on-surface">Cash Movements</h1>
-        <p class="text-sm text-on-surface-variant mt-1">Analytics and history for your current shift</p>
+        <h1 class="text-2xl font-black text-on-surface">{{ $t('cashMovements.title') }}</h1>
+        <p class="text-sm text-on-surface-variant mt-1">{{ $t('cashMovements.subtitle') }}</p>
       </div>
       <div class="flex gap-3">
         <button 
@@ -12,7 +12,7 @@
           class="bg-primary text-on-primary px-4 py-2 rounded-lg font-bold text-sm hover:bg-opacity-90 active:scale-95 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
         >
           <Plus class="w-4 h-4" />
-          <span>Add New Movement</span>
+          <span>{{ $t('cashMovements.addNewMovement') }}</span>
         </button>
         
         <button 
@@ -20,7 +20,7 @@
           class="bg-surface-container text-on-surface px-4 py-2 rounded-lg font-bold text-sm hover:bg-surface-variant transition-all flex items-center gap-2 border border-outline-variant cursor-pointer"
         >
           <X class="w-4 h-4" />
-          <span>Close</span>
+          <span>{{ $t('common.close') }}</span>
         </button>
       </div>
     </header>
@@ -29,7 +29,7 @@
       <!-- ADD/EDIT MOVEMENT FORM MODAL -->
       <Modal 
         :isOpen="isAdding" 
-        :title="isEditing ? 'Edit Cash Movement' : 'Record Cash Movement'" 
+        :title="isEditing ? $t('cashMovements.editMovement') : $t('cashMovements.recordMovement')" 
         :onClose="() => { isAdding = false; isEditing = false; editingId = null; validationError = null; }"
         maxWidth="max-w-md"
       >
@@ -42,19 +42,19 @@
         </div>
 
         <div class="space-y-2">
-          <label class="text-xs font-mono font-bold text-on-surface-variant uppercase tracking-wider">Movement Type</label>
+          <label class="text-xs font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashMovements.movementType') }}</label>
           <select 
             v-model="newMovement.type"
             class="w-full bg-surface-container border border-outline-variant rounded-xl p-3.5 text-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none"
           >
-            <option value="PAY_IN">Pay In (Add Cash)</option>
-            <option value="PAY_OUT">Pay Out (Remove Cash)</option>
-            <option value="CASH_DROP">Cash Drop (Safe Deposit)</option>
+            <option value="PAY_IN">{{ $t('cashMovements.payIn') }}</option>
+            <option value="PAY_OUT">{{ $t('cashMovements.payOut') }}</option>
+            <option value="CASH_DROP">{{ $t('cashMovements.cashDrop') }}</option>
           </select>
         </div>
 
         <div class="space-y-2">
-          <label class="text-xs font-mono font-bold text-on-surface-variant uppercase tracking-wider">Amount ({{ settings.currency }})</label>
+          <label class="text-xs font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashMovements.amountWithCurrency', { currency: settings.currency }) }}</label>
           <input 
             type="number"
             v-model="newMovement.amount"
@@ -64,10 +64,10 @@
         </div>
 
         <div class="space-y-2">
-          <label class="text-xs font-mono font-bold text-on-surface-variant uppercase tracking-wider">Reason</label>
+          <label class="text-xs font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashMovements.reason') }}</label>
           <textarea 
             v-model="newMovement.reason"
-            placeholder="e.g. Paid for water, Change from safe..."
+            :placeholder="$t('cashMovements.reasonPlaceholder')"
             class="w-full bg-surface-container border border-outline-variant rounded-xl p-3.5 text-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-none h-24"
           ></textarea>
         </div>
@@ -77,7 +77,7 @@
           :disabled="isSubmitting || !newMovement.amount || !newMovement.reason"
           class="w-full py-4 mt-2 bg-primary text-on-primary hover:bg-opacity-95 rounded-xl transition-all font-bold text-sm shadow-md shadow-primary/20 disabled:opacity-50 cursor-pointer"
         >
-          {{ isSubmitting ? 'Saving...' : (isEditing ? 'Save Changes' : 'Submit Movement') }}
+          {{ isSubmitting ? $t('common.loading') : (isEditing ? $t('cashMovements.saveChanges') : $t('cashMovements.submitMovement')) }}
         </button>
         </div>
       </Modal>
@@ -88,44 +88,44 @@
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4" v-if="vm.cashMovementAnalytics.value">
           <div v-for="(stat, period) in periods" :key="period" class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant shadow-sm flex flex-col gap-3">
-            <span class="text-xs font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ period }}</span>
+            <span class="text-xs font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ formatPeriodName(period) }}</span>
             <span class="text-3xl font-black font-mono text-primary truncate" :class="stat.summary.netMovement < 0 ? 'text-error' : 'text-primary'">
               {{ formatCurrency(stat.summary.netMovement, settings.currency) }}
             </span>
             <div class="flex justify-between text-xs text-on-surface-variant mt-2 border-t border-outline-variant/50 pt-3 font-mono">
-              <span class="text-emerald-600 font-bold">IN: {{ stat.summary.totalPayIn }}</span>
-              <span class="text-amber-600 font-bold">OUT: {{ stat.summary.totalPayOut }}</span>
+              <span class="text-emerald-600 font-bold">{{ $t('cashMovements.inSummary', { amount: stat.summary.totalPayIn }) }}</span>
+              <span class="text-amber-600 font-bold">{{ $t('cashMovements.outSummary', { amount: stat.summary.totalPayOut }) }}</span>
             </div>
             <div class="text-xs text-on-surface-variant text-right font-mono text-error font-bold mt-1">
-              DROP: {{ stat.summary.totalCashDrop }}
+              {{ $t('cashMovements.dropSummary', { amount: stat.summary.totalCashDrop }) }}
             </div>
           </div>
         </div>
 
         <div v-else class="flex justify-center py-12">
-          <span class="animate-pulse text-on-surface-variant text-base font-semibold">Loading Analytics...</span>
+          <span class="animate-pulse text-on-surface-variant text-base font-semibold">{{ $t('cashMovements.loadingAnalytics') }}</span>
         </div>
 
         <!-- Today's Movements Table -->
         <div class="flex flex-col gap-4">
-          <h3 class="text-lg font-bold text-on-surface border-b border-outline-variant pb-3">Recent Shift Movements</h3>
+          <h3 class="text-lg font-bold text-on-surface border-b border-outline-variant pb-3">{{ $t('cashMovements.recentShiftMovements') }}</h3>
           
           <div class="overflow-x-auto rounded-2xl border border-outline-variant bg-surface-container-lowest shadow-sm">
             <table class="w-full text-left text-sm whitespace-nowrap">
               <thead class="bg-surface-container-low text-xs uppercase text-on-surface-variant font-mono tracking-wider border-b border-outline-variant">
                 <tr>
-                  <th class="px-5 py-4">Time</th>
-                  <th class="px-5 py-4">Type</th>
-                  <th class="px-5 py-4">Amount</th>
-                  <th class="px-5 py-4">Reason</th>
-                  <th class="px-5 py-4">Authorized By</th>
-                  <th class="px-5 py-4 text-right">Actions</th>
+                  <th class="px-5 py-4">{{ $t('cashMovements.time') }}</th>
+                  <th class="px-5 py-4">{{ $t('cashMovements.type') }}</th>
+                  <th class="px-5 py-4">{{ $t('cashMovements.amount') }}</th>
+                  <th class="px-5 py-4">{{ $t('cashMovements.reason') }}</th>
+                  <th class="px-5 py-4">{{ $t('cashMovements.authorizedBy') }}</th>
+                  <th class="px-5 py-4 text-right">{{ $t('customers.tableActions') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-outline-variant bg-surface-container-lowest">
                 <tr v-if="!recentMovements.length">
                   <td colspan="6" class="px-5 py-12 text-center text-on-surface-variant text-sm italic">
-                    No cash movements recorded during this shift.
+                    {{ $t('cashMovements.noMovementsRecorded') }}
                   </td>
                 </tr>
                 <tr v-for="m in recentMovements" :key="m.id" class="hover:bg-surface-container/30 transition-colors">
@@ -178,6 +178,7 @@ import { useRouter } from 'vue-router';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { formatCurrency } from '../models/mockData';
 import { showToast } from '../services/toastService';
+import { t } from '../i18n';
 import Modal from '../components/common/Modal.vue';
 import { Plus, X, AlertCircle, Edit2, Trash2 } from 'lucide-vue-next';
 
@@ -220,6 +221,16 @@ const periods = computed(() => {
     'This Year': vm.cashMovementAnalytics.value.year
   };
 });
+
+const formatPeriodName = (key: string) => {
+  switch (key) {
+    case 'Today': return t('dashboard.today');
+    case 'This Week': return t('dashboard.thisWeek');
+    case 'This Month': return t('dashboard.thisMonth');
+    case 'This Year': return t('dashboard.thisYear');
+    default: return key;
+  }
+};
 
 const recentMovements = computed(() => {
   if (!vm.cashMovementAnalytics.value?.today?.movements) return [];

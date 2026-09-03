@@ -17,7 +17,7 @@
           </div>
           <div>
             <div class="flex items-center gap-1.5">
-              <span class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">Finance & Accounts /</span>
+              <span class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('finance.title') }} /</span>
               <span class="text-[10px] font-mono font-bold text-primary uppercase tracking-wider">{{ submoduleTitle }}</span>
             </div>
             <h1 class="text-2xl md:text-3xl font-black text-primary tracking-tight">{{ submoduleTitle }}</h1>
@@ -36,7 +36,7 @@
           class="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant shadow-xs text-xs font-semibold text-on-surface"
         >
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span class="text-on-surface-variant font-mono text-[11px] uppercase">Fiscal Period:</span>
+          <span class="text-on-surface-variant font-mono text-[11px] uppercase">{{ $t('finance.fiscalPeriodLabel') }}</span>
           <span class="font-bold font-mono text-primary">{{ currentPeriod.name }}</span>
         </div>
 
@@ -45,38 +45,40 @@
           @click="refreshActiveTab"
           :disabled="isLoading"
           class="h-10 px-3.5 rounded-xl border border-outline-variant text-on-surface hover:bg-surface-container-high active:scale-[0.98] font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all bg-white shadow-xs disabled:opacity-50"
-          title="Refresh Current Data"
+          :title="$t('common.refresh')"
         >
           <RotateCw class="w-3.5 h-3.5" :class="isLoading ? 'animate-spin text-primary' : ''" />
-          <span class="hidden sm:inline">Refresh</span>
+          <span class="hidden sm:inline">{{ $t('common.refresh') }}</span>
         </button>
 
         <!-- Export Statement / CSV -->
         <button 
           @click="handleExportCurrentView"
           class="h-10 px-3.5 rounded-xl border border-outline-variant text-on-surface hover:bg-surface-container-high active:scale-[0.98] font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all bg-white shadow-xs"
-          title="Print or Export Current Data"
+          :title="$t('common.export')"
         >
           <Download class="w-3.5 h-3.5" />
-          <span>Export</span>
+          <span>{{ $t('common.export') }}</span>
         </button>
 
         <!-- New Journal Entry Action -->
         <button 
+          v-if="userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || vm.hasPermission('finance:new_journal_entry')"
           @click="openNewJournalModal"
           class="h-10 px-4 rounded-xl bg-primary text-on-primary hover:bg-opacity-95 active:scale-[0.98] font-bold text-xs flex items-center gap-2 cursor-pointer transition-all shadow-sm"
         >
           <PlusCircle class="w-4 h-4" />
-          <span>New Journal Entry</span>
+          <span>{{ $t('finance.newJournalEntry') }}</span>
         </button>
 
         <!-- Add Custom Account Action -->
         <button 
+          v-if="userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || vm.hasPermission('finance:add_account')"
           @click="openAddAccountModal"
           class="h-10 px-4 rounded-xl bg-surface-container text-on-surface border border-outline-variant hover:bg-surface-container-high active:scale-[0.98] font-bold text-xs flex items-center gap-2 cursor-pointer transition-all shadow-xs"
         >
           <Plus class="w-4 h-4 text-primary" />
-          <span>Add Account</span>
+          <span>{{ $t('finance.addAccount') }}</span>
         </button>
       </div>
     </div>
@@ -88,7 +90,7 @@
         v-if="isLoading" 
         overlay 
         size="lg" 
-        label="Loading Financial Records..." 
+        :label="$t('common.loading')" 
         sublabel="Compiling accounts, double-entry vouchers, and ledgers" 
       />
 
@@ -106,7 +108,7 @@
               :class="statementType === 'pnl' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-high'"
             >
               <TrendingUp class="w-3.5 h-3.5" />
-              <span>Income Statement (P&L)</span>
+              <span>{{ $t('finance.incomeStatementPnl') }}</span>
             </button>
             <button 
               @click="switchStatementType('balance-sheet')"
@@ -114,7 +116,7 @@
               :class="statementType === 'balance-sheet' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-high'"
             >
               <Scale class="w-3.5 h-3.5" />
-              <span>Balance Sheet</span>
+              <span>{{ $t('finance.balanceSheet') }}</span>
             </button>
             <button 
               @click="switchStatementType('trial-balance')"
@@ -122,7 +124,7 @@
               :class="statementType === 'trial-balance' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-high'"
             >
               <CheckCircle2 class="w-3.5 h-3.5" />
-              <span>Trial Balance</span>
+              <span>{{ $t('finance.trialBalance') }}</span>
             </button>
           </div>
 
@@ -144,7 +146,7 @@
             <!-- Start Date / End Date (P&L) or As-Of Date (Balance Sheet & Trial Balance) -->
             <template v-if="statementType === 'pnl'">
               <div class="flex items-center gap-1.5">
-                <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">From</span>
+                <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">{{ $t('reports.fromDate') }}</span>
                 <input 
                   type="date" 
                   v-model="statementStartDate" 
@@ -152,7 +154,7 @@
                 />
               </div>
               <div class="flex items-center gap-1.5">
-                <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">To</span>
+                <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">{{ $t('reports.toDate') }}</span>
                 <input 
                   type="date" 
                   v-model="statementEndDate" 
@@ -162,7 +164,7 @@
             </template>
             <template v-else>
               <div class="flex items-center gap-1.5">
-                <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">As Of</span>
+                <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">{{ $t('finance.asOf') }}</span>
                 <input 
                   type="date" 
                   v-model="statementAsOfDate" 
@@ -177,7 +179,7 @@
               class="h-9 px-4 rounded-lg bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 hover:bg-opacity-90 active:scale-95 cursor-pointer transition-all shadow-xs"
             >
               <Activity class="w-3.5 h-3.5" />
-              <span>Apply</span>
+              <span>{{ $t('reports.applyFilters') }}</span>
             </button>
           </div>
         </div>
@@ -188,20 +190,20 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Gross Revenue</span>
+                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('finance.grossRevenue') }}</span>
                 <div class="p-2 rounded-xl bg-primary/10 text-primary">
                   <Coins class="w-4 h-4" />
                 </div>
               </div>
               <div class="mt-3">
                 <div class="text-2xl font-black font-mono text-primary">{{ formatCurrency(incomeStatement?.grossRevenue || 0) }}</div>
-                <div class="text-[11px] text-on-surface-variant mt-0.5">Operating sales before deductions</div>
+                <div class="text-[11px] text-on-surface-variant mt-0.5">{{ $t('finance.grossRevenueDesc') }}</div>
               </div>
             </div>
 
             <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Gross Profit</span>
+                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('finance.grossProfit') }}</span>
                 <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
                   <TrendingUp class="w-4 h-4" />
                 </div>
@@ -216,20 +218,20 @@
 
             <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Operating Expenses</span>
+                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('finance.operatingExpenses') }}</span>
                 <div class="p-2 rounded-xl bg-amber-500/10 text-amber-600">
                   <Receipt class="w-4 h-4" />
                 </div>
               </div>
               <div class="mt-3">
                 <div class="text-2xl font-black font-mono text-amber-600">{{ formatCurrency(incomeStatement?.totalExpenses || 0) }}</div>
-                <div class="text-[11px] text-on-surface-variant mt-0.5">Total operating costs</div>
+                <div class="text-[11px] text-on-surface-variant mt-0.5">{{ $t('finance.operatingExpensesDesc') }}</div>
               </div>
             </div>
 
             <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Net Income (Profit)</span>
+                <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('finance.netIncome') }}</span>
                 <div class="p-2 rounded-xl" :class="(incomeStatement?.netIncome || 0) >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'">
                   <DollarSign class="w-4 h-4" />
                 </div>
@@ -252,7 +254,7 @@
           <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden">
             <div class="p-5 bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
               <div>
-                <h3 class="text-sm font-black text-on-surface uppercase tracking-wide">Income Statement (Profit & Loss)</h3>
+                <h3 class="text-sm font-black text-on-surface uppercase tracking-wide">{{ $t('finance.incomeStatementPnl') }}</h3>
                 <p class="text-xs text-on-surface-variant mt-0.5">For the period from {{ statementStartDate }} to {{ statementEndDate }}</p>
               </div>
               <span class="text-xs font-mono font-bold text-primary px-2.5 py-1 rounded-full bg-primary/10">Currency: {{ incomeStatement?.currency || 'TZS' }}</span>
@@ -262,8 +264,8 @@
               <!-- 1. Operating Revenue -->
               <div class="pb-5 space-y-2">
                 <div class="flex justify-between items-center font-bold text-xs uppercase tracking-wider text-primary">
-                  <span>Operating Revenues</span>
-                  <span>Amount</span>
+                  <span>{{ $t('finance.operatingRevenues') }}</span>
+                  <span>{{ $t('customers.amount') }}</span>
                 </div>
                 <div 
                   v-for="line in (incomeStatement?.operatingRevenueLines || [])" 
@@ -280,15 +282,15 @@
                   No revenue transactions recorded for this period.
                 </div>
                 <div class="flex justify-between items-center pt-2 border-t border-outline-variant/30 text-xs font-bold text-on-surface-variant">
-                  <span>Gross Operating Sales</span>
+                  <span>{{ $t('finance.grossOperatingSales') }}</span>
                   <span class="font-mono">{{ formatCurrency(incomeStatement?.grossRevenue || 0) }}</span>
                 </div>
                 <div v-if="(incomeStatement?.salesDiscounts || 0) > 0" class="flex justify-between items-center text-xs text-rose-600">
-                  <span>Less: Sales Discounts & Allowances</span>
+                  <span>{{ $t('finance.salesDiscounts') }}</span>
                   <span class="font-mono">-{{ formatCurrency(incomeStatement?.salesDiscounts || 0) }}</span>
                 </div>
                 <div class="flex justify-between items-center pt-1 font-bold text-on-surface bg-surface-container-low/60 px-3 py-2 rounded-xl">
-                  <span>Net Revenue</span>
+                  <span>{{ $t('finance.netRevenue') }}</span>
                   <span class="font-mono text-base font-black text-primary">{{ formatCurrency(incomeStatement?.netRevenue || 0) }}</span>
                 </div>
               </div>
@@ -296,8 +298,8 @@
               <!-- 2. Cost of Goods Sold -->
               <div class="py-5 space-y-2">
                 <div class="flex justify-between items-center font-bold text-xs uppercase tracking-wider text-amber-700">
-                  <span>Cost of Goods Sold (COGS)</span>
-                  <span>Amount</span>
+                  <span>{{ $t('finance.cogs') }}</span>
+                  <span>{{ $t('customers.amount') }}</span>
                 </div>
                 <div 
                   v-for="line in (incomeStatement?.cogsLines || [])" 
@@ -311,11 +313,11 @@
                   <span class="font-mono font-semibold text-amber-700">{{ formatCurrency(line.amount) }}</span>
                 </div>
                 <div class="flex justify-between items-center pt-1 font-bold text-on-surface bg-amber-500/10 px-3 py-2 rounded-xl text-amber-900">
-                  <span>Total Cost of Goods Sold</span>
+                  <span>{{ $t('finance.totalCogs') }}</span>
                   <span class="font-mono text-sm font-black">{{ formatCurrency(incomeStatement?.costOfGoodsSold || 0) }}</span>
                 </div>
                 <div class="flex justify-between items-center pt-2 font-bold text-on-surface bg-emerald-500/10 px-3 py-2 rounded-xl text-emerald-900">
-                  <span>Gross Profit</span>
+                  <span>{{ $t('finance.grossProfit') }}</span>
                   <span class="font-mono text-base font-black text-emerald-700">{{ formatCurrency(incomeStatement?.grossProfit || 0) }}</span>
                 </div>
               </div>
@@ -323,8 +325,8 @@
               <!-- 3. Operating Expenses -->
               <div class="py-5 space-y-2">
                 <div class="flex justify-between items-center font-bold text-xs uppercase tracking-wider text-on-surface-variant">
-                  <span>Operating Expenses</span>
-                  <span>Amount</span>
+                  <span>{{ $t('finance.operatingExpenses') }}</span>
+                  <span>{{ $t('customers.amount') }}</span>
                 </div>
                 <div 
                   v-for="line in (incomeStatement?.expenseLines || [])" 
@@ -341,7 +343,7 @@
                   No operating expenses recorded for this period.
                 </div>
                 <div class="flex justify-between items-center pt-1 font-bold text-on-surface bg-surface-container-low/60 px-3 py-2 rounded-xl">
-                  <span>Total Operating Expenses</span>
+                  <span>{{ $t('finance.totalOperatingExpenses') }}</span>
                   <span class="font-mono text-sm font-black text-rose-600">{{ formatCurrency(incomeStatement?.totalExpenses || 0) }}</span>
                 </div>
               </div>
@@ -349,15 +351,15 @@
               <!-- 4. Other Income & Expenses (if any) -->
               <div v-if="(incomeStatement?.otherIncome || 0) > 0 || (incomeStatement?.otherExpenses || 0) > 0" class="py-5 space-y-2">
                 <div class="flex justify-between items-center font-bold text-xs uppercase tracking-wider text-on-surface-variant">
-                  <span>Other Income & Expenses</span>
-                  <span>Amount</span>
+                  <span>{{ $t('finance.otherIncomeExpenses') }}</span>
+                  <span>{{ $t('customers.amount') }}</span>
                 </div>
                 <div v-if="(incomeStatement?.otherIncome || 0) > 0" class="flex justify-between items-center py-1 px-2 text-emerald-700">
-                  <span>Other Non-Operating Income</span>
+                  <span>{{ $t('finance.otherNonOperatingIncome') }}</span>
                   <span class="font-mono font-semibold">+{{ formatCurrency(incomeStatement?.otherIncome || 0) }}</span>
                 </div>
                 <div v-if="(incomeStatement?.otherExpenses || 0) > 0" class="flex justify-between items-center py-1 px-2 text-rose-700">
-                  <span>Other Non-Operating Expenses</span>
+                  <span>{{ $t('finance.otherNonOperatingExpenses') }}</span>
                   <span class="font-mono font-semibold">-{{ formatCurrency(incomeStatement?.otherExpenses || 0) }}</span>
                 </div>
               </div>
@@ -373,7 +375,7 @@
                   <div class="flex items-center gap-2">
                     <CheckCircle2 v-if="(incomeStatement?.netIncome || 0) >= 0" class="w-6 h-6 text-emerald-600" />
                     <AlertCircle v-else class="w-6 h-6 text-rose-600" />
-                    <span>Net {{ (incomeStatement?.netIncome || 0) >= 0 ? 'Profit (Net Income)' : 'Loss' }}</span>
+                    <span>{{ (incomeStatement?.netIncome || 0) >= 0 ? $t('finance.netProfit') : $t('finance.netLoss') }}</span>
                   </div>
                   <span class="font-mono text-2xl" :class="(incomeStatement?.netIncome || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'">
                     {{ formatCurrency(incomeStatement?.netIncome || 0) }}
@@ -400,16 +402,16 @@
               </div>
               <div>
                 <h4 class="font-black text-sm">
-                  {{ balanceSheet?.balanced ? 'Accounting Equation Verified Balanced' : 'Balance Discrepancy Detected' }}
+                  {{ balanceSheet?.balanced ? $t('finance.equationBalanced') : $t('finance.equationDiscrepancy') }}
                 </h4>
                 <p class="text-xs opacity-90 mt-0.5">
-                  Assets ({{ formatCurrency(balanceSheet?.totalAssets || 0) }}) = Liabilities & Equity ({{ formatCurrency(balanceSheet?.totalLiabilitiesAndEquity || 0) }})
+                  {{ $t('finance.assets') }} ({{ formatCurrency(balanceSheet?.totalAssets || 0) }}) = {{ $t('finance.liabilitiesEquity') }} ({{ formatCurrency(balanceSheet?.totalLiabilitiesAndEquity || 0) }})
                 </p>
               </div>
             </div>
 
             <div class="text-right font-mono">
-              <span class="text-[10px] uppercase font-bold tracking-wider block opacity-75">As of Date</span>
+              <span class="text-[10px] uppercase font-bold tracking-wider block opacity-75">{{ $t('finance.asOf') }}</span>
               <span class="text-sm font-bold">{{ statementAsOfDate }}</span>
             </div>
           </div>
@@ -422,7 +424,7 @@
                 <div class="p-4 bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
                   <h3 class="text-sm font-black text-primary uppercase tracking-wide flex items-center gap-2">
                     <Building2 class="w-4 h-4" />
-                    <span>Assets</span>
+                    <span>{{ $t('finance.assets') }}</span>
                   </h3>
                   <span class="text-xs font-mono font-bold text-primary">{{ formatCurrency(balanceSheet?.totalAssets || 0) }}</span>
                 </div>
@@ -431,8 +433,8 @@
                   <!-- Non-Current Assets (Fixed & Long Term) -->
                   <div class="space-y-2">
                     <div class="font-bold uppercase tracking-wider text-on-surface-variant flex justify-between">
-                      <span>Non-Current Assets (Fixed & Long Term)</span>
-                      <span>Balance</span>
+                      <span>{{ $t('finance.nonCurrentAssets') }}</span>
+                      <span>{{ $t('suppliers.tableBalance') }}</span>
                     </div>
                     <div 
                       v-for="item in (balanceSheet?.nonCurrentAssets || [])" 
@@ -449,7 +451,7 @@
                       No fixed assets recorded.
                     </div>
                     <div class="flex justify-between items-center pt-1 font-bold text-on-surface bg-surface-container-low/60 px-3 py-1.5 rounded-lg">
-                      <span>Total Non-Current Assets</span>
+                      <span>{{ $t('finance.totalNonCurrentAssets') }}</span>
                       <span class="font-mono text-primary">{{ formatCurrency(balanceSheet?.totalNonCurrentAssets || 0) }}</span>
                     </div>
                   </div>
@@ -457,8 +459,8 @@
                   <!-- Current Assets (Liquid) -->
                   <div class="space-y-2">
                     <div class="font-bold uppercase tracking-wider text-on-surface-variant flex justify-between">
-                      <span>Current Assets (Liquid)</span>
-                      <span>Balance</span>
+                      <span>{{ $t('finance.currentAssets') }}</span>
+                      <span>{{ $t('suppliers.tableBalance') }}</span>
                     </div>
                     <div 
                       v-for="item in displayedCurrentAssets" 
@@ -472,7 +474,7 @@
                       <span class="font-mono font-semibold">{{ formatCurrency(item.balance) }}</span>
                     </div>
                     <div class="flex justify-between items-center pt-1 font-bold text-on-surface bg-surface-container-low/60 px-3 py-1.5 rounded-lg">
-                      <span>Total Current Assets</span>
+                      <span>{{ $t('finance.totalCurrentAssets') }}</span>
                       <span class="font-mono text-primary">{{ formatCurrency(balanceSheet?.totalCurrentAssets || 0) }}</span>
                     </div>
                   </div>
@@ -481,7 +483,7 @@
 
               <!-- Total Assets Footer -->
               <div class="p-4 bg-primary/10 border-t border-primary/20 flex justify-between items-center font-black text-sm text-primary">
-                <span>TOTAL ASSETS</span>
+                <span>{{ $t('finance.totalAssets') }}</span>
                 <span class="font-mono text-xl">{{ formatCurrency(balanceSheet?.totalAssets || 0) }}</span>
               </div>
             </div>
@@ -492,7 +494,7 @@
                 <div class="p-4 bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
                   <h3 class="text-sm font-black text-amber-700 uppercase tracking-wide flex items-center gap-2">
                     <ShieldCheck class="w-4 h-4" />
-                    <span>Liabilities & Equity</span>
+                    <span>{{ $t('finance.liabilitiesEquity') }}</span>
                   </h3>
                   <span class="text-xs font-mono font-bold text-amber-700">{{ formatCurrency(balanceSheet?.totalLiabilitiesAndEquity || 0) }}</span>
                 </div>
@@ -501,8 +503,8 @@
                   <!-- Non-Current Liabilities -->
                   <div class="space-y-2" v-if="(balanceSheet?.nonCurrentLiabilities?.length || 0) > 0">
                     <div class="font-bold uppercase tracking-wider text-amber-800 flex justify-between">
-                      <span>Long-Term Liabilities (Non-Current)</span>
-                      <span>Balance</span>
+                      <span>{{ $t('finance.nonCurrentLiabilities') }}</span>
+                      <span>{{ $t('suppliers.tableBalance') }}</span>
                     </div>
                     <div 
                       v-for="item in (balanceSheet?.nonCurrentLiabilities || [])" 
@@ -516,7 +518,7 @@
                       <span class="font-mono font-semibold">{{ formatCurrency(item.balance) }}</span>
                     </div>
                     <div class="flex justify-between items-center pt-1 font-bold text-on-surface bg-surface-container-low/60 px-3 py-1.5 rounded-lg">
-                      <span>Total Long-Term Liabilities</span>
+                      <span>{{ $t('finance.totalNonCurrentLiabilities') }}</span>
                       <span class="font-mono">{{ formatCurrency(balanceSheet?.totalNonCurrentLiabilities || 0) }}</span>
                     </div>
                   </div>
@@ -524,8 +526,8 @@
                   <!-- Current Liabilities -->
                   <div class="space-y-2">
                     <div class="font-bold uppercase tracking-wider text-amber-800 flex justify-between">
-                      <span>Current Liabilities (Short-Term)</span>
-                      <span>Balance</span>
+                      <span>{{ $t('finance.currentLiabilities') }}</span>
+                      <span>{{ $t('suppliers.tableBalance') }}</span>
                     </div>
                     <div 
                       v-for="item in displayedCurrentLiabilities" 
@@ -539,22 +541,22 @@
                       <span class="font-mono font-semibold text-amber-700">{{ formatCurrency(item.balance) }}</span>
                     </div>
                     <div class="flex justify-between items-center pt-1 font-bold text-on-surface bg-amber-500/10 px-3 py-1.5 rounded-lg text-amber-900">
-                      <span>Total Current Liabilities</span>
+                      <span>{{ $t('finance.totalCurrentLiabilities') }}</span>
                       <span class="font-mono">{{ formatCurrency(balanceSheet?.totalCurrentLiabilities || 0) }}</span>
                     </div>
                   </div>
 
                   <!-- Total Liabilities Subtotal -->
                   <div class="flex justify-between items-center pt-1 font-bold text-on-surface bg-surface-container-low px-3 py-1.5 rounded-lg">
-                    <span>Total Liabilities</span>
+                    <span>{{ $t('finance.totalLiabilities') }}</span>
                     <span class="font-mono font-black">{{ formatCurrency(balanceSheet?.totalLiabilities || 0) }}</span>
                   </div>
 
                   <!-- Equity Section -->
                   <div class="space-y-2 pt-2 border-t border-outline-variant/40">
                     <div class="font-bold uppercase tracking-wider text-purple-800 flex justify-between">
-                      <span>Owner's Equity & Earnings</span>
-                      <span>Balance</span>
+                      <span>{{ $t('finance.totalEquity') }}</span>
+                      <span>{{ $t('suppliers.tableBalance') }}</span>
                     </div>
                     <div 
                       v-for="item in displayedEquityLines" 
@@ -568,11 +570,11 @@
                       <span class="font-mono font-semibold">{{ formatCurrency(item.balance) }}</span>
                     </div>
                     <div class="flex justify-between items-center py-1 px-2" :class="(balanceSheet?.currentPeriodNetIncome || 0) >= 0 ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'">
-                      <span class="font-medium">Current Period Net Income</span>
+                      <span class="font-medium">{{ $t('finance.currentPeriodNetIncome') }}</span>
                       <span class="font-mono">{{ formatCurrency(balanceSheet?.currentPeriodNetIncome || 0) }}</span>
                     </div>
                     <div class="flex justify-between items-center pt-1 font-bold text-purple-950 bg-purple-500/10 px-3 py-1.5 rounded-lg">
-                      <span>Total Equity</span>
+                      <span>{{ $t('finance.totalEquity') }}</span>
                       <span class="font-mono font-black text-purple-800">{{ formatCurrency(balanceSheet?.totalEquity || 0) }}</span>
                     </div>
                   </div>
@@ -581,7 +583,7 @@
 
               <!-- Total Liabilities & Equity Footer -->
               <div class="p-4 bg-amber-500/15 border-t border-amber-500/20 flex justify-between items-center font-black text-sm text-amber-950">
-                <span>TOTAL LIABILITIES & EQUITY</span>
+                <span>{{ $t('finance.totalLiabilitiesEquity') }}</span>
                 <span class="font-mono text-xl">{{ formatCurrency(balanceSheet?.totalLiabilitiesAndEquity || 0) }}</span>
               </div>
             </div>
@@ -595,7 +597,7 @@
               <div>
                 <h3 class="text-sm font-black text-on-surface uppercase tracking-wide flex items-center gap-2">
                   <CheckCircle2 class="w-4 h-4 text-emerald-600" />
-                  <span>Trial Balance Verification Ledger</span>
+                  <span>{{ $t('finance.trialBalance') }}</span>
                 </h3>
                 <p class="text-xs text-on-surface-variant mt-0.5">As of {{ statementAsOfDate }} • Ensuring double-entry equality across all active accounts</p>
               </div>
@@ -606,7 +608,7 @@
                   :class="trialBalance?.balanced ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' : 'bg-rose-500/10 text-rose-700 border-rose-500/20'"
                 >
                   <span class="w-2 h-2 rounded-full" :class="trialBalance?.balanced ? 'bg-emerald-500' : 'bg-rose-500'"></span>
-                  {{ trialBalance?.balanced ? 'BALANCED' : 'OUT OF BALANCE' }}
+                  {{ trialBalance?.balanced ? $t('finance.balanced') : $t('finance.discrepancy') }}
                 </span>
               </div>
             </div>
@@ -616,12 +618,12 @@
               <table class="w-full text-left text-xs select-none">
                 <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant">
                   <tr>
-                    <th class="p-3.5 pl-5">Account Code</th>
-                    <th class="p-3.5">Account Name</th>
-                    <th class="p-3.5">Type</th>
-                    <th class="p-3.5">Category</th>
-                    <th class="p-3.5 text-right">Debit (TZS)</th>
-                    <th class="p-3.5 text-right pr-5">Credit (TZS)</th>
+                    <th class="p-3.5 pl-5">{{ $t('finance.accountCode') }}</th>
+                    <th class="p-3.5">{{ $t('finance.accountName') }}</th>
+                    <th class="p-3.5">{{ $t('customers.tableType') }}</th>
+                    <th class="p-3.5">{{ $t('inventory.category') }}</th>
+                    <th class="p-3.5 text-right">{{ $t('finance.debit') }} (TZS)</th>
+                    <th class="p-3.5 text-right pr-5">{{ $t('finance.credit') }} (TZS)</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-surface-variant">
@@ -723,13 +725,13 @@
             <table class="w-full text-left text-xs select-none">
               <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant">
                 <tr>
-                  <th class="p-4 pl-5">Code</th>
-                  <th class="p-4">Account Name & Description</th>
-                  <th class="p-4">Type</th>
-                  <th class="p-4">Category</th>
+                  <th class="p-4 pl-5">{{ $t('finance.accountCode') }}</th>
+                  <th class="p-4">{{ $t('finance.accountName') }}</th>
+                  <th class="p-4">{{ $t('customers.tableType') }}</th>
+                  <th class="p-4">{{ $t('inventory.category') }}</th>
                   <th class="p-4 text-center">Class</th>
-                  <th class="p-4 text-center">Status</th>
-                  <th class="p-4 text-right pr-5">Actions</th>
+                  <th class="p-4 text-center">{{ $t('customers.tableStatus') }}</th>
+                  <th class="p-4 text-right pr-5">{{ $t('customers.tableActions') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-surface-variant">
@@ -763,7 +765,7 @@
                       class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold"
                       :class="acc.active ? 'bg-emerald-500/10 text-emerald-700' : 'bg-rose-500/10 text-rose-700'"
                     >
-                      {{ acc.active ? 'Active' : 'Inactive' }}
+                      {{ acc.active ? $t('common.active') : $t('common.inactive') }}
                     </span>
                   </td>
                   <td class="p-4 text-right pr-5">
@@ -796,7 +798,7 @@
           <div class="flex flex-wrap items-center gap-3">
             <!-- Date range -->
             <div class="flex items-center gap-1.5">
-              <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">From</span>
+              <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">{{ $t('reports.fromDate') }}</span>
               <input 
                 type="date" 
                 v-model="journalStartDate" 
@@ -804,7 +806,7 @@
               />
             </div>
             <div class="flex items-center gap-1.5">
-              <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">To</span>
+              <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">{{ $t('reports.toDate') }}</span>
               <input 
                 type="date" 
                 v-model="journalEndDate" 
@@ -833,13 +835,13 @@
               <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant">
                 <tr>
                   <th class="p-4 pl-5">Entry #</th>
-                  <th class="p-4">Date</th>
+                  <th class="p-4">{{ $t('receipt.date') }}</th>
                   <th class="p-4">Source / Ref Type</th>
-                  <th class="p-4">Description Memo</th>
-                  <th class="p-4">Branch</th>
-                  <th class="p-4 text-right">Debit Sum</th>
-                  <th class="p-4 text-right">Credit Sum</th>
-                  <th class="p-4 text-center">Status</th>
+                  <th class="p-4">{{ $t('customers.notes') }}</th>
+                  <th class="p-4">{{ $t('topNav.branch') }}</th>
+                  <th class="p-4 text-right">{{ $t('finance.debit') }}</th>
+                  <th class="p-4 text-right">{{ $t('finance.credit') }}</th>
+                  <th class="p-4 text-center">{{ $t('customers.tableStatus') }}</th>
                   <th class="p-4 text-right pr-5">Voucher</th>
                 </tr>
               </thead>
@@ -940,7 +942,7 @@
 
             <!-- Date Range -->
             <div class="flex flex-col gap-1">
-              <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">From Date</label>
+              <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('reports.fromDate') }}</label>
               <input 
                 type="date" 
                 v-model="ledgerStartDate" 
@@ -948,7 +950,7 @@
               />
             </div>
             <div class="flex flex-col gap-1">
-              <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">To Date</label>
+              <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('reports.toDate') }}</label>
               <input 
                 type="date" 
                 v-model="ledgerEndDate" 
@@ -973,25 +975,25 @@
           <!-- Summary Cards -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs">
-              <span class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">Opening Balance</span>
+              <span class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashMovements.openingBalance') }}</span>
               <p class="text-xl font-black font-mono text-on-surface mt-1.5">{{ formatCurrency(accountStatement.openingBalance) }}</p>
               <p class="text-[10px] text-on-surface-variant mt-1">Balance as of {{ accountStatement.startDate }}</p>
             </div>
 
             <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs">
-              <span class="text-[10px] font-mono font-bold text-emerald-700 uppercase tracking-wider">Total Debits (+)</span>
+              <span class="text-[10px] font-mono font-bold text-emerald-700 uppercase tracking-wider">{{ $t('finance.debits') }}</span>
               <p class="text-xl font-black font-mono text-emerald-600 mt-1.5">{{ formatCurrency(accountStatement.totalDebit) }}</p>
               <p class="text-[10px] text-emerald-700 mt-1">Cumulative debits posted</p>
             </div>
 
             <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs">
-              <span class="text-[10px] font-mono font-bold text-blue-700 uppercase tracking-wider">Total Credits (-)</span>
+              <span class="text-[10px] font-mono font-bold text-blue-700 uppercase tracking-wider">{{ $t('finance.credits') }}</span>
               <p class="text-xl font-black font-mono text-blue-600 mt-1.5">{{ formatCurrency(accountStatement.totalCredit) }}</p>
               <p class="text-[10px] text-blue-700 mt-1">Cumulative credits posted</p>
             </div>
 
             <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs">
-              <span class="text-[10px] font-mono font-bold text-primary uppercase tracking-wider">Closing Balance</span>
+              <span class="text-[10px] font-mono font-bold text-primary uppercase tracking-wider">{{ $t('cashMovements.closingBalance') }}</span>
               <p class="text-xl font-black font-mono text-primary mt-1.5">{{ formatCurrency(accountStatement.closingBalance) }}</p>
               <p class="text-[10px] text-primary mt-1">Ending ledger balance</p>
             </div>
@@ -1017,13 +1019,13 @@
               <table class="w-full text-left text-xs select-none">
                 <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant">
                   <tr>
-                    <th class="p-3.5 pl-5">Date</th>
+                    <th class="p-3.5 pl-5">{{ $t('receipt.date') }}</th>
                     <th class="p-3.5">Entry #</th>
-                    <th class="p-3.5">Type</th>
-                    <th class="p-3.5">Description</th>
-                    <th class="p-3.5">Branch</th>
-                    <th class="p-3.5 text-right">Debit (+)</th>
-                    <th class="p-3.5 text-right">Credit (-)</th>
+                    <th class="p-3.5">{{ $t('customers.tableType') }}</th>
+                    <th class="p-3.5">{{ $t('customers.notes') }}</th>
+                    <th class="p-3.5">{{ $t('topNav.branch') }}</th>
+                    <th class="p-3.5 text-right">{{ $t('finance.debit') }} (+)</th>
+                    <th class="p-3.5 text-right">{{ $t('finance.credit') }} (-)</th>
                     <th class="p-3.5 text-right pr-5">Running Balance</th>
                   </tr>
                 </thead>
@@ -1093,7 +1095,7 @@
             <div>
               <div class="flex items-center gap-2">
                 <span class="text-xs font-mono uppercase font-bold text-emerald-700 px-2 py-0.5 rounded bg-emerald-500/10">Active Period</span>
-                <h3 class="text-xl font-black text-on-surface font-mono">{{ currentPeriod?.name || 'Loading...' }}</h3>
+                <h3 class="text-xl font-black text-on-surface font-mono">{{ currentPeriod?.name || $t('common.loading') }}</h3>
               </div>
               <p class="text-xs text-on-surface-variant mt-1">
                 Duration: <strong class="font-mono text-on-surface">{{ currentPeriod?.startDate }}</strong> to <strong class="font-mono text-on-surface">{{ currentPeriod?.endDate }}</strong>
@@ -1110,7 +1112,7 @@
               class="px-5 py-2.5 rounded-xl bg-amber-600 text-white font-bold text-xs hover:bg-amber-700 active:scale-95 transition-all shadow-sm flex items-center gap-2 cursor-pointer"
             >
               <Lock class="w-4 h-4" />
-              <span>Close & Finalize Period</span>
+              <span>{{ $t('finance.closePeriod') }}</span>
             </button>
           </div>
         </div>
@@ -1126,9 +1128,9 @@
               <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant">
                 <tr>
                   <th class="p-4 pl-5">Period Name</th>
-                  <th class="p-4">Start Date</th>
-                  <th class="p-4">End Date</th>
-                  <th class="p-4 text-center">Status</th>
+                  <th class="p-4">{{ $t('reports.fromDate') }}</th>
+                  <th class="p-4">{{ $t('reports.toDate') }}</th>
+                  <th class="p-4 text-center">{{ $t('customers.tableStatus') }}</th>
                   <th class="p-4">Closed At</th>
                   <th class="p-4 pr-5">Closed By</th>
                 </tr>
@@ -1331,7 +1333,7 @@
             @click="showNewJournalModal = false"
             class="px-4 py-2.5 rounded-xl border border-outline-variant hover:bg-surface-container text-on-surface font-bold text-xs cursor-pointer transition-all"
           >
-            Cancel
+            {{ $t('common.cancel') }}
           </button>
           <button 
             :disabled="!isJournalBalanced || totalJournalDebits <= 0 || isSubmittingJournal"
@@ -1340,7 +1342,7 @@
           >
             <RotateCw v-if="isSubmittingJournal" class="w-3.5 h-3.5 animate-spin" />
             <Check v-else class="w-3.5 h-3.5" />
-            <span>{{ isSubmittingJournal ? 'Posting to GL...' : 'Post Journal Entry' }}</span>
+            <span>{{ isSubmittingJournal ? 'Posting to GL...' : $t('finance.postJournalEntry') }}</span>
           </button>
         </div>
       </div>
@@ -1358,7 +1360,7 @@
       <div class="flex flex-col gap-4 p-2 font-sans select-none text-xs">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="flex flex-col gap-1.5">
-            <label class="font-mono font-bold text-on-surface-variant uppercase text-[10px]">Account Type *</label>
+            <label class="font-mono font-bold text-on-surface-variant uppercase text-[10px]">{{ $t('customers.customerTypeRequired') }}</label>
             <select 
               v-model="newAccount.accountType"
               @change="onAccountTypeChange"
@@ -1386,7 +1388,7 @@
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label class="font-mono font-bold text-on-surface-variant uppercase text-[10px]">Account Name *</label>
+          <label class="font-mono font-bold text-on-surface-variant uppercase text-[10px]">{{ $t('finance.accountName') }} *</label>
           <input 
             type="text" 
             v-model="newAccount.name" 
@@ -1418,7 +1420,7 @@
             @click="showAddAccountModal = false"
             class="px-4 py-2.5 rounded-xl border border-outline-variant hover:bg-surface-container text-on-surface font-bold text-xs cursor-pointer transition-all"
           >
-            Cancel
+            {{ $t('common.cancel') }}
           </button>
           <button 
             :disabled="!newAccount.name || isSubmittingAccount"
@@ -1427,7 +1429,7 @@
           >
             <RotateCw v-if="isSubmittingAccount" class="w-3.5 h-3.5 animate-spin" />
             <Plus v-else class="w-3.5 h-3.5" />
-            <span>{{ isSubmittingAccount ? 'Creating...' : 'Create Account' }}</span>
+            <span>{{ isSubmittingAccount ? $t('common.loading') : $t('finance.addAccount') }}</span>
           </button>
         </div>
       </div>
@@ -1453,7 +1455,7 @@
             <span class="font-bold font-mono text-primary">{{ selectedJournal.referenceType }}</span>
           </div>
           <div>
-            <span class="text-[10px] font-mono uppercase text-on-surface-variant font-bold block">Status</span>
+            <span class="text-[10px] font-mono uppercase text-on-surface-variant font-bold block">{{ $t('customers.tableStatus') }}</span>
             <span class="font-bold text-emerald-600">{{ selectedJournal.status }}</span>
           </div>
           <div>
@@ -1471,9 +1473,9 @@
             <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant">
               <tr>
                 <th class="p-3 pl-4">Account</th>
-                <th class="p-3">Branch</th>
-                <th class="p-3 text-right">Debit (TZS)</th>
-                <th class="p-3 text-right pr-4">Credit (TZS)</th>
+                <th class="p-3">{{ $t('topNav.branch') }}</th>
+                <th class="p-3 text-right">{{ $t('finance.debit') }} (TZS)</th>
+                <th class="p-3 text-right pr-4">{{ $t('finance.credit') }} (TZS)</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-surface-variant bg-surface-container-lowest">
@@ -1502,7 +1504,7 @@
             @click="showVoucherModal = false"
             class="px-5 py-2 rounded-xl bg-primary text-on-primary font-bold text-xs cursor-pointer"
           >
-            Close
+            {{ $t('receipt.close') }}
           </button>
         </div>
       </div>
@@ -1537,7 +1539,7 @@
             @click="showClosePeriodModal = false"
             class="px-4 py-2.5 rounded-xl border border-outline-variant hover:bg-surface-container text-on-surface font-bold text-xs cursor-pointer transition-all"
           >
-            Cancel
+            {{ $t('common.cancel') }}
           </button>
           <button 
             :disabled="isClosingPeriod"
@@ -1561,7 +1563,9 @@ import Toast from '../components/common/Toast.vue';
 import Modal from '../components/common/Modal.vue';
 import JengaLoader from '../components/common/JengaLoader.vue';
 import { financeService } from '../services/financeService';
+import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { formatCurrency } from '../models/mockData';
+import { t } from '../i18n';
 import type {
   ChartOfAccount,
   AccountType,
@@ -1605,6 +1609,8 @@ import {
 
 const router = useRouter();
 const route = useRoute();
+const vm = useAppViewModel();
+const { userRole } = vm;
 
 // State Variables
 const activeSubmodule = ref<'statements' | 'accounts' | 'journal' | 'ledger' | 'periods'>('statements');
@@ -1615,12 +1621,12 @@ const toastType = ref<'success' | 'error'>('success');
 
 const submoduleTitle = computed(() => {
   switch (activeSubmodule.value) {
-    case 'statements': return 'Financial Statements';
-    case 'accounts': return 'Chart of Accounts';
-    case 'journal': return 'General Ledger & Journals';
-    case 'ledger': return 'Account Statement';
-    case 'periods': return 'Fiscal Periods';
-    default: return 'Finance & Accounts';
+    case 'statements': return t('finance.financialStatements');
+    case 'accounts': return t('finance.chartOfAccounts');
+    case 'journal': return t('finance.generalLedgerJournals');
+    case 'ledger': return t('finance.accountStatement');
+    case 'periods': return t('finance.fiscalPeriods');
+    default: return t('finance.title');
   }
 });
 
@@ -1654,7 +1660,6 @@ const switchStatementType = (type: 'pnl' | 'balance-sheet' | 'trial-balance') =>
 const selectSubmodule = (sub: 'statements' | 'accounts' | 'journal' | 'ledger' | 'periods') => {
   activeSubmodule.value = sub;
   router.replace({ query: { ...route.query, tab: sub } });
-  // Auto-fetch data if switching tabs
   if (sub === 'statements') {
     loadStatements();
   } else if (sub === 'accounts' && accounts.value.length === 0) {
@@ -1745,7 +1750,7 @@ const filteredAccounts = computed(() => {
     const query = coaSearchQuery.value.toLowerCase().trim();
     const matchesQuery = !query || 
       a.code.toLowerCase().includes(query) || 
-      a.name.toLowerCase().includes(query) ||
+      a.name.toLowerCase().includes(query) || 
       (a.description && a.description.toLowerCase().includes(query));
     return matchesType && matchesQuery;
   });
@@ -1806,7 +1811,6 @@ const displayedCurrentLiabilities = computed(() => {
 const displayedEquityLines = computed(() => {
   const lines = [...(balanceSheet.value?.equityLines || [])];
   
-  // 1. Ensure 3010 Owner's Capital is always visible
   if (!lines.some(l => l.accountCode === '3010')) {
     lines.push({
       accountCode: '3010',
@@ -1815,7 +1819,6 @@ const displayedEquityLines = computed(() => {
     });
   }
   
-  // 2. Ensure 3020 Retained Earnings is always visible
   if (!lines.some(l => l.accountCode === '3020')) {
     const retainedBal = balanceSheet.value?.retainedEarnings || 0;
     lines.push({
@@ -1983,10 +1986,10 @@ const applyDatePreset = (preset: string) => {
 };
 
 const formatPresetLabel = (preset: string) => {
-  if (preset === 'this_month') return 'This Month';
+  if (preset === 'this_month') return t('dashboard.thisMonth');
   if (preset === 'last_month') return 'Last Month';
   if (preset === 'this_quarter') return 'This Quarter';
-  if (preset === 'this_year') return 'This Year';
+  if (preset === 'this_year') return t('dashboard.thisYear');
   return preset;
 };
 

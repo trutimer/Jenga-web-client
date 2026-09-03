@@ -11,10 +11,10 @@
         </button>
         <div>
           <h1 class="text-2xl font-black text-on-surface tracking-tight flex items-center gap-2">
-            <span>Cashier Shifts</span>
+            <span>{{ $t('cashierShifts.title') }}</span>
             <span v-if="cashier" class="text-base font-normal text-on-surface-variant">({{ cashier.fullName }})</span>
           </h1>
-          <p class="text-sm text-on-surface-variant mt-0.5">Historical register shifts and reconciliation records</p>
+          <p class="text-sm text-on-surface-variant mt-0.5">{{ $t('cashierShifts.subtitle') }}</p>
         </div>
       </div>
     </div>
@@ -29,22 +29,22 @@
       <!-- Summary KPIs Banner -->
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-surface rounded-2xl border border-outline-variant p-5 shadow-sm flex flex-col gap-1">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Total Shifts</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.totalShifts') }}</span>
           <span class="text-2xl font-black text-on-surface font-mono">{{ shifts.length }}</span>
         </div>
         <div class="bg-surface rounded-2xl border border-outline-variant p-5 shadow-sm flex flex-col gap-1">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Active Shift</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.activeShift') }}</span>
           <span class="text-xl font-bold font-mono flex items-center gap-2" :class="activeShift ? 'text-emerald-600' : 'text-on-surface-variant'">
             <span class="w-2.5 h-2.5 rounded-full" :class="activeShift ? 'bg-emerald-500 animate-pulse' : 'bg-outline-variant'"></span>
-            {{ activeShift ? 'OPEN NOW' : 'None Open' }}
+            {{ activeShift ? $t('cashierShifts.openNow') : $t('cashierShifts.noneOpen') }}
           </span>
         </div>
         <div class="bg-surface rounded-2xl border border-outline-variant p-5 shadow-sm flex flex-col gap-1">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Cumulative Sales</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.cumulativeSales') }}</span>
           <span class="text-2xl font-black text-primary font-mono">{{ formatCurrency(totalSalesSum) }}</span>
         </div>
         <div class="bg-surface rounded-2xl border border-outline-variant p-5 shadow-sm flex flex-col gap-1">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Net Discrepancies</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.netDiscrepancies') }}</span>
           <span 
             class="text-2xl font-black font-mono"
             :class="totalDiscrepancySum === 0 ? 'text-success' : totalDiscrepancySum < 0 ? 'text-error' : 'text-warning'"
@@ -61,20 +61,20 @@
           <input 
             v-model="searchQuery" 
             type="text" 
-            placeholder="Search by Shift ID or date..."
+            :placeholder="$t('cashierShifts.searchPlaceholder')"
             class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl pl-10 pr-4 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary transition-colors"
           />
         </div>
 
         <div class="flex items-center gap-2 w-full sm:w-auto">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Filter Status:</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider whitespace-nowrap">{{ $t('cashierShifts.filterStatus') }}</span>
           <select 
             v-model="statusFilter"
             class="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-2 text-sm font-medium text-on-surface focus:outline-none focus:border-primary transition-colors cursor-pointer"
           >
-            <option value="ALL">All Statuses</option>
-            <option value="OPEN">Open Only</option>
-            <option value="CLOSED">Closed Only</option>
+            <option value="ALL">{{ $t('cashierShifts.allStatuses') }}</option>
+            <option value="OPEN">{{ $t('cashierShifts.openOnly') }}</option>
+            <option value="CLOSED">{{ $t('cashierShifts.closedOnly') }}</option>
           </select>
         </div>
       </div>
@@ -85,15 +85,15 @@
           <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-surface-container-low text-xs uppercase text-on-surface-variant font-mono tracking-wider border-b border-outline-variant">
               <tr>
-                <th class="px-5 py-4">Shift ID</th>
-                <th class="px-5 py-4">Opened At</th>
-                <th class="px-5 py-4">Closed At</th>
-                <th class="px-5 py-4 text-center">Status</th>
-                <th class="px-5 py-4 text-right">Opening Cash</th>
-                <th class="px-5 py-4 text-right">Total Sales</th>
-                <th class="px-5 py-4 text-right">Actual Cash</th>
-                <th class="px-5 py-4 text-right">Discrepancy</th>
-                <th class="px-5 py-4 text-right">Action</th>
+                <th class="px-5 py-4">{{ $t('cashierShifts.shiftId') }}</th>
+                <th class="px-5 py-4">{{ $t('cashierShifts.openedAt') }}</th>
+                <th class="px-5 py-4">{{ $t('cashierShifts.closedAt') }}</th>
+                <th class="px-5 py-4 text-center">{{ $t('customers.tableStatus') }}</th>
+                <th class="px-5 py-4 text-right">{{ $t('cashierShifts.openingCash') }}</th>
+                <th class="px-5 py-4 text-right">{{ $t('cashierShifts.totalSales') }}</th>
+                <th class="px-5 py-4 text-right">{{ $t('cashierShifts.actualCash') }}</th>
+                <th class="px-5 py-4 text-right">{{ $t('cashierShifts.discrepancy') }}</th>
+                <th class="px-5 py-4 text-right">{{ $t('customers.tableActions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-outline-variant bg-surface-container-lowest">
@@ -115,7 +115,7 @@
                   {{ formatDate(shift.openedAt) }}
                 </td>
                 <td class="px-5 py-4 font-mono text-xs text-on-surface-variant">
-                  {{ shift.closedAt ? formatDate(shift.closedAt) : 'Still Active' }}
+                  {{ shift.closedAt ? formatDate(shift.closedAt) : $t('cashierShifts.stillActive') }}
                 </td>
                 <td class="px-5 py-4 text-center">
                   <span 
@@ -146,7 +146,7 @@
                     class="px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
                   >
                     <Eye class="w-3.5 h-3.5" />
-                    <span>View Overview</span>
+                    <span>{{ $t('cashierShifts.viewOverview') }}</span>
                   </button>
                 </td>
               </tr>
@@ -209,11 +209,9 @@ const totalDiscrepancySum = computed(() => {
 
 const filteredShifts = computed(() => {
   return shifts.value.filter(shift => {
-    // Status filter
     if (statusFilter.value !== 'ALL' && shift.status !== statusFilter.value) {
       return false;
     }
-    // Search query
     if (searchQuery.value.trim()) {
       const q = searchQuery.value.toLowerCase().trim();
       const idMatch = shift.id.toLowerCase().includes(q);

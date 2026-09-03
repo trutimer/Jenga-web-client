@@ -53,7 +53,7 @@ const routes = [
     path: '/finance',
     name: 'finance',
     component: () => import('../views/FinanceView.vue'),
-    meta: { requiresAuth: true, adminOnly: true }
+    meta: { requiresAuth: true }
   },
   {
     path: '/settings',
@@ -187,6 +187,7 @@ router.beforeEach((to, from, next) => {
         'suppliers': 'suppliers:view',
         'reports': 'reports:view',
         'users': 'users:view',
+        'finance': 'finance:view',
         'dashboard': 'dashboard:view'
       };
       const requiredPerm = routePermissions[routeName];
@@ -196,6 +197,13 @@ router.beforeEach((to, from, next) => {
       } else {
         next({ name: 'checkout' });
       }
+    }
+  } else if (to.name === 'finance' && role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
+    const userPermissions: string[] = JSON.parse(localStorage.getItem('userPermissions') || '[]');
+    if (userPermissions.includes('finance:view')) {
+      next();
+    } else {
+      next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
     }
   } else {
     next();

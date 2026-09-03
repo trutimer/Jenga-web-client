@@ -11,7 +11,7 @@
         </button>
         <div>
           <div class="flex items-center gap-2.5">
-            <h1 class="text-2xl font-black text-on-surface tracking-tight">Shift Summary & Overview</h1>
+            <h1 class="text-2xl font-black text-on-surface tracking-tight">{{ $t('shiftDetails.title') }}</h1>
             <span 
               v-if="detail?.shift"
               class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border"
@@ -21,8 +21,8 @@
             </span>
           </div>
           <p v-if="detail?.summary" class="text-sm text-on-surface-variant mt-1">
-            Cashier: <strong class="text-on-surface">{{ detail.summary.cashierName || 'N/A' }}</strong> &bull; 
-            Branch: <strong class="text-on-surface">{{ detail.summary.branchName || 'N/A' }}</strong>
+            {{ $t('receipt.cashier') }}: <strong class="text-on-surface">{{ detail.summary.cashierName || 'N/A' }}</strong> &bull; 
+            {{ $t('topNav.branch') }}: <strong class="text-on-surface">{{ detail.summary.branchName || 'N/A' }}</strong>
           </p>
         </div>
       </div>
@@ -30,8 +30,8 @@
       <div v-if="detail?.shift" class="flex items-center gap-3 bg-surface border border-outline-variant px-4 py-2.5 rounded-2xl shadow-sm">
         <Clock class="w-4 h-4 text-primary shrink-0" />
         <div class="flex flex-col text-xs font-mono">
-          <span class="text-on-surface-variant">Opened: {{ formatDate(detail.shift.openedAt) }}</span>
-          <span class="text-on-surface font-semibold">Closed: {{ detail.shift.closedAt ? formatDate(detail.shift.closedAt) : 'Still Active' }}</span>
+          <span class="text-on-surface-variant">{{ $t('shiftDetails.opened', { date: formatDate(detail.shift.openedAt) }) }}</span>
+          <span class="text-on-surface font-semibold">{{ $t('shiftDetails.closed', { date: detail.shift.closedAt ? formatDate(detail.shift.closedAt) : $t('cashierShifts.stillActive') }) }}</span>
         </div>
       </div>
     </div>
@@ -47,34 +47,34 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <!-- Opening Cash -->
         <div class="bg-surface rounded-2xl border border-outline-variant p-4 shadow-sm flex flex-col justify-between">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Opening Cash</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.openingCash') }}</span>
           <span class="text-xl font-black text-on-surface font-mono mt-2">{{ formatCurrency(detail.summary.openingCash) }}</span>
         </div>
 
         <!-- Total Sales -->
         <div class="bg-surface rounded-2xl border border-outline-variant p-4 shadow-sm flex flex-col justify-between">
           <div class="flex justify-between items-start">
-            <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Total Sales</span>
-            <span class="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">{{ detail.summary.totalTransactions }} sales</span>
+            <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.totalSales') }}</span>
+            <span class="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">{{ $t('shiftDetails.salesCount', { count: detail.summary.totalTransactions }) }}</span>
           </div>
           <span class="text-xl font-black text-primary font-mono mt-2">{{ formatCurrency(detail.summary.totalSales) }}</span>
         </div>
 
         <!-- Gross Profit -->
         <div class="bg-surface rounded-2xl border border-outline-variant p-4 shadow-sm flex flex-col justify-between">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Gross Profit</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('shiftDetails.grossProfit') }}</span>
           <span class="text-xl font-black text-emerald-600 font-mono mt-2">{{ formatCurrency(detail.summary.grossProfit) }}</span>
         </div>
 
         <!-- Expected Cash -->
         <div class="bg-surface rounded-2xl border border-outline-variant p-4 shadow-sm flex flex-col justify-between">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Expected Cash</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('shiftDetails.expectedCash') }}</span>
           <span class="text-xl font-black text-on-surface font-mono mt-2">{{ formatCurrency(detail.summary.expectedCash) }}</span>
         </div>
 
         <!-- Actual Cash -->
         <div class="bg-surface rounded-2xl border border-outline-variant p-4 shadow-sm flex flex-col justify-between">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Actual Cash</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.actualCash') }}</span>
           <span class="text-xl font-black font-mono mt-2" :class="detail.summary.actualCash != null ? 'text-on-surface' : 'text-on-surface-variant/40'">
             {{ detail.summary.actualCash != null ? formatCurrency(detail.summary.actualCash) : '-' }}
           </span>
@@ -82,7 +82,7 @@
 
         <!-- Net Discrepancy -->
         <div class="bg-surface rounded-2xl border border-outline-variant p-4 shadow-sm flex flex-col justify-between">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Discrepancy</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.discrepancy') }}</span>
           <span 
             class="text-xl font-black font-mono mt-2"
             :class="detail.summary.totalDiscrepancy === 0 ? 'text-success' : detail.summary.totalDiscrepancy < 0 ? 'text-error' : 'text-warning'"
@@ -99,7 +99,7 @@
         <div class="bg-surface rounded-2xl border border-outline-variant p-6 shadow-sm flex flex-col gap-4">
           <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
             <PieChart class="w-5 h-5 text-primary" />
-            <span>Payment Breakdown</span>
+            <span>{{ $t('shiftSales.paymentBreakdown') }}</span>
           </h3>
 
           <div class="flex-1 flex flex-col items-center justify-center py-4">
@@ -131,7 +131,7 @@
                 <div class="flex items-center gap-2">
                   <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
                   <Banknote class="w-4 h-4 text-emerald-600" />
-                  <span class="text-sm font-semibold text-on-surface">Cash Sales</span>
+                  <span class="text-sm font-semibold text-on-surface">{{ $t('reports.cashDrawer') }}</span>
                 </div>
                 <div class="flex flex-col text-right font-mono">
                   <span class="text-sm font-bold text-on-surface">{{ formatCurrency(paymentStats.cashAmount) }}</span>
@@ -143,7 +143,7 @@
                 <div class="flex items-center gap-2">
                   <div class="w-3 h-3 rounded-full bg-blue-500"></div>
                   <CreditCard class="w-4 h-4 text-blue-600" />
-                  <span class="text-sm font-semibold text-on-surface">Card Sales</span>
+                  <span class="text-sm font-semibold text-on-surface">{{ $t('reports.cardBank') }}</span>
                 </div>
                 <div class="flex flex-col text-right font-mono">
                   <span class="text-sm font-bold text-on-surface">{{ formatCurrency(paymentStats.cardAmount) }}</span>
@@ -155,7 +155,7 @@
                 <div class="flex items-center gap-2">
                   <div class="w-3 h-3 rounded-full bg-purple-500"></div>
                   <Smartphone class="w-4 h-4 text-purple-600" />
-                  <span class="text-sm font-semibold text-on-surface">Mobile Sales</span>
+                  <span class="text-sm font-semibold text-on-surface">{{ $t('reports.mobileMoney') }}</span>
                 </div>
                 <div class="flex flex-col text-right font-mono">
                   <span class="text-sm font-bold text-on-surface">{{ formatCurrency(paymentStats.mobileAmount) }}</span>
@@ -171,9 +171,9 @@
           <div class="flex items-center justify-between">
             <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
               <TrendingUp class="w-5 h-5 text-primary" />
-              <span>Shift Sales Timeline</span>
+              <span>{{ $t('shiftDetails.salesTimeline') }}</span>
             </h3>
-            <span class="text-xs font-mono text-on-surface-variant">Sales Progression over Shift Hours</span>
+            <span class="text-xs font-mono text-on-surface-variant">{{ $t('shiftDetails.salesProgression') }}</span>
           </div>
 
           <div class="flex-1 min-h-[220px] flex flex-col justify-end relative pt-6">
@@ -235,9 +235,9 @@
           <div>
             <h3 class="text-lg font-black text-on-surface flex items-center gap-2">
               <Receipt class="w-5 h-5 text-primary" />
-              <span>Shift Sales Report</span>
+              <span>{{ $t('shiftDetails.shiftSalesReport') }}</span>
             </h3>
-            <p class="text-xs text-on-surface-variant mt-0.5">Itemized transaction log for this cashier shift</p>
+            <p class="text-xs text-on-surface-variant mt-0.5">{{ $t('shiftDetails.itemizedLog') }}</p>
           </div>
 
           <div class="flex items-center gap-3">
@@ -257,19 +257,19 @@
           <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-surface-container-low text-xs uppercase text-on-surface-variant font-mono tracking-wider border-b border-outline-variant">
               <tr>
-                <th class="px-5 py-4">Time</th>
-                <th class="px-5 py-4">Receipt No</th>
-                <th class="px-5 py-4 text-center">Items</th>
-                <th class="px-5 py-4 text-center">Payment Method</th>
-                <th class="px-5 py-4 text-center">Status</th>
-                <th class="px-5 py-4 text-right">Total Amount</th>
-                <th class="px-5 py-4 text-right">Receipt Details</th>
+                <th class="px-5 py-4">{{ $t('cashMovements.time') }}</th>
+                <th class="px-5 py-4">{{ $t('receipt.receiptNumber') }}</th>
+                <th class="px-5 py-4 text-center">{{ $t('inventory.items') }}</th>
+                <th class="px-5 py-4 text-center">{{ $t('receipt.payment') }}</th>
+                <th class="px-5 py-4 text-center">{{ $t('customers.tableStatus') }}</th>
+                <th class="px-5 py-4 text-right">{{ $t('receipt.grandTotal') }}</th>
+                <th class="px-5 py-4 text-right">{{ $t('shiftDetails.shiftDetails') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-outline-variant bg-surface-container-lowest">
               <tr v-if="filteredSales.length === 0">
                 <td colspan="7" class="px-5 py-12 text-center text-on-surface-variant text-sm italic">
-                  No sales recorded for this shift.
+                  {{ $t('shiftSales.noSalesRecorded') }}
                 </td>
               </tr>
               <tr v-for="sale in filteredSales" :key="sale.id" class="hover:bg-surface-container/30 transition-colors">
@@ -309,7 +309,7 @@
                     class="px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
                   >
                     <Eye class="w-3.5 h-3.5" />
-                    <span>View Items</span>
+                    <span>{{ $t('shiftSales.viewItems') }}</span>
                   </button>
                 </td>
               </tr>
@@ -323,7 +323,7 @@
         <div class="p-5 border-b border-outline-variant bg-surface-container-low">
           <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
             <ArrowDownRight class="w-5 h-5 text-primary" />
-            <span>Cash Movements Audit Log</span>
+            <span>{{ $t('shiftDetails.cashMovementsLog') }}</span>
           </h3>
         </div>
 
@@ -331,10 +331,10 @@
           <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-surface-container-low text-xs uppercase text-on-surface-variant font-mono tracking-wider border-b border-outline-variant">
               <tr>
-                <th class="px-5 py-3.5">Time</th>
-                <th class="px-5 py-3.5">Type</th>
-                <th class="px-5 py-3.5">Reason</th>
-                <th class="px-5 py-3.5 text-right">Amount</th>
+                <th class="px-5 py-3.5">{{ $t('cashMovements.time') }}</th>
+                <th class="px-5 py-3.5">{{ $t('cashMovements.type') }}</th>
+                <th class="px-5 py-3.5">{{ $t('cashMovements.reason') }}</th>
+                <th class="px-5 py-3.5 text-right">{{ $t('cashMovements.amount') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-outline-variant bg-surface-container-lowest">
@@ -363,18 +363,18 @@
     <!-- Sale Item Modal -->
     <Modal 
       :isOpen="selectedSale !== null" 
-      :title="selectedSale ? `Sale Receipt #${selectedSale.id.substring(0, 8).toUpperCase()}` : 'Sale Receipt'" 
+      :title="selectedSale ? `${$t('receipt.receiptNumber')} #${selectedSale.id.substring(0, 8).toUpperCase()}` : $t('receipt.receiptNumber')" 
       :onClose="() => selectedSale = null"
       maxWidth="max-w-2xl"
     >
       <div v-if="selectedSale" class="flex flex-col gap-6">
         <div class="flex justify-between items-start bg-surface-container-lowest p-4 rounded-xl border border-outline-variant">
           <div class="flex flex-col gap-1">
-            <span class="text-xs font-mono font-bold text-on-surface-variant uppercase">Time</span>
+            <span class="text-xs font-mono font-bold text-on-surface-variant uppercase">{{ $t('cashMovements.time') }}</span>
             <span class="text-sm font-mono text-on-surface">{{ formatDate(selectedSale.createdAt) }}</span>
           </div>
           <div class="flex flex-col gap-1 text-right">
-            <span class="text-xs font-mono font-bold text-on-surface-variant uppercase">Payment Method</span>
+            <span class="text-xs font-mono font-bold text-on-surface-variant uppercase">{{ $t('receipt.payment') }}</span>
             <span class="text-sm font-bold text-on-surface">{{ selectedSale.paymentMethod }}</span>
           </div>
         </div>
@@ -383,10 +383,10 @@
           <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-surface-container-low text-xs uppercase text-on-surface-variant font-mono tracking-wider border-b border-outline-variant">
               <tr>
-                <th class="px-4 py-3">Item</th>
-                <th class="px-4 py-3 text-right">Qty</th>
-                <th class="px-4 py-3 text-right">Price</th>
-                <th class="px-4 py-3 text-right">Total</th>
+                <th class="px-4 py-3">{{ $t('checkout.item') }}</th>
+                <th class="px-4 py-3 text-right">{{ $t('checkout.qty') }}</th>
+                <th class="px-4 py-3 text-right">{{ $t('checkout.price') }}</th>
+                <th class="px-4 py-3 text-right">{{ $t('receipt.subtotal') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-outline-variant">
@@ -401,7 +401,7 @@
         </div>
 
         <div class="flex justify-between items-center px-4 py-3 bg-primary-container/20 rounded-xl border border-primary/20">
-          <span class="font-black text-on-surface uppercase tracking-wider text-sm">Grand Total</span>
+          <span class="font-black text-on-surface uppercase tracking-wider text-sm">{{ $t('receipt.grandTotal') }}</span>
           <span class="font-black font-mono text-xl text-primary">{{ formatCurrency(selectedSale.totalAmount) }}</span>
         </div>
       </div>
@@ -419,6 +419,7 @@ import {
 import { useUserViewModel } from '../viewmodels/useUserViewModel';
 import type { ShiftDetail } from '../models/types';
 import { formatCurrency } from '../models/mockData';
+import { t } from '../i18n';
 import Modal from '../components/common/Modal.vue';
 
 const route = useRoute();
@@ -487,7 +488,6 @@ const salesChartData = computed(() => {
     return { points: [], linePath: '', areaPath: '' };
   }
 
-  // Bucket sales by interval / index
   const count = Math.min(sorted.length, 6);
   const step = Math.ceil(sorted.length / count);
   const sample = [];

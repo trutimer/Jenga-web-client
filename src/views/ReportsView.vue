@@ -4,8 +4,8 @@
     <!-- Header element -->
     <div class="flex flex-col sm:flex-row justify-between sm:items-end mb-2">
       <div>
-        <h2 class="text-3xl font-black text-on-background tracking-tight">Reports Center</h2>
-        <p class="text-sm font-semibold text-on-surface-variant mt-1">Acquire and export analytical store accounts, payment logs audits, and general ledgers.</p>
+        <h2 class="text-3xl font-black text-on-background tracking-tight">{{ $t('reports.title') }}</h2>
+        <p class="text-sm font-semibold text-on-surface-variant mt-1">{{ $t('reports.subtitle') }}</p>
       </div>
 
       <div class="flex gap-2.5 mt-4 sm:mt-0">
@@ -15,44 +15,44 @@
           class="px-4 py-2.5 bg-primary text-on-primary font-bold text-xs rounded-lg hover:bg-opacity-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow shadow-primary/10 border-0"
         >
           <Download class="w-4 h-4" />
-          <span>Export report</span>
+          <span>{{ $t('reports.exportReport') }}</span>
         </button>
       </div>
     </div>
 
     <!-- Filters Panel -->
     <div class="bg-surface-container-lowest border border-outline-variant shadow-sm rounded-xl p-5 select-none">
-      <span class="block text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider mb-3 px-1">Report Filters</span>
+      <span class="block text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider mb-3 px-1">{{ $t('reports.reportFilters') }}</span>
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4">
         <!-- 1. Report Category -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">Report Category</label>
+          <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('reports.reportCategory') }}</label>
           <select 
             v-model="reportCategory"
             class="w-full bg-surface-container-low border border-outline-variant text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors rounded-lg px-3 py-2.5 outline-none cursor-pointer"
           >
-            <option value="sales">Sales Operations</option>
-            <option value="inventory">Inventory Status</option>
-            <option value="suppliers">Suppliers Overview</option>
+            <option value="sales">{{ $t('reports.salesOperations') }}</option>
+            <option value="inventory">{{ $t('reports.inventoryStatus') }}</option>
+            <option value="suppliers">{{ $t('reports.suppliersOverview') }}</option>
           </select>
         </div>
 
         <!-- 2. Export Format -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">Export Format</label>
+          <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('reports.exportFormat') }}</label>
           <select 
             v-model="exportFormat"
             class="w-full bg-surface-container-low border border-outline-variant text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors rounded-lg px-3 py-2.5 outline-none cursor-pointer"
           >
-            <option value="PDF">PDF Document (.pdf)</option>
-            <option value="EXCEL">Excel Spreadsheet (.xlsx)</option>
-            <option value="CSV">CSV Data File (.csv)</option>
+            <option value="PDF">{{ $t('reports.pdfDocument') }}</option>
+            <option value="EXCEL">{{ $t('reports.excelSpreadsheet') }}</option>
+            <option value="CSV">{{ $t('reports.csvDataFile') }}</option>
           </select>
         </div>
 
         <!-- 3. Transaction Dates (From) -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">From Date</label>
+          <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('reports.fromDate') }}</label>
           <input 
             type="date"
             v-model="fromDate"
@@ -63,7 +63,7 @@
 
         <!-- 4. Transaction Dates (To) -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">To Date</label>
+          <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('reports.toDate') }}</label>
           <input 
             type="date"
             v-model="toDate"
@@ -74,32 +74,32 @@
 
         <!-- 5a. Sale Status Filter (Sales category only) -->
         <div class="flex flex-col gap-1.5" v-if="reportCategory === 'sales'">
-          <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">Sale Status</label>
+          <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('reports.saleStatus') }}</label>
           <select 
             v-model="statusFilter"
             class="w-full bg-surface-container-low border border-outline-variant text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors rounded-lg px-3 py-2.5 outline-none cursor-pointer"
           >
-            <option value="ALL">All Statuses</option>
-            <option value="PAID">Paid Only</option>
-            <option value="UNPAID">Unpaid (Credit)</option>
-            <option value="VOID">Void / Reversed</option>
-            <option value="PARTIALLY_PAID">Partially Paid</option>
+            <option value="ALL">{{ $t('customers.allStatus') }}</option>
+            <option value="PAID">{{ $t('checkout.paid') }}</option>
+            <option value="UNPAID">{{ $t('checkout.unpaid') }}</option>
+            <option value="VOID">{{ $t('reports.voided') }}</option>
+            <option value="PARTIALLY_PAID">{{ $t('reports.partiallyPaid') }}</option>
           </select>
         </div>
 
         <!-- 5b. Stock Movement Type Filter (Restock inventory category only) -->
         <div class="flex flex-col gap-1.5" v-if="reportCategory === 'inventory' && inventoryReportType === 'restock'">
-          <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">Movement Type</label>
+          <label class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('reports.movementType') }}</label>
           <select 
             v-model="movementTypeFilter"
             class="w-full bg-surface-container-low border border-outline-variant text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors rounded-lg px-3 py-2.5 outline-none cursor-pointer"
           >
-            <option value="ALL">All Movement Types</option>
-            <option value="PURCHASE">Purchase / Restock In</option>
-            <option value="ADJUSTMENT">Stock Adjustment</option>
-            <option value="SALE">Sales Outbound</option>
-            <option value="TRANSFER">Branch Transfer</option>
-            <option value="RETURN">Customer Return</option>
+            <option value="ALL">{{ $t('reports.allMovements') }}</option>
+            <option value="PURCHASE">{{ $t('reports.movementPurchase') }}</option>
+            <option value="ADJUSTMENT">{{ $t('reports.movementAdjustment') }}</option>
+            <option value="SALE">{{ $t('reports.movementSale') }}</option>
+            <option value="TRANSFER">{{ $t('reports.movementTransfer') }}</option>
+            <option value="RETURN">{{ $t('reports.movementReturn') }}</option>
           </select>
         </div>
 
@@ -113,7 +113,7 @@
           >
             <RotateCw v-if="isReportLoading" class="w-4 h-4 animate-spin text-white" />
             <Activity v-else class="w-4 h-4" />
-            <span>{{ isReportLoading ? 'Applying...' : 'Apply Filters' }}</span>
+            <span>{{ isReportLoading ? $t('reports.applying') : $t('reports.applyFilters') }}</span>
           </button>
         </div>
       </div>
@@ -127,7 +127,7 @@
         v-if="reportCategory === 'sales'" 
         class="bg-surface-container-lowest border border-outline-variant shadow-md rounded-xl p-5 md:p-6 flex flex-col gap-3 md:col-span-1 select-none"
       >
-        <span class="block text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider mb-2 px-2.5">Sales Section</span>
+        <span class="block text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider mb-2 px-2.5">{{ $t('reports.salesSection') }}</span>
         
         <button 
           @click="reportType = 'sales'"
@@ -137,7 +137,7 @@
             : 'text-on-surface-variant hover:bg-surface-container bg-transparent'"
         >
           <TrendingUp class="w-5 h-5 shrink-0" />
-          <span>Sales Operations</span>
+          <span>{{ $t('reports.salesOperations') }}</span>
         </button>
 
         <button 
@@ -148,7 +148,7 @@
             : 'text-on-surface-variant hover:bg-surface-container bg-transparent'"
         >
           <Coins class="w-5 h-5 shrink-0" />
-          <span>Payment Channels</span>
+          <span>{{ $t('reports.paymentChannels') }}</span>
         </button>
 
         <button 
@@ -159,7 +159,7 @@
             : 'text-on-surface-variant hover:bg-surface-container bg-transparent'"
         >
           <Activity class="w-5 h-5 shrink-0" />
-          <span>Audit Trail Logs</span>
+          <span>{{ $t('reports.auditTrailLogs') }}</span>
         </button>
       </div>
 
@@ -186,43 +186,43 @@
             <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
                 <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">Paid Revenue</span>
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">{{ $t('reports.paidRevenue') }}</span>
                   <p class="text-xl font-black font-mono text-emerald-600 leading-tight mt-1">{{ formatCurrency(totalInvoiced, currency) }}</p>
                 </div>
                 <Coins class="w-5 h-5 text-emerald-600/70 shrink-0" />
               </div>
-              <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Realized income (PAID & Partial)</div>
+              <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">{{ $t('reports.realizedIncomeDesc') }}</div>
             </div>
 
             <!-- Unpaid Receivables -->
             <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
                 <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">Unpaid Receivables</span>
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">{{ $t('reports.unpaidReceivables') }}</span>
                   <p class="text-xl font-black font-mono text-amber-600 leading-tight mt-1">{{ formatCurrency(totalUnpaid, currency) }}</p>
                 </div>
                 <Clock class="w-5 h-5 text-amber-600/70 shrink-0" />
               </div>
-              <div class="text-[10px] text-amber-700/80 font-semibold mt-2">Outstanding customer credit</div>
+              <div class="text-[10px] text-amber-700/80 font-semibold mt-2">{{ $t('reports.outstandingCreditDesc') }}</div>
             </div>
 
             <!-- Voided / Reversed Sales -->
             <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
                 <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-rose-700 dark:text-rose-400">Voided / Reversed</span>
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-rose-700 dark:text-rose-400">{{ $t('reports.voidedReversed') }}</span>
                   <p class="text-xl font-black font-mono text-rose-600 leading-tight mt-1">{{ formatCurrency(totalVoided, currency) }}</p>
                 </div>
                 <Ban class="w-5 h-5 text-rose-600/70 shrink-0" />
               </div>
-              <div class="text-[10px] text-rose-700/80 font-semibold mt-2">Cancelled & voided totals</div>
+              <div class="text-[10px] text-rose-700/80 font-semibold mt-2">{{ $t('reports.cancelledTotalsDesc') }}</div>
             </div>
 
             <!-- Profit / Loss Card -->
             <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
                 <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Profit / Loss</span>
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.profitLoss') }}</span>
                   <p 
                     class="text-xl font-black font-mono leading-tight mt-1"
                     :class="totalProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'"
@@ -232,7 +232,7 @@
                 </div>
                 <TrendingUp class="w-5 h-5 shrink-0" :class="totalProfit >= 0 ? 'text-emerald-600/70' : 'text-rose-600/70'" />
               </div>
-              <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Net profit (Paid revenue - Cost)</div>
+              <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">{{ $t('reports.netProfitDesc') }}</div>
             </div>
 
           </div>
@@ -241,7 +241,11 @@
           <div v-if="reportType === 'sales'" class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col overflow-hidden">
             <div class="p-4 bg-surface-container-low border-b border-outline-variant select-none flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <span class="text-xs font-mono font-bold uppercase tracking-wide text-on-surface-variant">
-                Timeframe: {{ fromDate || 'Start' }} to {{ toDate || 'Today' }} / Sales Ledger ({{ resolvedHistory.length }} items)
+                {{ $t('reports.timeframeHeader', {
+                  from: fromDate || 'Start',
+                  to: toDate || 'Today',
+                  count: resolvedHistory.length
+                }) }}
               </span>
 
               <!-- Search Input -->
@@ -250,7 +254,7 @@
                 <input 
                   type="text"
                   v-model="searchQuery"
-                  placeholder="Search reference, cashier, customer..."
+                  :placeholder="$t('reports.searchPlaceholder')"
                   class="w-full bg-surface-container-lowest border border-outline-variant text-xs rounded-lg pl-8 pr-3 py-1.5 outline-none font-medium focus:border-primary"
                 />
               </div>
@@ -261,14 +265,14 @@
               <table class="w-full text-left text-xs select-none">
                 <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant select-none">
                   <tr>
-                    <th class="p-4 pl-6">Reference & Details</th>
-                    <th class="p-4">Timestamp</th>
-                    <th class="p-4">Payment Method</th>
-                    <th class="p-4 text-right">Invoice Sum</th>
-                    <th class="p-4 text-right">Profit / Loss</th>
-                    <th class="p-4 text-right">Discount</th>
-                    <th class="p-4">Ref Code</th>
-                    <th class="p-4 text-center pr-6">Status</th>
+                    <th class="p-4 pl-6">{{ $t('reports.referenceDetails') }}</th>
+                    <th class="p-4">{{ $t('reports.timestamp') }}</th>
+                    <th class="p-4">{{ $t('checkout.selectMethod') }}</th>
+                    <th class="p-4 text-right">{{ $t('reports.invoiceSum') }}</th>
+                    <th class="p-4 text-right">{{ $t('reports.profitLoss') }}</th>
+                    <th class="p-4 text-right">{{ $t('checkout.discount') }}</th>
+                    <th class="p-4">{{ $t('reports.refCode') }}</th>
+                    <th class="p-4 text-center pr-6">{{ $t('customers.tableStatus') }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-surface-variant">
@@ -281,8 +285,8 @@
                     <td class="p-4 pl-6 select-all font-bold text-on-surface">
                       <div class="font-mono text-xs">{{ txn.id }}</div>
                       <div class="text-[10px] text-on-surface-variant font-normal mt-0.5 flex flex-wrap gap-x-2">
-                        <span v-if="txn.cashierName">Cashier: <strong class="font-semibold text-on-surface">{{ txn.cashierName }}</strong></span>
-                        <span v-if="txn.customerName">Customer: <strong class="font-semibold text-primary">{{ txn.customerName }}</strong> <span v-if="txn.customerCode" class="text-[9px] font-mono opacity-80">({{ txn.customerCode }})</span></span>
+                        <span v-if="txn.cashierName">{{ $t('receipt.cashier') }}: <strong class="font-semibold text-on-surface">{{ txn.cashierName }}</strong></span>
+                        <span v-if="txn.customerName">{{ $t('receipt.customer') }}: <strong class="font-semibold text-primary">{{ txn.customerName }}</strong> <span v-if="txn.customerCode" class="text-[9px] font-mono opacity-80">({{ txn.customerCode }})</span></span>
                       </div>
                     </td>
                     <td class="p-4 font-mono text-xs text-on-surface-variant">{{ txn.date }}</td>
@@ -338,7 +342,7 @@
                   </tr>
                   <tr v-if="resolvedHistory.length === 0">
                     <td colspan="8" class="p-8 text-center text-on-surface-variant font-medium">
-                      No sales transactions found matching your filters.
+                      {{ $t('reports.noSalesTransactions') }}
                     </td>
                   </tr>
                 </tbody>
@@ -348,55 +352,55 @@
 
           <!-- PAYMENT CHANNELS REPORT -->
           <div v-else-if="reportType === 'payments'" class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-6 space-y-6">
-            <h3 class="text-md font-bold text-on-surface">Invoice collections by Gateway</h3>
+            <h3 class="text-md font-bold text-on-surface">{{ $t('reports.gatewayCollectionsTitle') }}</h3>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 select-none">
               <!-- Cash totals -->
               <div class="bg-surface-container p-4 rounded-xl border border-outline-variant">
                 <div class="flex justify-between items-center mb-2">
-                  <span class="text-xs font-mono font-semibold text-on-surface-variant uppercase">Cash register drawer</span>
+                  <span class="text-xs font-mono font-semibold text-on-surface-variant uppercase">{{ $t('reports.cashDrawerTitle') }}</span>
                   <Coins class="w-5 h-5 text-primary" />
                 </div>
                 <p class="text-xl font-bold font-mono text-on-surface">
                   {{ formatCurrency(totalByMethod('Cash'), currency) }}
                 </p>
-                <p class="text-[10px] text-outline mt-1 font-semibold">Verified drawer reconciliation</p>
+                <p class="text-[10px] text-outline mt-1 font-semibold">{{ $t('reports.verifiedDrawerReconciliation') }}</p>
               </div>
 
               <!-- M-PESA totals -->
               <div class="bg-surface-container p-4 rounded-xl border border-outline-variant">
                 <div class="flex justify-between items-center mb-2">
-                  <span class="text-xs font-mono font-semibold text-on-surface-variant uppercase">M-Pesa Mobile money</span>
+                  <span class="text-xs font-mono font-semibold text-on-surface-variant uppercase">{{ $t('reports.mpesaTitle') }}</span>
                   <Sparkles class="w-5 h-5 text-primary" />
                 </div>
                 <p class="text-xl font-bold font-mono text-on-surface">
                   {{ formatCurrency(totalByMethod('M-Pesa'), currency) }}
                 </p>
-                <p class="text-[10px] text-outline mt-1 font-semibold">Secured automated webhook confirmation</p>
+                <p class="text-[10px] text-outline mt-1 font-semibold">{{ $t('reports.securedWebhookConfirmation') }}</p>
               </div>
 
               <!-- Card terminal -->
               <div class="bg-surface-container p-4 rounded-xl border border-outline-variant">
                 <div class="flex justify-between items-center mb-2">
-                  <span class="text-xs font-mono font-semibold text-on-surface-variant uppercase">Integrated POS Card</span>
+                  <span class="text-xs font-mono font-semibold text-on-surface-variant uppercase">{{ $t('reports.cardTerminalTitle') }}</span>
                   <DollarSign class="w-5 h-5 text-primary" />
                 </div>
                 <p class="text-xl font-bold font-mono text-on-surface">
                   {{ formatCurrency(totalByMethod('Card'), currency) }}
                 </p>
-                <p class="text-[10px] text-outline mt-1 font-semibold">Consolidated VISA/Mastercard terminal</p>
+                <p class="text-[10px] text-outline mt-1 font-semibold">{{ $t('reports.consolidatedCardTerminal') }}</p>
               </div>
             </div>
           </div>
 
           <!-- AUDIT TRAIL DATA -->
           <div v-else-if="reportType === 'audit'" class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-6 select-none leading-relaxed">
-            <h3 class="text-md font-bold text-on-surface mb-4">Secured Audit Log Trail</h3>
+            <h3 class="text-md font-bold text-on-surface mb-4">{{ $t('reports.auditTrailTitle') }}</h3>
             
             <div class="p-8 text-center text-on-surface-variant font-medium text-sm flex flex-col items-center justify-center">
               <FileText class="w-8 h-8 text-outline-variant mb-2 animate-pulse" />
-              <p>Audit trail logs are recorded securely in the database.</p>
-              <p class="text-xs text-outline mt-1">Contact your system administrator for complete audit history exports.</p>
+              <p>{{ $t('reports.auditTrailNotice') }}</p>
+              <p class="text-xs text-outline mt-1">{{ $t('reports.auditTrailContactAdmin') }}</p>
             </div>
           </div>
         </template>
@@ -406,9 +410,9 @@
           <!-- Sub-Report Type Toggle Bar -->
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm select-none">
             <div>
-              <h3 class="text-base font-black text-on-surface">Inventory Status & Restock Center</h3>
+              <h3 class="text-base font-black text-on-surface">{{ $t('reports.inventoryStatusTitle') }}</h3>
               <p class="text-xs text-on-surface-variant font-semibold mt-0.5">
-                {{ inventoryReportType === 'all' ? 'Viewing current full catalog stock status and valuation ledger.' : 'Viewing stock movements and restock history for selected date range.' }}
+                {{ inventoryReportType === 'all' ? $t('reports.inventoryAllDesc') : $t('reports.inventoryRestockDesc') }}
               </p>
             </div>
             <div class="flex items-center gap-2 bg-surface-container-low p-1.5 rounded-xl border border-outline-variant shrink-0">
@@ -418,7 +422,7 @@
                 :class="inventoryReportType === 'all' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-high bg-transparent'"
               >
                 <Package class="w-4 h-4" />
-                <span>All Stock Report</span>
+                <span>{{ $t('reports.allStockReport') }}</span>
               </button>
               <button
                 @click="inventoryReportType = 'restock'"
@@ -426,7 +430,7 @@
                 :class="inventoryReportType === 'restock' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-high bg-transparent'"
               >
                 <RefreshCw class="w-4 h-4" />
-                <span>Restock Report</span>
+                <span>{{ $t('reports.restockReport') }}</span>
               </button>
             </div>
           </div>
@@ -439,34 +443,34 @@
               <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
                 <div class="flex justify-between items-start">
                   <div>
-                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Total Stock Units</span>
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.totalStockUnits') }}</span>
                     <p class="text-2xl font-black font-mono text-primary leading-tight mt-1">{{ totalInventoryItems }}</p>
                   </div>
                   <Package class="w-5 h-5 text-primary/70 shrink-0" />
                 </div>
-                <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Total quantity of products across all categories</div>
+                <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">{{ $t('reports.totalStockUnitsDesc') }}</div>
               </div>
 
               <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
                 <div class="flex justify-between items-start">
                   <div>
-                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Low Stock items</span>
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.lowStockItems') }}</span>
                     <p class="text-2xl font-black font-mono text-tertiary leading-tight mt-1">{{ lowStockItemsCount }}</p>
                   </div>
                   <AlertTriangle class="w-5 h-5 text-tertiary/70 shrink-0" />
                 </div>
-                <div class="text-[10px] text-tertiary/90 font-semibold mt-2">Products below safety or reorder threshold</div>
+                <div class="text-[10px] text-tertiary/90 font-semibold mt-2">{{ $t('reports.lowStockThresholdDesc') }}</div>
               </div>
 
               <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
                 <div class="flex justify-between items-start">
                   <div>
-                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Inventory Valuation</span>
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.inventoryValuation') }}</span>
                     <p class="text-2xl font-black font-mono text-on-surface leading-tight mt-1">{{ formatCurrency(totalInventoryValuation, currency) }}</p>
                   </div>
                   <TrendingUp class="w-5 h-5 text-outline/70 shrink-0" />
                 </div>
-                <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Total value based on retail selling price</div>
+                <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">{{ $t('reports.inventoryValuationDesc') }}</div>
               </div>
 
             </div>
@@ -474,20 +478,20 @@
             <!-- Inventory Table -->
             <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col overflow-hidden">
               <div class="p-4 bg-surface-container-low border-b border-outline-variant select-none">
-                <span class="text-xs font-mono font-bold uppercase tracking-wide text-on-surface-variant">Current Inventory Valuation Ledger</span>
+                <span class="text-xs font-mono font-bold uppercase tracking-wide text-on-surface-variant">{{ $t('reports.currentValuationLedger') }}</span>
               </div>
               
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs select-none">
                   <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant select-none">
                     <tr>
-                      <th class="p-4 pl-6">Product Details</th>
-                      <th class="p-4">Category</th>
-                      <th class="p-4 text-center">Stock Level</th>
-                      <th class="p-4 text-right">Cost Price</th>
-                      <th class="p-4 text-right">Selling Price</th>
-                      <th class="p-4 text-right">Stock Value</th>
-                      <th class="p-4 text-center pr-6">Status</th>
+                      <th class="p-4 pl-6">{{ $t('inventory.productName') }}</th>
+                      <th class="p-4">{{ $t('inventory.category') }}</th>
+                      <th class="p-4 text-center">{{ $t('inventory.stockLevel') }}</th>
+                      <th class="p-4 text-right">{{ $t('inventory.costPrice') }}</th>
+                      <th class="p-4 text-right">{{ $t('inventory.sellingPrice') }}</th>
+                      <th class="p-4 text-right">{{ $t('reports.stockValue') }}</th>
+                      <th class="p-4 text-center pr-6">{{ $t('customers.tableStatus') }}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-surface-variant">
@@ -530,7 +534,7 @@
                     </tr>
                     <tr v-if="productsList.length === 0">
                       <td colspan="7" class="p-8 text-center text-on-surface-variant font-medium">
-                        No products found in the catalog.
+                        {{ $t('reports.noProductsFoundCatalog') }}
                       </td>
                     </tr>
                   </tbody>
@@ -540,8 +544,11 @@
               <!-- Inventory Report Pagination Footer (15 items per page) -->
               <div class="p-4 bg-surface-container-lowest border-t border-outline-variant flex flex-col sm:flex-row justify-between items-center gap-4 select-none">
                 <div class="text-xs text-on-surface-variant font-medium">
-                  Showing {{ productsList.length === 0 ? 0 : (inventoryCurrentPage - 1) * inventoryItemsPerPage + 1 }} to
-                  {{ Math.min(inventoryCurrentPage * inventoryItemsPerPage, productsList.length) }} of {{ productsList.length }} entries
+                  {{ $t('inventory.showingEntries', {
+                    start: productsList.length === 0 ? 0 : (inventoryCurrentPage - 1) * inventoryItemsPerPage + 1,
+                    end: Math.min(inventoryCurrentPage * inventoryItemsPerPage, productsList.length),
+                    total: productsList.length
+                  }) }}
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 font-sans text-xs">
@@ -597,34 +604,34 @@
               <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
                 <div class="flex justify-between items-start">
                   <div>
-                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Restock Log Entries</span>
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.restockLogEntries') }}</span>
                     <p class="text-2xl font-black font-mono text-primary leading-tight mt-1">{{ filteredStockMovements.length }}</p>
                   </div>
                   <RefreshCw class="w-5 h-5 text-primary/70 shrink-0" />
                 </div>
-                <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Total stock additions & movements recorded</div>
+                <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">{{ $t('reports.totalStockAdditionsRecorded') }}</div>
               </div>
 
               <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
                 <div class="flex justify-between items-start">
                   <div>
-                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Total Units Restocked</span>
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.totalUnitsRestocked') }}</span>
                     <p class="text-2xl font-black font-mono text-emerald-600 leading-tight mt-1">{{ totalRestockQuantity }}</p>
                   </div>
                   <Package class="w-5 h-5 text-emerald-600/70 shrink-0" />
                 </div>
-                <div class="text-[10px] text-emerald-700/80 font-semibold mt-2">Cumulative stock quantity added</div>
+                <div class="text-[10px] text-emerald-700/80 font-semibold mt-2">{{ $t('reports.cumulativeStockAdded') }}</div>
               </div>
 
               <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
                 <div class="flex justify-between items-start">
                   <div>
-                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Restock Valuation</span>
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.restockValuation') }}</span>
                     <p class="text-2xl font-black font-mono text-on-surface leading-tight mt-1">{{ formatCurrency(totalRestockValuation, currency) }}</p>
                   </div>
                   <TrendingUp class="w-5 h-5 text-outline/70 shrink-0" />
                 </div>
-                <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Total monetary value of stock entries</div>
+                <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">{{ $t('reports.monetaryValueEntries') }}</div>
               </div>
 
             </div>
@@ -632,7 +639,7 @@
             <!-- Restock Movements Table -->
             <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col overflow-hidden">
               <div class="p-4 bg-surface-container-low border-b border-outline-variant select-none flex justify-between items-center">
-                <span class="text-xs font-mono font-bold uppercase tracking-wide text-on-surface-variant">Stock Movements & Restock Audit History</span>
+                <span class="text-xs font-mono font-bold uppercase tracking-wide text-on-surface-variant">{{ $t('reports.stockMovementsAuditHistory') }}</span>
                 <span class="text-[11px] font-mono text-outline font-semibold">Range: {{ fromDate }} to {{ toDate }} (Filter: {{ movementTypeFilter }})</span>
               </div>
               
@@ -640,13 +647,13 @@
                 <table class="w-full text-left text-xs select-none">
                   <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant select-none">
                     <tr>
-                      <th class="p-4 pl-6">Date & Time</th>
-                      <th class="p-4">Product Name</th>
-                      <th class="p-4 text-center">Movement Type</th>
-                      <th class="p-4 text-center">Quantity</th>
-                      <th class="p-4 text-right">Cost Price</th>
-                      <th class="p-4 text-right">Selling Price</th>
-                      <th class="p-4 text-left pr-6">Added / Created By</th>
+                      <th class="p-4 pl-6">{{ $t('reports.timestamp') }}</th>
+                      <th class="p-4">{{ $t('inventory.productName') }}</th>
+                      <th class="p-4 text-center">{{ $t('reports.movementType') }}</th>
+                      <th class="p-4 text-center">{{ $t('inventory.quantity') }}</th>
+                      <th class="p-4 text-right">{{ $t('inventory.costPrice') }}</th>
+                      <th class="p-4 text-right">{{ $t('inventory.sellingPrice') }}</th>
+                      <th class="p-4 text-left pr-6">{{ $t('reports.addedCreatedBy') }}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-surface-variant">
@@ -684,7 +691,7 @@
                     </tr>
                     <tr v-if="filteredStockMovements.length === 0">
                       <td colspan="7" class="p-8 text-center text-on-surface-variant font-medium">
-                        {{ isLoadingMovements ? 'Loading restock history from server...' : 'No stock movements matching your filter criteria.' }}
+                        {{ isLoadingMovements ? $t('common.loading') : $t('reports.noStockMovementsMatch') }}
                       </td>
                     </tr>
                   </tbody>
@@ -694,8 +701,11 @@
               <!-- Restock Report Pagination Footer (15 items per page) -->
               <div class="p-4 bg-surface-container-lowest border-t border-outline-variant flex flex-col sm:flex-row justify-between items-center gap-4 select-none">
                 <div class="text-xs text-on-surface-variant font-medium">
-                  Showing {{ filteredStockMovements.length === 0 ? 0 : (restockCurrentPage - 1) * restockItemsPerPage + 1 }} to
-                  {{ Math.min(restockCurrentPage * restockItemsPerPage, filteredStockMovements.length) }} of {{ filteredStockMovements.length }} entries
+                  {{ $t('inventory.showingEntries', {
+                    start: filteredStockMovements.length === 0 ? 0 : (restockCurrentPage - 1) * restockItemsPerPage + 1,
+                    end: Math.min(restockCurrentPage * restockItemsPerPage, filteredStockMovements.length),
+                    total: filteredStockMovements.length
+                  }) }}
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 font-sans text-xs">
@@ -752,34 +762,34 @@
             <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
                 <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Total Suppliers</span>
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.totalSuppliers') }}</span>
                   <p class="text-2xl font-black font-mono text-primary leading-tight mt-1">{{ totalSuppliers }}</p>
                 </div>
                 <Users class="w-5 h-5 text-primary/70 shrink-0" />
               </div>
-              <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">Total registered merchant profiles</div>
+              <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">{{ $t('reports.totalRegisteredMerchantsDesc') }}</div>
             </div>
 
             <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
                 <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Active Accounts</span>
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.activeAccounts') }}</span>
                   <p class="text-2xl font-black font-mono text-primary leading-tight mt-1">{{ activeSuppliers }}</p>
                 </div>
                 <UserCheck class="w-5 h-5 text-primary/70 shrink-0" />
               </div>
-              <div class="text-[10px] text-primary/80 font-semibold mt-2">Active vendor supply channels</div>
+              <div class="text-[10px] text-primary/80 font-semibold mt-2">{{ $t('reports.activeVendorSupplyChannels') }}</div>
             </div>
 
             <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
                 <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Outstanding Liabilities</span>
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.outstandingLiabilities') }}</span>
                   <p class="text-2xl font-black font-mono text-tertiary leading-tight mt-1">{{ formatCurrency(totalOutstandingBalance, currency) }}</p>
                 </div>
                 <CreditCard class="w-5 h-5 text-tertiary/70 shrink-0" />
               </div>
-              <div class="text-[10px] text-tertiary/95 font-semibold mt-2">Total payables accrued due to supplier orders</div>
+              <div class="text-[10px] text-tertiary/95 font-semibold mt-2">{{ $t('reports.totalPayablesAccruedDesc') }}</div>
             </div>
 
           </div>
@@ -787,19 +797,19 @@
           <!-- Suppliers Table -->
           <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col overflow-hidden">
             <div class="p-4 bg-surface-container-low border-b border-outline-variant select-none">
-              <span class="text-xs font-mono font-bold uppercase tracking-wide text-on-surface-variant">Consolidated Supplier Payables Ledger</span>
+              <span class="text-xs font-mono font-bold uppercase tracking-wide text-on-surface-variant">{{ $t('reports.consolidatedSupplierPayables') }}</span>
             </div>
 
             <div class="overflow-x-auto">
               <table class="w-full text-left text-xs select-none">
                 <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant select-none">
                   <tr>
-                    <th class="p-4 pl-6">Supplier Details</th>
-                    <th class="p-4">Contact Person</th>
-                    <th class="p-4">Contact Details</th>
-                    <th class="p-4">Category</th>
-                    <th class="p-4 text-right">Outstanding Balance</th>
-                    <th class="p-4 text-center pr-6">Status</th>
+                    <th class="p-4 pl-6">{{ $t('suppliers.tableSupplier') }}</th>
+                    <th class="p-4">{{ $t('suppliers.tableContactPerson') }}</th>
+                    <th class="p-4">{{ $t('suppliers.tableContact') }}</th>
+                    <th class="p-4">{{ $t('suppliers.tableCategory') }}</th>
+                    <th class="p-4 text-right">{{ $t('suppliers.tableBalance') }}</th>
+                    <th class="p-4 text-center pr-6">{{ $t('customers.tableStatus') }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-surface-variant">
@@ -843,7 +853,7 @@
                   </tr>
                   <tr v-if="suppliersList.length === 0">
                     <td colspan="6" class="p-8 text-center text-on-surface-variant font-medium">
-                      No suppliers found in registry.
+                      {{ $t('reports.noSuppliersFound') }}
                     </td>
                   </tr>
                 </tbody>
@@ -902,11 +912,6 @@ const getTodayString = () => {
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-};
-
-const formatSoldItems = (txn: Transaction) => {
-  if (!txn.items || txn.items.length === 0) return 'No items';
-  return txn.items.map(item => `${item.product?.name || 'Product'} (x${item.quantity})`).join(', ');
 };
 
 // Active Filters state
@@ -1024,8 +1029,6 @@ const getMovementTypeBadgeClass = (type: string) => {
   return 'bg-primary/10 text-primary border-primary/20';
 };
 
-
-
 const applyFilters = () => {
   inventoryCurrentPage.value = 1;
   restockCurrentPage.value = 1;
@@ -1127,12 +1130,6 @@ const totalVoided = computed(() => {
     .reduce((acc, t) => acc + Math.abs(t.total), 0);
 });
 
-const totalDiscount = computed(() => {
-  return filteredTransactions.value
-    .filter(t => isPaidOnlyStatus(t.status))
-    .reduce((acc, t) => acc + t.discount, 0);
-});
-
 const getTransactionCost = (txn: Transaction) => {
   if (!txn.items || txn.items.length === 0) return Math.max(0, txn.total * 0.70);
   return txn.items.reduce((sum, item) => {
@@ -1162,12 +1159,6 @@ const totalProfit = computed(() => {
   return filteredTransactions.value
     .filter(t => isPaidOnlyStatus(t.status))
     .reduce((acc, t) => acc + getTransactionProfit(t), 0);
-});
-
-const totalTax = computed(() => {
-  return filteredTransactions.value
-    .filter(t => isPaidOnlyStatus(t.status))
-    .reduce((acc, t) => acc + t.tax, 0);
 });
 
 const totalByMethod = (method: string) => {
@@ -1254,7 +1245,7 @@ const exportToExcelHtml = (title: string, metadata: string, kpis: { label: strin
       <span style="font-size: 9px; color: #64748b; text-transform: uppercase; font-weight: bold; display: block;">${k.label}</span><br>
       <span style="font-size: 14px; font-weight: bold; color: #0f172a; font-family: monospace;">${k.value}</span>
     </td>
-  `).join('<td style="width: 20px; border: none;"></td>'); // spacers
+  `).join('<td style="width: 20px; border: none;"></td>');
 
   const tableHeadersHtml = headers.map(h => `
     <th style="background-color: #f1f5f9; color: #475569; font-weight: bold; border: 1px solid #cbd5e1; padding: 8px; text-transform: uppercase; font-size: 10px; text-align: left;">${h}</th>
@@ -1275,7 +1266,7 @@ const exportToExcelHtml = (title: string, metadata: string, kpis: { label: strin
       <style>
         body { font-family: sans-serif; }
       </style>
-    <\/head>
+    </head>
     <body>
       <table style="border: none;">
         <tr>
@@ -1315,8 +1306,8 @@ const exportToExcelHtml = (title: string, metadata: string, kpis: { label: strin
 
       <br>
       <span style="font-size: 8px; color: #94a3b8;">Generated via Jenga Analytical reporting on ${new Date().toLocaleString()}</span>
-    <\/body>
-    <\/html>
+    </body>
+    </html>
   `;
 
   const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
@@ -1327,7 +1318,6 @@ const exportToExcelHtml = (title: string, metadata: string, kpis: { label: strin
 };
 
 const exportToPDF = (title: string, metadata: string, kpis: { label: string, value: string }[], headers: string[], rows: any[][]) => {
-  // Create a hidden iframe for printing
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';
   iframe.style.right = '0';
@@ -1382,7 +1372,7 @@ const exportToPDF = (title: string, metadata: string, kpis: { label: string, val
           
           .footer { position: fixed; bottom: 0; left: 0; right: 0; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 8px; color: #94a3b8; display: flex; justify-content: space-between; }
         </style>
-      <\/head>
+      </head>
       <body>
         <div class="header-container">
           <div>
@@ -1419,8 +1409,8 @@ const exportToPDF = (title: string, metadata: string, kpis: { label: string, val
           <span>Generated via Jenga Analytical Reporting on ${new Date().toLocaleString()}</span>
           <span>Page 1 of 1</span>
         </div>
-      <\/body>
-    <\/html>
+      </body>
+    </html>
   `;
 
   const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
@@ -1433,13 +1423,11 @@ const exportToPDF = (title: string, metadata: string, kpis: { label: string, val
   iframeDoc.write(html);
   iframeDoc.close();
 
-  // Wait a short moment to ensure styling/rendering completes in the iframe
   setTimeout(() => {
     if (iframe.contentWindow) {
       iframe.contentWindow.focus();
       iframe.contentWindow.print();
     }
-    // Clean up frame
     document.body.removeChild(iframe);
   }, 300);
 };
@@ -1566,9 +1554,7 @@ const handleExportReport = () => {
 };
 
 const handleRowClick = (txn: any) => {
-  console.log('ReportsView - Row clicked. txn:', txn);
   vm.lastTransaction.value = txn;
-  console.log('ReportsView - vm.lastTransaction.value set to:', vm.lastTransaction.value);
   router.push('/receipt');
 };
 </script>

@@ -8,7 +8,7 @@
         </div>
         <div class="min-w-0" v-if="!sidebarCollapsed">
           <h2 class="text-base font-bold text-primary truncate leading-tight">{{ branchName }}</h2>
-          <p class="text-xs text-on-surface-variant font-mono truncate uppercase tracking-widest mt-0.5">Active Session</p>
+          <p class="text-xs text-on-surface-variant font-mono truncate uppercase tracking-widest mt-0.5">{{ $t('sidebar.activeSession') }}</p>
         </div>
       </div>
       <!-- Toggle button -->
@@ -23,7 +23,7 @@
 
     <!-- Main Nav Links -->
     <div class="flex-1 overflow-y-auto py-4 flex flex-col gap-1.5" :class="sidebarCollapsed ? 'px-2' : 'px-3'">
-      <template v-for="item in menuItems" :key="item.label">
+      <template v-for="item in menuItems" :key="item.id">
         <div 
           v-if="item.disabled"
           class="py-3 flex items-center rounded-xl cursor-not-allowed select-none transition-all duration-200"
@@ -105,19 +105,19 @@
         @click.prevent="alertHelp"
         class="py-3 flex items-center hover:bg-surface-variant/50 rounded-xl transition-all duration-200"
         :class="sidebarCollapsed ? 'justify-center mx-1.5 px-0' : 'gap-3.5 px-4.5 mx-1.5 text-on-surface-variant'"
-        :title="sidebarCollapsed ? 'Help' : ''"
+        :title="sidebarCollapsed ? $t('sidebar.help') : ''"
       >
         <HelpCircle class="w-5 h-5 text-on-surface-variant" />
-        <span v-if="!sidebarCollapsed" class="text-sm font-semibold">Help</span>
+        <span v-if="!sidebarCollapsed" class="text-sm font-semibold">{{ $t('sidebar.help') }}</span>
       </a>
       <button 
         @click="onLogout"
         class="py-3 flex items-center text-error hover:bg-error-container/50 rounded-xl transition-all duration-200 cursor-pointer text-left"
         :class="sidebarCollapsed ? 'justify-center mx-1.5 px-0' : 'gap-3.5 px-4.5 mx-1.5'"
-        :title="sidebarCollapsed ? 'Logout' : ''"
+        :title="sidebarCollapsed ? $t('sidebar.logout') : ''"
       >
         <LogOut class="w-5 h-5 stroke-[2px]" />
-        <span v-if="!sidebarCollapsed" class="text-sm font-semibold">Logout</span>
+        <span v-if="!sidebarCollapsed" class="text-sm font-semibold">{{ $t('sidebar.logout') }}</span>
       </button>
     </div>
   </nav>
@@ -143,20 +143,21 @@ import {
   Settings, 
   HelpCircle, 
   LogOut, 
-  Store,
-  PlusCircle,
+  Store, 
   ChevronLeft,
   ChevronRight,
   ChevronDown
 } from 'lucide-vue-next';
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
+import { t } from '../../i18n';
 
 defineProps<{
   onLogout: () => void;
   branchName: string;
 }>();
 
-const { sidebarCollapsed, userRole } = useAppViewModel();
+const vm = useAppViewModel();
+const { sidebarCollapsed, userRole } = vm;
 
 const router = useRouter();
 const route = useRoute();
@@ -188,32 +189,34 @@ watch(() => route.path, (newPath) => {
   }
 }, { immediate: true });
 
-const rawMenuItems: MenuItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'checkout', label: 'POS Checkout', icon: CreditCard },
-  { id: 'inventory', label: 'Inventory', icon: Package },
-  { id: 'suppliers', label: 'Suppliers', icon: Truck },
-  { id: 'customers', label: 'Customers', icon: Users },
-  { id: 'users', label: 'User Management', icon: UserCog },
-  { id: 'reports', label: 'Reports', icon: BarChart3 },
-  { 
-    id: 'finance', 
-    label: 'Finance & Accounts', 
-    icon: Landmark, 
-    adminOnly: true,
-    children: [
-      { tab: 'statements', label: 'Financial Statements', icon: FileSpreadsheet },
-      { tab: 'accounts', label: 'Chart of Accounts', icon: Layers },
-      { tab: 'journal', label: 'General Ledger & Journals', icon: BookOpen },
-      { tab: 'ledger', label: 'Account Statement', icon: Search },
-      { tab: 'periods', label: 'Fiscal Periods', icon: CalendarCheck },
-    ]
-  },
-  { id: 'settings', label: 'Settings', icon: Settings },
-];
+const menuItems = computed<MenuItem[]>(() => {
+  const raw: MenuItem[] = [
+    { id: 'dashboard', label: t('sidebar.dashboard'), icon: LayoutDashboard },
+    { id: 'checkout', label: t('sidebar.checkout'), icon: CreditCard },
+    { id: 'inventory', label: t('sidebar.inventory'), icon: Package },
+    { id: 'suppliers', label: t('sidebar.suppliers'), icon: Truck },
+    { id: 'customers', label: t('sidebar.customers'), icon: Users },
+    { id: 'users', label: t('sidebar.users'), icon: UserCog },
+    { id: 'reports', label: t('sidebar.reports'), icon: BarChart3 },
+    { 
+      id: 'finance', 
+      label: t('sidebar.finance'), 
+      icon: Landmark, 
+      children: [
+        { tab: 'statements', label: t('sidebar.financialStatements'), icon: FileSpreadsheet },
+        { tab: 'accounts', label: t('sidebar.chartOfAccounts'), icon: Layers },
+        { tab: 'journal', label: t('sidebar.generalLedger'), icon: BookOpen },
+        { tab: 'ledger', label: t('sidebar.accountStatement'), icon: Search },
+        { tab: 'periods', label: t('sidebar.fiscalPeriods'), icon: CalendarCheck },
+      ]
+    },
+    { id: 'settings', label: t('sidebar.settings'), icon: Settings },
+  ];
 
-const menuItems = computed(() => {
-  return rawMenuItems.filter(item => {
+  return raw.filter(item => {
+    if (item.id === 'finance') {
+      return userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN' || vm.hasPermission('finance:view');
+    }
     if (item.adminOnly) {
       return userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN';
     }
@@ -256,6 +259,6 @@ const navigateToSubmenu = (parentId: string, tab: string) => {
 };
 
 const alertHelp = () => {
-  alert("Help & Documentation center: Email support@mainbranch.co or refer to user guidelines.");
+  alert(t('sidebar.helpAlert'));
 };
 </script>

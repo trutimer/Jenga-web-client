@@ -8,14 +8,14 @@
           class="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors mb-2 cursor-pointer bg-transparent border-0 p-0"
         >
           <ArrowLeft class="w-4 h-4" />
-          <span>Back to Dashboard</span>
+          <span>{{ $t('topSelling.backToDashboard') }}</span>
         </button>
         <h2 class="text-3xl font-black text-on-background tracking-tight flex items-center gap-2.5">
           <Trophy class="w-7 h-7 text-amber-500" />
-          <span>Top Selling Products Leaderboard</span>
+          <span>{{ $t('topSelling.title') }}</span>
         </h2>
         <p class="text-sm font-semibold text-on-surface-variant mt-1">
-          Real-time rank and volume sales performance across your store branch catalog.
+          {{ $t('topSelling.subtitle') }}
         </p>
       </div>
 
@@ -36,7 +36,7 @@
           class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border-0"
           :class="selectedDate === todayStr ? 'bg-primary text-on-primary shadow-xs' : 'bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant'"
         >
-          Today
+          {{ $t('topSelling.today') }}
         </button>
 
         <button
@@ -44,7 +44,7 @@
           class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border-0"
           :class="selectedDate === yesterdayStr ? 'bg-primary text-on-primary shadow-xs' : 'bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant'"
         >
-          Yesterday
+          {{ $t('topSelling.yesterday') }}
         </button>
 
         <button
@@ -53,13 +53,13 @@
           :class="!selectedDate ? 'bg-primary text-on-primary shadow-xs' : 'bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant'"
           title="Fetch top sellers across default period"
         >
-          All-Time / Default
+          {{ $t('topSelling.allTimeDefault') }}
         </button>
 
         <button 
           @click="fetchTopSelling"
           class="p-2 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant transition-colors cursor-pointer border-0"
-          title="Refresh Data"
+          :title="$t('common.refresh')"
         >
           <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isLoading }" />
         </button>
@@ -73,16 +73,16 @@
       <div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-amber-500/50 transition-all">
         <div class="absolute -right-4 -top-4 w-16 h-16 bg-amber-500/10 rounded-full group-hover:scale-125 transition-transform"></div>
         <div class="flex justify-between items-start mb-3 relative z-10">
-          <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">#1 Top Seller</span>
+          <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('topSelling.topSeller') }}</span>
           <span class="p-1.5 rounded-lg bg-amber-500/15 text-amber-600 font-bold text-xs flex items-center gap-1">
             <Crown class="w-4 h-4 fill-amber-500" />
-            <span>Leader</span>
+            <span>{{ $t('topSelling.leader') }}</span>
           </span>
         </div>
         <div class="relative z-10">
           <p class="text-lg font-black text-on-surface truncate">{{ topProduct?.name || 'No Sales Yet' }}</p>
           <div class="flex items-center justify-between text-xs mt-2 font-mono">
-            <span class="text-amber-600 font-bold">{{ topProduct ? topProduct.totalSold + ' Units Sold' : '-' }}</span>
+            <span class="text-amber-600 font-bold">{{ topProduct ? topProduct.totalSold + ' ' + $t('topSelling.unitsSold') : '-' }}</span>
             <span class="text-on-surface-variant font-semibold">{{ topProduct ? formatCurrency(topProductRevenue, currency) : '-' }}</span>
           </div>
         </div>
@@ -91,42 +91,42 @@
       <!-- Total Units Sold KPI -->
       <div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant shadow-sm flex flex-col justify-between">
         <div class="flex justify-between items-start mb-3">
-          <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Total Volume Sold</span>
+          <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('topSelling.totalVolumeSold') }}</span>
           <span class="p-1.5 rounded-lg bg-primary-container/30 text-primary">
             <Package class="w-4 h-4" />
           </span>
         </div>
         <div>
           <div class="text-3xl font-black font-mono text-on-surface leading-tight">{{ totalUnitsSold }}</div>
-          <p class="text-xs text-on-surface-variant font-medium mt-1">Cumulative units across leaderboard</p>
+          <p class="text-xs text-on-surface-variant font-medium mt-1">{{ $t('topSelling.cumulativeUnits') }}</p>
         </div>
       </div>
 
       <!-- Total Revenue KPI -->
       <div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant shadow-sm flex flex-col justify-between">
         <div class="flex justify-between items-start mb-3">
-          <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Top Sales Revenue</span>
+          <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('topSelling.topSalesRevenue') }}</span>
           <span class="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-600">
             <TrendingUp class="w-4 h-4" />
           </span>
         </div>
         <div>
           <div class="text-3xl font-black font-mono text-emerald-600 leading-tight">{{ formatCurrency(totalRevenue, currency) }}</div>
-          <p class="text-xs text-on-surface-variant font-medium mt-1">Generated sales revenue</p>
+          <p class="text-xs text-on-surface-variant font-medium mt-1">{{ $t('topSelling.generatedRevenue') }}</p>
         </div>
       </div>
 
       <!-- Active Catalog Share -->
       <div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant shadow-sm flex flex-col justify-between">
         <div class="flex justify-between items-start mb-3">
-          <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">Ranked Products</span>
+          <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('topSelling.rankedProducts') }}</span>
           <span class="p-1.5 rounded-lg bg-surface-container-high text-on-surface-variant">
             <ShoppingBag class="w-4 h-4" />
           </span>
         </div>
         <div>
           <div class="text-3xl font-black font-mono text-on-surface leading-tight">{{ topSellingProducts.length }}</div>
-          <p class="text-xs text-on-surface-variant font-medium mt-1">High-velocity catalog items</p>
+          <p class="text-xs text-on-surface-variant font-medium mt-1">{{ $t('topSelling.highVelocityCatalog') }}</p>
         </div>
       </div>
 
@@ -136,7 +136,7 @@
     <div v-if="topSellingProducts.length >= 1" class="space-y-3 select-none">
       <h3 class="text-sm font-mono font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-2">
         <Sparkles class="w-4 h-4 text-amber-500" />
-        <span>Top 3 Sales Champions</span>
+        <span>{{ $t('topSelling.salesChampions') }}</span>
       </h3>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -153,7 +153,7 @@
               :class="getPodiumBadgeClass(idx)"
             >
               <span>{{ getPodiumRankIcon(idx) }}</span>
-              <span>RANK #{{ idx + 1 }}</span>
+              <span>{{ $t('topSelling.rank', { rank: idx + 1 }) }}</span>
             </span>
 
             <span 
@@ -168,7 +168,7 @@
           <div>
             <h4 class="text-base font-black text-on-surface leading-snug line-clamp-1">{{ product.name }}</h4>
             <div class="flex items-center gap-2 text-xs text-on-surface-variant font-mono mt-1">
-              <span>Category: {{ product.categoryName || 'General' }}</span>
+              <span>{{ $t('topSelling.category') }}: {{ product.categoryName || 'General' }}</span>
               <span v-if="product.barcode">• {{ product.barcode }}</span>
             </div>
           </div>
@@ -176,11 +176,11 @@
           <!-- Metrics Row -->
           <div class="mt-6 pt-4 border-t border-outline-variant/50 flex justify-between items-end">
             <div>
-              <span class="text-[10px] font-mono font-bold uppercase text-on-surface-variant block">Volume Sold</span>
+              <span class="text-[10px] font-mono font-bold uppercase text-on-surface-variant block">{{ $t('topSelling.volumeSold') }}</span>
               <span class="text-xl font-black font-mono text-primary">{{ product.totalSold }} {{ product.unitOfMeasure || 'PCS' }}</span>
             </div>
             <div class="text-right">
-              <span class="text-[10px] font-mono font-bold uppercase text-on-surface-variant block">Revenue</span>
+              <span class="text-[10px] font-mono font-bold uppercase text-on-surface-variant block">{{ $t('topSelling.revenue') }}</span>
               <span class="text-sm font-black font-mono text-emerald-600">{{ formatCurrency((product.totalSold || 0) * (product.sellingPrice || 0), currency) }}</span>
             </div>
           </div>
@@ -193,9 +193,9 @@
       <!-- Table Header Bar -->
       <div class="p-4 bg-surface-container-low border-b border-outline-variant flex flex-col sm:flex-row justify-between items-center gap-4">
         <div class="flex items-center gap-2">
-          <span class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">Complete Top Sellers Table</span>
+          <span class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">{{ $t('topSelling.completeTable') }}</span>
           <span class="text-[11px] font-mono text-outline font-semibold bg-surface-container-high px-2 py-0.5 rounded-full">
-            {{ filteredList.length }} Items
+            {{ $t('topSelling.itemsCount', { count: filteredList.length }) }}
           </span>
         </div>
 
@@ -206,7 +206,7 @@
             <input 
               type="text"
               v-model="searchQuery"
-              placeholder="Search product, barcode..."
+              :placeholder="$t('topSelling.searchPlaceholder')"
               class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg pl-9 pr-3 py-2 text-xs font-semibold outline-none focus:border-primary text-on-surface"
             />
           </div>
@@ -216,7 +216,7 @@
             class="px-3.5 py-2 rounded-lg bg-primary text-on-primary text-xs font-bold hover:bg-primary/95 transition-all cursor-pointer border-0 shadow-2xs flex items-center gap-1.5"
           >
             <Download class="w-3.5 h-3.5" />
-            <span>Export CSV</span>
+            <span>{{ $t('topSelling.exportCsv') }}</span>
           </button>
         </div>
       </div>
@@ -226,15 +226,15 @@
         <table class="w-full text-left text-xs select-none">
           <thead class="bg-[#f0f3f0] text-[10px] font-mono uppercase font-bold text-on-surface-variant border-b border-outline-variant">
             <tr>
-              <th class="p-4 pl-6 text-center w-16">Rank</th>
-              <th class="p-4">Product Details</th>
-              <th class="p-4">Category</th>
-              <th class="p-4 text-center">Units Sold</th>
-              <th class="p-4 text-right">Selling Price</th>
-              <th class="p-4 text-right">Total Revenue</th>
-              <th class="p-4 text-center">Stock Level</th>
-              <th class="p-4 text-center">Stock Status</th>
-              <th class="p-4 text-center pr-6">Action</th>
+              <th class="p-4 pl-6 text-center w-16">{{ $t('topSelling.rankCol') }}</th>
+              <th class="p-4">{{ $t('topSelling.productDetails') }}</th>
+              <th class="p-4">{{ $t('topSelling.category') }}</th>
+              <th class="p-4 text-center">{{ $t('topSelling.unitsSoldCol') }}</th>
+              <th class="p-4 text-right">{{ $t('topSelling.sellingPrice') }}</th>
+              <th class="p-4 text-right">{{ $t('topSelling.totalRevenue') }}</th>
+              <th class="p-4 text-center">{{ $t('topSelling.stockLevel') }}</th>
+              <th class="p-4 text-center">{{ $t('topSelling.stockStatus') }}</th>
+              <th class="p-4 text-center pr-6">{{ $t('topSelling.action') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-surface-variant">
@@ -310,7 +310,7 @@
                   <button 
                     @click="router.push('/inventory')"
                     class="p-1.5 hover:bg-surface-container rounded-lg text-primary hover:text-primary/80 transition-colors cursor-pointer border-0 bg-transparent"
-                    title="View in Inventory"
+                    :title="$t('topSelling.viewInInventory')"
                   >
                     <ExternalLink class="w-4.5 h-4.5" />
                   </button>
@@ -323,13 +323,13 @@
               <tr>
                 <td colspan="9" class="p-12 text-center select-none text-on-surface-variant">
                   <ShoppingBag class="w-10 h-10 mx-auto text-outline-variant mb-3 stroke-[1.5px]" />
-                  <p class="font-bold text-base text-on-surface">No Top Selling Products Found</p>
-                  <p class="text-xs text-outline mt-1">No product sales recorded for {{ selectedDate ? selectedDate : 'the selected period' }}.</p>
+                  <p class="font-bold text-base text-on-surface">{{ $t('topSelling.noProductsFound') }}</p>
+                  <p class="text-xs text-outline mt-1">{{ $t('topSelling.noSalesRecorded', { period: selectedDate ? selectedDate : 'the selected period' }) }}</p>
                   <button 
                     @click="clearDateFilter"
                     class="text-xs font-bold underline mt-3 cursor-pointer bg-transparent border-0 text-primary"
                   >
-                    Reset date filter
+                    {{ $t('topSelling.resetDateFilter') }}
                   </button>
                 </td>
               </tr>
@@ -348,6 +348,7 @@ import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { formatCurrency } from '../models/mockData';
 import { showToast } from '../services/toastService';
 import { api } from '../services/api';
+import { t } from '../i18n';
 import type { TopSellingProduct } from '../models/types';
 import { 
   ArrowLeft, 
@@ -485,9 +486,9 @@ const getRankTableBadgeClass = (idx: number) => {
 const getStockStatusText = (p: TopSellingProduct) => {
   const stock = p.stock || 0;
   const minStock = p.reorderLevel || 10;
-  if (stock === 0) return 'OUT OF STOCK';
-  if (stock <= minStock) return 'LOW STOCK';
-  return 'IN STOCK';
+  if (stock === 0) return t('topSelling.outOfStock');
+  if (stock <= minStock) return t('topSelling.lowStock');
+  return t('topSelling.inStock');
 };
 
 const getStockBadgeClass = (p: TopSellingProduct) => {

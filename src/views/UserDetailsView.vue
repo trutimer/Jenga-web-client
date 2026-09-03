@@ -9,8 +9,8 @@
         <ArrowLeft class="w-5 h-5" />
       </button>
       <div>
-        <h1 class="text-2xl font-black text-on-surface tracking-tight">User Details</h1>
-        <p class="text-sm text-on-surface-variant mt-1">Detailed profile and system access</p>
+        <h1 class="text-2xl font-black text-on-surface tracking-tight">{{ $t('users.userDetailsTitle') }}</h1>
+        <p class="text-sm text-on-surface-variant mt-1">{{ $t('users.userDetailsSubtitle') }}</p>
       </div>
     </div>
 
@@ -30,7 +30,7 @@
             <div 
               class="absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-surface"
               :class="user.active ? 'bg-success' : 'bg-error'"
-              :title="user.active ? 'Active' : 'Blocked'"
+              :title="user.active ? $t('common.active') : $t('users.blocked')"
             ></div>
           </div>
           <h2 class="text-xl font-bold text-on-surface">{{ user.fullName }}</h2>
@@ -43,7 +43,7 @@
             </div>
             <div class="flex items-center gap-3 p-3 bg-surface-container-lowest rounded-xl border border-outline-variant/50">
               <Store class="w-4 h-4 text-on-surface-variant shrink-0" />
-              <span class="text-sm text-on-surface font-medium">{{ branchName || 'No Branch Assigned' }}</span>
+              <span class="text-sm text-on-surface font-medium">{{ branchName || $t('users.noBranchAssigned') }}</span>
             </div>
           </div>
         </div>
@@ -55,25 +55,25 @@
         <div class="bg-surface rounded-2xl border border-outline-variant p-6 shadow-sm">
           <h3 class="text-base font-bold text-on-surface mb-6 flex items-center gap-2">
             <ShieldCheck class="w-5 h-5 text-primary" />
-            System Details
+            {{ $t('users.systemDetails') }}
           </h3>
           
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div class="flex flex-col gap-1.5">
-              <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Account ID</span>
+              <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('users.accountId') }}</span>
               <span class="text-sm font-mono text-on-surface bg-surface-container-lowest px-3 py-2 rounded-lg border border-outline-variant/50 truncate">{{ user.id }}</span>
             </div>
             <div class="flex flex-col gap-1.5">
-              <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Store ID</span>
+              <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('users.storeId') }}</span>
               <span class="text-sm font-mono text-on-surface bg-surface-container-lowest px-3 py-2 rounded-lg border border-outline-variant/50 truncate">{{ user.storeId || 'N/A' }}</span>
             </div>
             <div class="flex flex-col gap-1.5">
-              <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Created At</span>
+              <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('users.createdAt') }}</span>
               <span class="text-sm text-on-surface">{{ formatDate(user.createdAt) }}</span>
             </div>
             <div class="flex flex-col gap-1.5">
-              <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Last Login</span>
-              <span class="text-sm text-on-surface">{{ user.lastLoginAt ? formatDate(user.lastLoginAt) : 'Never logged in' }}</span>
+              <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('users.lastLogin') }}</span>
+              <span class="text-sm text-on-surface">{{ user.lastLoginAt ? formatDate(user.lastLoginAt) : $t('users.neverLoggedIn') }}</span>
             </div>
           </div>
         </div>
@@ -83,7 +83,7 @@
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
               <KeyRound class="w-5 h-5 text-primary" />
-              User Permissions & Access
+              {{ $t('users.userPermissionsAccess') }}
               <span v-if="userPermissions.length > 0" class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary-container text-primary border border-primary/20">
                 {{ userPermissions.length }}
               </span>
@@ -93,7 +93,7 @@
               class="px-3.5 py-1.5 bg-primary text-on-primary rounded-xl font-bold text-xs hover:bg-opacity-95 transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Plus class="w-4 h-4" />
-              <span>{{ userPermissions.length > 0 ? 'Edit Permissions' : 'Add permission' }}</span>
+              <span>{{ userPermissions.length > 0 ? $t('users.editPermissions') : $t('users.addPermission') }}</span>
             </button>
           </div>
 
@@ -107,11 +107,11 @@
             <table class="w-full text-left text-sm whitespace-nowrap">
               <thead class="bg-surface-container-low text-xs uppercase text-on-surface-variant font-mono tracking-wider border-b border-outline-variant">
                 <tr>
-                  <th class="px-4 py-3">Permission Name</th>
-                  <th class="px-4 py-3">Code</th>
-                  <th class="px-4 py-3">Category</th>
-                  <th class="px-4 py-3">Description</th>
-                  <th class="px-4 py-3 text-right">Action</th>
+                  <th class="px-4 py-3">{{ $t('users.permissionName') }}</th>
+                  <th class="px-4 py-3">{{ $t('users.permissionCode') }}</th>
+                  <th class="px-4 py-3">{{ $t('users.permissionCategory') }}</th>
+                  <th class="px-4 py-3">{{ $t('users.permissionDescription') }}</th>
+                  <th class="px-4 py-3 text-right">{{ $t('users.tableActions') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-outline-variant">
@@ -137,16 +137,16 @@
                     <template v-if="user.role === 'CASHIER' && perm.code === 'pos:checkout'">
                       <span 
                         class="inline-flex items-center gap-1 text-[11px] font-bold text-on-surface-variant/70 bg-surface-container-high px-2.5 py-1 rounded-lg border border-outline-variant cursor-not-allowed"
-                        title="Default Cashier role permission cannot be deleted"
+                        :title="$t('users.roleDefaultTooltip')"
                       >
                         <Lock class="w-3 h-3 text-primary" />
-                        <span>Role Default</span>
+                        <span>{{ $t('users.roleDefault') }}</span>
                       </span>
                     </template>
                     <template v-else>
                       <button 
                         @click="promptRevokePermission(perm)"
-                        title="Revoke Permission"
+                        :title="$t('users.revokePermission')"
                         class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors cursor-pointer"
                       >
                         <Trash2 class="w-4 h-4" />
@@ -163,11 +163,11 @@
             <table class="w-full text-left text-sm whitespace-nowrap">
               <thead class="bg-surface-container-low text-xs uppercase text-on-surface-variant font-mono tracking-wider border-b border-outline-variant">
                 <tr>
-                  <th class="px-4 py-3">Permission Name</th>
-                  <th class="px-4 py-3">Code</th>
-                  <th class="px-4 py-3">Category</th>
-                  <th class="px-4 py-3">Description</th>
-                  <th class="px-4 py-3 text-right">Action</th>
+                  <th class="px-4 py-3">{{ $t('users.permissionName') }}</th>
+                  <th class="px-4 py-3">{{ $t('users.permissionCode') }}</th>
+                  <th class="px-4 py-3">{{ $t('users.permissionCategory') }}</th>
+                  <th class="px-4 py-3">{{ $t('users.permissionDescription') }}</th>
+                  <th class="px-4 py-3 text-right">{{ $t('users.tableActions') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -177,14 +177,14 @@
                       <div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant mb-3">
                         <ShieldAlert class="w-6 h-6 text-on-surface-variant/60" />
                       </div>
-                      <h4 class="text-sm font-bold text-on-surface">No permissions assigned</h4>
-                      <p class="text-xs text-on-surface-variant mt-1 mb-4">This user currently has no explicit permissions assigned. Click below to assign permissions from the catalog.</p>
+                      <h4 class="text-sm font-bold text-on-surface">{{ $t('users.noPermissionsAssigned') }}</h4>
+                      <p class="text-xs text-on-surface-variant mt-1 mb-4">{{ $t('users.noPermissionsDesc') }}</p>
                       <button 
                         @click="openPermissionsModal"
                         class="px-4 py-2 bg-primary text-on-primary rounded-xl font-bold text-xs hover:bg-opacity-95 transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
                       >
                         <Plus class="w-4 h-4" />
-                        <span>Add permission</span>
+                        <span>{{ $t('users.addPermission') }}</span>
                       </button>
                     </div>
                   </td>
@@ -200,14 +200,14 @@
             <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
               <Clock v-if="user.role === 'CASHIER'" class="w-5 h-5 text-primary" />
               <History v-else class="w-5 h-5 text-primary" />
-              {{ user.role === 'CASHIER' ? 'Recent Shifts' : 'Recent Activity' }}
+              {{ user.role === 'CASHIER' ? $t('users.recentShifts') : $t('users.recentActivity') }}
             </h3>
             <button 
               v-if="user.role === 'CASHIER'"
               @click="router.push(`/users/${user.id}/shifts`)"
               class="text-xs font-bold text-primary hover:bg-primary/10 transition-colors flex items-center gap-1.5 cursor-pointer bg-primary-container/20 px-3 py-1.5 rounded-lg border border-primary/20"
             >
-              <span>View all Shifts</span>
+              <span>{{ $t('users.viewAllShifts') }}</span>
               <ExternalLink class="w-3.5 h-3.5" />
             </button>
           </div>
@@ -218,11 +218,11 @@
               <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="bg-surface-container-low text-xs uppercase text-on-surface-variant font-mono tracking-wider border-b border-outline-variant">
                   <tr>
-                    <th class="px-4 py-3">Opened At</th>
-                    <th class="px-4 py-3">Status</th>
-                    <th class="px-4 py-3 text-right">Opening Cash</th>
-                    <th class="px-4 py-3 text-right">Total Sales</th>
-                    <th class="px-4 py-3 text-right">Discrepancy</th>
+                    <th class="px-4 py-3">{{ $t('cashierShifts.tableOpened') }}</th>
+                    <th class="px-4 py-3">{{ $t('cashierShifts.tableStatus') }}</th>
+                    <th class="px-4 py-3 text-right">{{ $t('cashierShifts.tableOpeningCash') }}</th>
+                    <th class="px-4 py-3 text-right">{{ $t('cashierShifts.tableTotalSales') }}</th>
+                    <th class="px-4 py-3 text-right">{{ $t('cashierShifts.tableDiscrepancy') }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-outline-variant">
@@ -231,7 +231,7 @@
                     :key="shift.id" 
                     @click="router.push(`/shifts/${shift.id}`)"
                     class="hover:bg-primary-container/10 transition-colors cursor-pointer group"
-                    title="Click to view shift details"
+                    :title="$t('cashierShifts.viewShiftDetailsTooltip')"
                   >
                     <td class="px-4 py-3 font-mono text-xs text-on-surface group-hover:text-primary transition-colors">
                       {{ formatDate(shift.openedAt) }}
@@ -262,14 +262,14 @@
             </div>
             <div v-else class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-surface-container-lowest rounded-xl border border-dashed border-outline-variant">
               <Clock class="w-8 h-8 text-on-surface-variant/30 mb-2" />
-              <p class="text-sm text-on-surface-variant font-medium">No shifts recorded for this cashier yet.</p>
+              <p class="text-sm text-on-surface-variant font-medium">{{ $t('users.noShiftsRecorded') }}</p>
             </div>
           </div>
 
           <!-- Non-Cashier Activity Log Placeholder -->
           <div v-else class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-surface-container-lowest rounded-xl border border-dashed border-outline-variant">
             <History class="w-8 h-8 text-on-surface-variant/30 mb-2" />
-            <p class="text-sm text-on-surface-variant font-medium">Activity logs are not available for this user.</p>
+            <p class="text-sm text-on-surface-variant font-medium">{{ $t('users.activityLogsUnavailable') }}</p>
           </div>
         </div>
       </div>
@@ -281,13 +281,13 @@
       <div class="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center text-error mb-4">
         <UserIcon class="w-8 h-8" />
       </div>
-      <h3 class="text-lg font-bold text-on-surface">User Not Found</h3>
-      <p class="text-sm text-on-surface-variant mt-2 max-w-sm">The user you are looking for does not exist or you do not have permission to view their profile.</p>
+      <h3 class="text-lg font-bold text-on-surface">{{ $t('users.userNotFound') }}</h3>
+      <p class="text-sm text-on-surface-variant mt-2 max-w-sm">{{ $t('users.userNotFoundDesc') }}</p>
       <button 
         @click="router.push('/users')"
         class="mt-6 px-6 py-2.5 bg-primary text-on-primary rounded-xl font-bold text-sm hover:bg-opacity-95 transition-colors cursor-pointer"
       >
-        Return to Users
+        {{ $t('users.returnToUsers') }}
       </button>
     </div>
 
@@ -295,7 +295,7 @@
     <Modal
       v-if="user && permissionToRevoke"
       :isOpen="showRevokeModal"
-      title="Revoke Permission"
+      :title="$t('users.revokePermission')"
       subtitle="Confirm permission removal"
       :onClose="() => { showRevokeModal = false; permissionToRevoke = null; }"
       maxWidth="max-w-md"
@@ -304,7 +304,7 @@
         <div class="flex items-start gap-3 p-4 bg-error/10 text-error rounded-xl border border-error/20">
           <AlertTriangle class="w-5 h-5 shrink-0 mt-0.5" />
           <div class="text-xs space-y-1">
-            <p class="font-bold text-sm">Are you sure you want to revoke this permission?</p>
+            <p class="font-bold text-sm">{{ $t('users.revokePermissionPrompt') }}</p>
             <p class="text-on-surface-variant">
               You are about to remove <strong>{{ permissionToRevoke.name }}</strong> (<code class="font-mono text-primary font-bold">{{ permissionToRevoke.code }}</code>) from <strong>{{ user.fullName }}</strong>.
             </p>
@@ -316,7 +316,7 @@
             @click="showRevokeModal = false; permissionToRevoke = null;"
             class="px-4 py-2 bg-surface-container-high text-on-surface rounded-xl font-bold text-xs hover:bg-surface-container transition-colors cursor-pointer"
           >
-            Cancel
+            {{ $t('common.cancel') }}
           </button>
           <button 
             @click="confirmRevokePermission"
@@ -324,7 +324,7 @@
             class="px-4 py-2 bg-error text-on-error rounded-xl font-bold text-xs hover:bg-opacity-95 transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50 shadow-xs"
           >
             <div v-if="isRevoking" class="w-3.5 h-3.5 border-2 border-on-error border-t-transparent rounded-full animate-spin"></div>
-            <span>Confirm Revoke</span>
+            <span>{{ $t('users.confirmRevoke') }}</span>
           </button>
         </div>
       </div>
@@ -346,7 +346,7 @@
           <input 
             v-model="permissionSearchQuery"
             type="text" 
-            placeholder="Search permissions by name, code or description..."
+            :placeholder="$t('users.searchPermissionsPlaceholder')"
             class="w-full pl-9 pr-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant rounded-xl text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors"
           />
         </div>
@@ -367,7 +367,7 @@
         <!-- Permissions Catalog Selection Area -->
         <div class="overflow-y-auto pr-1 flex-1 space-y-6 max-h-[380px]">
           <div v-if="groupedFilteredCatalog.length === 0" class="py-12 text-center text-on-surface-variant text-sm">
-            No permissions found matching your search.
+            {{ $t('users.noPermissionsMatch') }}
           </div>
 
           <div 
@@ -385,14 +385,14 @@
                   @click="toggleGroupPermissions(group.permissions, true)"
                   class="text-primary font-bold hover:underline cursor-pointer"
                 >
-                  Select All
+                  {{ $t('users.selectAll') }}
                 </button>
                 <span class="text-outline-variant">|</span>
                 <button 
                   @click="toggleGroupPermissions(group.permissions, false)"
                   class="text-on-surface-variant font-medium hover:underline cursor-pointer"
                 >
-                  Deselect All
+                  {{ $t('users.deselectAll') }}
                 </button>
               </div>
             </div>
@@ -418,7 +418,7 @@
                 <div class="flex flex-col gap-0.5 min-w-0">
                   <div class="flex items-center gap-2">
                     <span class="text-sm font-bold text-on-surface truncate">{{ perm.name }}</span>
-                    <span v-if="user.role === 'CASHIER' && perm.code === 'pos:checkout'" class="text-[10px] font-bold text-primary bg-primary-container/40 px-1.5 py-0.2 rounded border border-primary/20">Role Default</span>
+                    <span v-if="user.role === 'CASHIER' && perm.code === 'pos:checkout'" class="text-[10px] font-bold text-primary bg-primary-container/40 px-1.5 py-0.2 rounded border border-primary/20">{{ $t('users.roleDefault') }}</span>
                   </div>
                   <span class="font-mono text-[11px] text-primary font-semibold truncate">{{ perm.code }}</span>
                   <p v-if="perm.description" class="text-xs text-on-surface-variant/80 mt-1 line-clamp-2">
@@ -433,14 +433,14 @@
         <!-- Modal Footer Actions -->
         <div class="flex items-center justify-between pt-4 border-t border-outline-variant mt-2">
           <span class="text-xs font-medium text-on-surface-variant">
-            Selected <strong class="text-primary font-bold">{{ selectedCodes.size }}</strong> permission(s)
+            {{ $t('users.selectedCount', { count: selectedCodes.size }) }}
           </span>
           <div class="flex items-center gap-3">
             <button 
               @click="showPermissionsModal = false"
               class="px-4 py-2 bg-surface-container-high text-on-surface rounded-xl font-bold text-xs hover:bg-surface-container transition-colors cursor-pointer"
             >
-              Cancel
+              {{ $t('common.cancel') }}
             </button>
             <button 
               @click="savePermissions"
@@ -448,7 +448,7 @@
               class="px-5 py-2 bg-primary text-on-primary rounded-xl font-bold text-xs hover:bg-opacity-95 transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50 shadow-xs"
             >
               <div v-if="isSavingPermissions" class="w-3.5 h-3.5 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></div>
-              <span>Save Permissions</span>
+              <span>{{ $t('users.savePermissions') }}</span>
             </button>
           </div>
         </div>
@@ -469,14 +469,14 @@
           <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-surface-container-low text-xs uppercase text-on-surface-variant font-mono tracking-wider border-b border-outline-variant">
               <tr>
-                <th class="px-4 py-3">Opened At</th>
-                <th class="px-4 py-3">Closed At</th>
-                <th class="px-4 py-3">Status</th>
-                <th class="px-4 py-3 text-right">Opening Cash</th>
-                <th class="px-4 py-3 text-right">Total Sales</th>
-                <th class="px-4 py-3 text-right">Expected Cash</th>
-                <th class="px-4 py-3 text-right">Actual Cash</th>
-                <th class="px-4 py-3 text-right">Discrepancy</th>
+                <th class="px-4 py-3">{{ $t('cashierShifts.tableOpened') }}</th>
+                <th class="px-4 py-3">{{ $t('cashierShifts.tableClosed') }}</th>
+                <th class="px-4 py-3">{{ $t('cashierShifts.tableStatus') }}</th>
+                <th class="px-4 py-3 text-right">{{ $t('cashierShifts.tableOpeningCash') }}</th>
+                <th class="px-4 py-3 text-right">{{ $t('cashierShifts.tableTotalSales') }}</th>
+                <th class="px-4 py-3 text-right">{{ $t('shiftDetails.expectedCash') }}</th>
+                <th class="px-4 py-3 text-right">{{ $t('shiftDetails.actualCash') }}</th>
+                <th class="px-4 py-3 text-right">{{ $t('cashierShifts.tableDiscrepancy') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-outline-variant">
@@ -518,7 +518,7 @@
           </table>
         </div>
         <div v-else class="p-8 text-center bg-surface-container-lowest rounded-xl border border-dashed border-outline-variant">
-          <p class="text-sm text-on-surface-variant font-medium">No shifts recorded for this cashier yet.</p>
+          <p class="text-sm text-on-surface-variant font-medium">{{ $t('users.noShiftsRecorded') }}</p>
         </div>
       </div>
     </Modal>

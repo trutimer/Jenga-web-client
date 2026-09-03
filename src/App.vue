@@ -15,9 +15,9 @@
       </div>
       
       <div class="space-y-3">
-        <h1 class="text-2xl font-black text-on-surface tracking-tight">No Branch Assigned</h1>
+        <h1 class="text-2xl font-black text-on-surface tracking-tight">{{ $t('auth.noBranchAssignedTitle') }}</h1>
         <p class="text-sm text-on-surface-variant leading-relaxed">
-          Your account is not assigned to any store branch. Please ask your respective store administrator to assign a branch to your profile.
+          {{ $t('auth.noBranchAssignedDesc') }}
         </p>
       </div>
 
@@ -26,7 +26,7 @@
         class="w-full h-12 py-3 bg-error text-on-error hover:bg-opacity-95 rounded-lg font-bold hover:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-2 shadow-md shadow-error/15 cursor-pointer border-0 text-white"
       >
         <LogOut class="w-4 h-4" />
-        <span>Logout cashier</span>
+        <span>{{ $t('auth.logoutCashier') }}</span>
       </button>
     </main>
   </div>
@@ -67,7 +67,7 @@
           class="mt-auto flex items-center gap-3 px-4 py-4 rounded-lg text-sm font-bold text-error text-left border-t border-outline-variant/50 hover:bg-error-container/20 cursor-pointer"
         >
           <LogOut class="w-5 h-5" />
-          <span>Logout cashier</span>
+          <span>{{ $t('auth.logoutCashier') }}</span>
         </button>
       </div>
     </div>
@@ -93,7 +93,7 @@
   <!-- Logout Confirmation Modal -->
   <Modal 
     :isOpen="showLogoutModal" 
-    title="End Session" 
+    :title="$t('auth.endSessionTitle')" 
     :onClose="() => showLogoutModal = false"
     maxWidth="max-w-md"
   >
@@ -103,9 +103,9 @@
       </div>
       
       <div class="space-y-2">
-        <h4 class="text-md font-bold text-on-surface">Are you sure you want to logout?</h4>
+        <h4 class="text-md font-bold text-on-surface">{{ $t('auth.logoutConfirmTitle') }}</h4>
         <p class="text-xs text-on-surface-variant leading-relaxed">
-          Ending your cashier session will clear all active register states, local cache, and access tokens. You will be redirected to the login portal.
+          {{ $t('auth.logoutConfirmDesc') }}
         </p>
       </div>
     </div>
@@ -115,13 +115,13 @@
         @click="showLogoutModal = false" 
         class="flex-1 py-3 text-xs font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-all border border-outline-variant bg-transparent cursor-pointer"
       >
-        Keep Session Active
+        {{ $t('auth.keepSessionActive') }}
       </button>
       <button 
         @click="confirmLogout" 
         class="flex-1 py-3 bg-error text-on-error hover:bg-opacity-95 rounded-xl transition-all font-bold text-xs cursor-pointer text-white border-0 shadow-md shadow-error/15"
       >
-        Yes, Logout
+        {{ $t('auth.yesLogout') }}
       </button>
     </template>
   </Modal>
@@ -129,38 +129,38 @@
   <!-- Close Shift Modal for Cashiers -->
   <Modal 
     :isOpen="showCloseShiftModal" 
-    title="End Register Shift" 
+    :title="$t('checkout.endRegisterShift')" 
     :onClose="() => showCloseShiftModal = false"
     maxWidth="max-w-md"
   >
     <div class="flex flex-col space-y-4">
       <div class="space-y-2 text-center pb-2 border-b border-outline-variant">
-        <h4 class="text-md font-bold text-on-surface">Declare Cash Drawer</h4>
+        <h4 class="text-md font-bold text-on-surface">{{ $t('checkout.declareCashDrawer') }}</h4>
         <p class="text-xs text-on-surface-variant leading-relaxed">
-          Please count the physical cash in your drawer and enter it below to finalize your shift.
+          {{ $t('checkout.declareCashDrawerDesc') }}
         </p>
       </div>
 
       <div class="flex justify-between items-center bg-surface-container p-3 rounded-lg border border-outline-variant/50">
-        <span class="text-xs font-semibold text-on-surface-variant">System Expected Cash:</span>
+        <span class="text-xs font-semibold text-on-surface-variant">{{ $t('checkout.systemExpectedCash') }}</span>
         <span class="font-mono text-sm font-bold text-on-surface">{{ currentShift ? currentShift.expectedCash.toLocaleString() : '0' }} {{ settings.currency }}</span>
       </div>
 
       <div class="space-y-2">
-        <label class="text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">Actual Cash Count ({{ settings.currency }})</label>
+        <label class="text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('checkout.actualCashCount', { currency: settings.currency }) }}</label>
         <input 
           type="number" 
           v-model="actualCashInput"
-          placeholder="Enter counted amount..."
+          :placeholder="$t('checkout.enterCountedAmount')"
           class="w-full bg-surface-container border border-outline-variant rounded-lg p-3.5 text-lg text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-mono text-center font-black shadow-inner"
         />
       </div>
 
       <div class="space-y-2">
-        <label class="text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">Notes (Optional)</label>
+        <label class="text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('checkout.notesOptional') }}</label>
         <textarea 
           v-model="shiftNotesInput"
-          placeholder="Reason for discrepancy if any..."
+          :placeholder="$t('checkout.reasonDiscrepancyPlaceholder')"
           class="w-full bg-surface-container border border-outline-variant rounded-lg p-3 text-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none h-20"
         ></textarea>
       </div>
@@ -171,17 +171,24 @@
         @click="showCloseShiftModal = false" 
         class="flex-1 py-3.5 text-xs font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-all border border-outline-variant bg-transparent cursor-pointer"
       >
-        Cancel
+        {{ $t('common.cancel') }}
       </button>
       <button 
         @click="handleCloseShift" 
         :disabled="isClosingShift || !actualCashInput"
         class="flex-1 py-3.5 bg-error text-on-error hover:bg-opacity-95 rounded-xl transition-all font-bold text-sm cursor-pointer text-white border-0 shadow-lg shadow-error/20 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {{ isClosingShift ? 'Closing...' : 'Close & Logout' }}
+        {{ isClosingShift ? $t('checkout.closingShiftBtn') : $t('checkout.closeAndLogout') }}
       </button>
     </template>
   </Modal>
+
+  <!-- Post-Login 2FA Security Prompt Modal -->
+  <TwoFactorPromptModal
+    :isOpen="show2FaPrompt"
+    @close="show2FaPrompt = false"
+    @updated="handle2FaUpdated"
+  />
 
   <!-- Global Toast Notification -->
   <Toast 
@@ -201,6 +208,8 @@ import { useRouter, useRoute } from 'vue-router';
 import Sidebar from './components/layout/Sidebar.vue';
 import TopNav from './components/layout/TopNav.vue';
 import Modal from './components/common/Modal.vue';
+import TwoFactorPromptModal from './components/common/TwoFactorPromptModal.vue';
+import { t } from './i18n';
 import { Store, LogOut, LayoutDashboard, CreditCard, Package, BarChart3, Settings as SettingsIcon, Truck, UserCog } from 'lucide-vue-next';
 
 const {
@@ -221,11 +230,27 @@ const {
 const router = useRouter();
 const route = useRoute();
 
+const show2FaPrompt = ref(false);
+
+const check2FaPrompt = () => {
+  const is2FaEnabled = localStorage.getItem('twoFactorEnabled') === 'true';
+  const hasPending = sessionStorage.getItem('pending2FaPrompt') === 'true';
+  const isDismissed = sessionStorage.getItem('dismissed2FaPrompt') === 'true';
+
+  if (!is2FaEnabled && hasPending && !isDismissed && user.value) {
+    show2FaPrompt.value = true;
+  }
+};
+
+const handle2FaUpdated = () => {
+  sessionStorage.removeItem('pending2FaPrompt');
+  show2FaPrompt.value = false;
+};
+
 const hasBranch = computed(() => {
   if (userRole.value === 'ADMIN') return true;
   return !!activeBranchId.value && activeBranchId.value !== 'null' && activeBranchId.value !== 'undefined' && activeBranchId.value !== '';
 });
-
 
 watch(
   () => route.path,
@@ -236,13 +261,21 @@ watch(
     if (newPath === '/checkout') {
       sidebarCollapsed.value = true;
     }
+    check2FaPrompt();
   }
 );
+
+watch(user, (val) => {
+  if (val) {
+    check2FaPrompt();
+  }
+});
 
 onMounted(() => {
   if (userRole.value === 'CASHIER') {
     fetchCurrentShift();
   }
+  check2FaPrompt();
 });
 
 const showLogoutModal = ref(false);
@@ -254,7 +287,7 @@ const isClosingShift = ref(false);
 const triggerLogoutConfirm = async () => {
   if (userRole.value === 'CASHIER') {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      showToast('Internet connection is required to close register shift and log out. Please connect to the internet.', 'error');
+      showToast(t('checkout.shiftRequiredError'), 'error');
       return;
     }
     await fetchCurrentShift();
@@ -268,11 +301,10 @@ const triggerLogoutConfirm = async () => {
   }
 };
 
-
 const handleCloseShift = async () => {
   const amount = parseFloat(actualCashInput.value);
   if (isNaN(amount) || amount < 0) {
-    showToast('Please enter a valid actual cash amount', 'error');
+    showToast(t('checkout.enterValidActualCash'), 'error');
     return;
   }
   isClosingShift.value = true;
@@ -291,15 +323,15 @@ const confirmLogout = () => {
   performLogout();
 };
 
-const menuItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'checkout', label: 'POS Checkout', icon: CreditCard },
-  { id: 'inventory', label: 'Inventory Ops', icon: Package },
-  { id: 'suppliers', label: 'Suppliers', icon: Truck },
-  { id: 'users', label: 'User Management', icon: UserCog },
-  { id: 'reports', label: 'Reports Center', icon: BarChart3 },
-  { id: 'settings', label: 'Settings', icon: SettingsIcon }
-];
+const menuItems = computed(() => [
+  { id: 'dashboard', label: t('sidebar.dashboard'), icon: LayoutDashboard },
+  { id: 'checkout', label: t('sidebar.checkout'), icon: CreditCard },
+  { id: 'inventory', label: t('sidebar.inventory'), icon: Package },
+  { id: 'suppliers', label: t('sidebar.suppliers'), icon: Truck },
+  { id: 'users', label: t('sidebar.users'), icon: UserCog },
+  { id: 'reports', label: t('sidebar.reports'), icon: BarChart3 },
+  { id: 'settings', label: t('sidebar.settings'), icon: SettingsIcon }
+]);
 
 const isActive = (view: string) => {
   return route.path.startsWith('/' + view);
