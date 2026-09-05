@@ -203,11 +203,11 @@ const menuItems = computed<MenuItem[]>(() => {
     { id: 'checkout', label: t('sidebar.checkout'), icon: CreditCard },
     { 
       id: 'inventory_group', 
-      label: 'Inventory & purchases', 
+      label: t('sidebar.inventoryPurchases'), 
       icon: Package, 
       children: [
-        { path: '/inventory', label: 'Inventory', icon: Package },
-        { path: '/purchases', label: 'Purchases', icon: ShoppingBag },
+        { path: '/inventory', label: t('sidebar.inventory'), icon: Package },
+        { path: '/purchases', label: t('sidebar.purchases'), icon: ShoppingBag },
       ]
     },
     { id: 'suppliers', label: t('sidebar.suppliers'), icon: Truck },

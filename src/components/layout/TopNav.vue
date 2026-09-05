@@ -98,11 +98,11 @@
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
                   <ShoppingBag class="w-3.5 h-3.5 text-primary" />
-                  Purchases
+                  {{ $t('topNav.purchases') }}
                 </span>
-                <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-primary-container/30 text-primary">Invoices</span>
+                <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-primary-container/30 text-primary">{{ $t('topNav.invoicesBadge') }}</span>
               </div>
-              <span class="text-[11px] text-on-surface-variant/70 line-clamp-1">Manage purchase orders, returns & reversals</span>
+              <span class="text-[11px] text-on-surface-variant/70 line-clamp-1">{{ $t('topNav.managePurchasesDesc') }}</span>
             </button>
 
             <!-- Customers Module -->
@@ -199,8 +199,8 @@
               </div>
               <div class="flex flex-wrap gap-1 mt-1">
                 <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">{{ $t('common.view').toUpperCase() }}</span>
-                <span v-if="vm.hasPermission('finance:add_account')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-container/40 text-primary">ADD ACCOUNT</span>
-                <span v-if="vm.hasPermission('finance:new_journal_entry')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">NEW JOURNAL</span>
+                <span v-if="vm.hasPermission('finance:add_account')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-container/40 text-primary">{{ $t('topNav.addAccount').toUpperCase() }}</span>
+                <span v-if="vm.hasPermission('finance:new_journal_entry')" class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">{{ $t('topNav.newJournal').toUpperCase() }}</span>
               </div>
             </button>
           </div>
