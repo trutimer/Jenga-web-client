@@ -88,6 +88,23 @@
               </div>
             </button>
 
+            <!-- Purchases Module -->
+            <button 
+              v-if="vm.hasPermission('inventory:view')"
+              @click="navigateToModule('/purchases')"
+              class="flex flex-col gap-1 p-3 rounded-xl border transition-colors text-left group cursor-pointer"
+              :class="currentView === 'purchases' ? 'border-primary bg-primary-container/20' : 'border-outline-variant/60 bg-surface-container-lowest hover:border-primary'"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-1.5">
+                  <ShoppingBag class="w-3.5 h-3.5 text-primary" />
+                  Purchases
+                </span>
+                <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-primary-container/30 text-primary">Invoices</span>
+              </div>
+              <span class="text-[11px] text-on-surface-variant/70 line-clamp-1">Manage purchase orders, returns & reversals</span>
+            </button>
+
             <!-- Customers Module -->
             <button 
               v-if="vm.hasPermission('customers:view')"
@@ -370,7 +387,8 @@ import {
   Truck,
   BarChart3,
   UserCog,
-  Landmark
+  Landmark,
+  ShoppingBag
 } from 'lucide-vue-next';
 
 defineProps<{

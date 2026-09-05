@@ -13,9 +13,9 @@ import {
   cacheAuthCredentials,
   getCachedAuth
 } from './offlineSalesService';
+import { generateSalt, hashPasswordWithSalt } from '@/utils/cryptoAuth';
 
-export const BASE_URL = 'http://localhost:9090';
-// export const BASE_URL = 'https://jenga-api.sintax.tz';
+export const BASE_URL = (import.meta.env.VITE_API_URL as string) || (import.meta.env.PROD ? 'https://jenga-api.sintax.tz' : 'http://localhost:9090');
 
 export interface ApiOptions extends RequestInit {
   suppressToast?: boolean;
@@ -177,9 +177,19 @@ export async function apiRequest<T = any>(
       }
     }
 
-    // Cache successful auth response
+    // Cache successful auth response with salted password hash
     if (isElectron() && branchId && endpoint.includes('/auth/login') && data?.user && data?.accessToken) {
-      cacheAuthCredentials(data.user, data.accessToken, branchId);
+      try {
+        const bodyObj = options.body ? JSON.parse(options.body as string) : {};
+        if (bodyObj.password) {
+          const salt = generateSalt();
+          hashPasswordWithSalt(bodyObj.password, salt).then((hash) => {
+            cacheAuthCredentials(data.user, data.accessToken, branchId, hash, salt);
+          }).catch((err) => {
+            console.error('Failed to hash password for offline caching:', err);
+          });
+        }
+      } catch (_) {}
     }
 
     return data as T;
@@ -276,23 +286,39 @@ async function handleOfflineFallback<T>(
     if (endpoint.includes('/auth/login') && (bodyObj.username || bodyObj.phone)) {
       console.log('[Offline API] Attempting offline authentication fallback...');
       const identifier = bodyObj.phone || bodyObj.username || '';
-      const cached = await getCachedAuth(identifier, branchId);
-      if (cached) {
-        // Check if cashier has an open shift cached in local SQLite
-        const cachedShift = await (window as any).ipcRenderer.invoke('db:get-active-shift', { branchId, cashierId: cached.user.id });
-        if (!cachedShift || cachedShift.status !== 'OPEN') {
-          showToast('Internet connection is required to open a register shift before selling.', 'error');
-          throw new Error('Internet connection is required to open a register shift before selling.');
-        }
+      const inputPassword = bodyObj.password || '';
 
-        showToast('Offline Mode: Authenticated using cached credentials', 'success');
-        return {
-          user: cached.user,
-          accessToken: cached.token,
-          tokenType: 'Bearer',
-          offline: true
-        } as any;
+      if (!inputPassword) {
+        showToast('Password is required for offline sign in', 'error');
+        throw new Error('Password is required for offline sign in');
       }
+
+      const cached = await getCachedAuth(identifier, branchId);
+      if (!cached || !cached.passwordHash || !cached.passwordSalt) {
+        showToast('Offline credentials not found. Please connect to the internet to sign in first.', 'error');
+        throw new Error('Offline credentials not found');
+      }
+
+      const computedHash = await hashPasswordWithSalt(inputPassword, cached.passwordSalt);
+      if (computedHash !== cached.passwordHash) {
+        showToast('Invalid phone number or password', 'error');
+        throw new Error('Invalid phone number or password');
+      }
+
+      // Check if cashier has an open shift cached in local SQLite
+      const cachedShift = await (window as any).ipcRenderer.invoke('db:get-active-shift', { branchId, cashierId: cached.user.id });
+      if (!cachedShift || cachedShift.status !== 'OPEN') {
+        showToast('Internet connection is required to open a register shift before selling.', 'error');
+        throw new Error('Internet connection is required to open a register shift before selling.');
+      }
+
+      showToast('Offline Mode: Authenticated using cached credentials', 'success');
+      return {
+        user: cached.user,
+        accessToken: cached.token,
+        tokenType: 'Bearer',
+        offline: true
+      } as any;
     }
 
   }

@@ -26,8 +26,11 @@ WORKDIR /app
 # Install a lightweight static server
 RUN npm install -g serve
 
-# Copy built files
-COPY --from=build-stage /app/dist ./dist
+# Copy built files with non-root ownership
+COPY --from=build-stage --chown=node:node /app/dist ./dist
+
+# Run as non-root user
+USER node
 
 # Expose internal port
 EXPOSE 3030

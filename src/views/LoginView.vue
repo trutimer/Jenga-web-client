@@ -369,6 +369,7 @@
           <a 
             href="https://sintax.tz/pricing" 
             target="_blank"
+            rel="noopener noreferrer"
             class="w-full h-12 bg-primary text-white rounded-xl font-bold hover:bg-opacity-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/25 cursor-pointer no-underline"
           >
             <span>{{ $t('auth.buyLicense') }}</span>

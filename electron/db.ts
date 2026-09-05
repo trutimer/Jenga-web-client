@@ -77,8 +77,17 @@ function initTables(db: Database.Database) {
       phone TEXT,
       token TEXT NOT NULL,
       user_json TEXT NOT NULL,
+      password_hash TEXT,
+      password_salt TEXT,
       updated_at INTEGER NOT NULL
     );
+
+    try {
+      db.exec(`ALTER TABLE cached_auth ADD COLUMN password_hash TEXT;`);
+    } catch (_) {}
+    try {
+      db.exec(`ALTER TABLE cached_auth ADD COLUMN password_salt TEXT;`);
+    } catch (_) {}
 
     CREATE TABLE IF NOT EXISTS active_shifts (
       id TEXT PRIMARY KEY,
@@ -255,11 +264,11 @@ export function getBranchCustomers(branchId: string): any[] {
 
 // ----------------- Auth Caching & Verification ----------------- //
 
-export function cacheUserAuth(user: any, token: string, branchId: string) {
+export function cacheUserAuth(user: any, token: string, branchId: string, passwordHash?: string | null, passwordSalt?: string | null) {
   const db = getDB()
   db.prepare(`
-    INSERT OR REPLACE INTO cached_auth (user_id, branch_id, email, phone, token, user_json, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT OR REPLACE INTO cached_auth (user_id, branch_id, email, phone, token, user_json, password_hash, password_salt, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     user.id,
     branchId,
@@ -267,21 +276,25 @@ export function cacheUserAuth(user: any, token: string, branchId: string) {
     user.phone || '',
     token,
     JSON.stringify(user),
+    passwordHash || null,
+    passwordSalt || null,
     Date.now()
   )
 }
 
-export function getCachedUserAuth(identifier: string, branchId: string): { user: any; token: string } | null {
+export function getCachedUserAuth(identifier: string, branchId: string): { user: any; token: string; passwordHash: string | null; passwordSalt: string | null } | null {
   const db = getDB()
   const row = db.prepare(`
-    SELECT token, user_json FROM cached_auth
+    SELECT token, user_json, password_hash, password_salt FROM cached_auth
     WHERE branch_id = ? AND (email = ? OR phone = ? OR user_id = ?)
-  `).get(branchId, identifier, identifier, identifier) as { token: string; user_json: string } | undefined
+  `).get(branchId, identifier, identifier, identifier) as { token: string; user_json: string; password_hash: string | null; password_salt: string | null } | undefined
 
   if (!row) return null
   return {
     user: JSON.parse(row.user_json),
-    token: row.token
+    token: row.token,
+    passwordHash: row.password_hash || null,
+    passwordSalt: row.password_salt || null
   }
 }
 

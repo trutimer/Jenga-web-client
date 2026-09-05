@@ -76,16 +76,16 @@ export async function getCachedBranchCustomers(branchId: string): Promise<Custom
 
 // ------------ Auth Persistence ------------ //
 
-export async function cacheAuthCredentials(user: any, token: string, branchId: string) {
+export async function cacheAuthCredentials(user: any, token: string, branchId: string, passwordHash?: string | null, passwordSalt?: string | null) {
   if (!isElectron() || !branchId) return
   try {
-    await (window as any).ipcRenderer.invoke('db:cache-auth', { user, token, branchId })
+    await (window as any).ipcRenderer.invoke('db:cache-auth', { user, token, branchId, passwordHash, passwordSalt })
   } catch (err) {
     console.error('[Offline Service] Failed to cache auth credentials:', err)
   }
 }
 
-export async function getCachedAuth(identifier: string, branchId: string) {
+export async function getCachedAuth(identifier: string, branchId: string): Promise<{ user: any; token: string; passwordHash: string | null; passwordSalt: string | null } | null> {
   if (!isElectron() || !branchId) return null
   try {
     return await (window as any).ipcRenderer.invoke('db:get-cached-auth', { identifier, branchId })

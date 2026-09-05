@@ -5,8 +5,7 @@ let isOnline = false
 let isSyncing = false
 let syncTimer: NodeJS.Timeout | null = null
 let healthCheckTimer: NodeJS.Timeout | null = null
-let apiBaseUrl = 'http://localhost:9090'
-// let apiBaseUrl = 'https://jenga-api.sintax.tz';
+let apiBaseUrl = process.env.VITE_API_URL || (process.env.NODE_ENV === 'production' ? 'https://jenga-api.sintax.tz' : 'http://localhost:9090')
 
 export function setApiBaseUrl(url: string) {
   if (url && url.trim() !== '') {
@@ -96,8 +95,22 @@ export async function processSyncQueue(windowsGetter: () => BrowserWindow[]) {
         headers['Authorization'] = `Bearer ${token}`
       }
 
+      // Security check: strictly validate outbox endpoint to prevent SSRF and token exfiltration
+      if (typeof item.endpoint !== 'string' || item.endpoint.startsWith('http://') || item.endpoint.startsWith('https://') || item.endpoint.startsWith('//')) {
+        console.error(`[Sync Engine] Security Violation: Outbox item ${item.id} specified an absolute URL (${item.endpoint}). Rejected.`)
+        updateOutboxItemStatus(item.id, 'FAILED', 'Security Violation: Absolute URLs are not permitted')
+        continue
+      }
+
+      const sanitizedEndpoint = item.endpoint.startsWith('/') ? item.endpoint : `/${item.endpoint}`
+      if (!sanitizedEndpoint.startsWith('/api/')) {
+        console.error(`[Sync Engine] Security Violation: Outbox item ${item.id} specified a non-API path (${sanitizedEndpoint}). Rejected.`)
+        updateOutboxItemStatus(item.id, 'FAILED', 'Security Violation: Endpoint must begin with /api/')
+        continue
+      }
+
       // Add storeBranchId parameter to URL if required
-      let targetUrl = item.endpoint.startsWith('http') ? item.endpoint : `${apiBaseUrl}${item.endpoint}`
+      let targetUrl = `${apiBaseUrl}${sanitizedEndpoint}`
       if (item.branch_id && !targetUrl.includes('storeBranchId=')) {
         const sep = targetUrl.includes('?') ? '&' : '?'
         targetUrl += `${sep}storeBranchId=${encodeURIComponent(item.branch_id)}`

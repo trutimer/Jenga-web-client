@@ -23,7 +23,7 @@ const formatDateForInput = (dateStr?: string | null): string => {
 // Global shared reactive states
 const user = ref<string | null>(
   localStorage.getItem('accessToken') && localStorage.getItem('storeId')
-    ? (localStorage.getItem('cashierName') || 'Sarah K.')
+    ? (localStorage.getItem('cashierName') || 'User')
     : null
 );
 const userRole = ref<string | null>(
@@ -59,14 +59,13 @@ const resetInactivityTimeout = () => {
   if (timeoutId) clearTimeout(timeoutId);
   timeoutId = setTimeout(() => {
     user.value = null;
+    userRole.value = null;
+    userId.value = null;
     activeBranchId.value = null;
+    userPermissions.value = [];
     mobileMenuOpen.value = false;
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('cashierId');
-    localStorage.removeItem('storeId');
-    localStorage.removeItem('branchId');
-    localStorage.removeItem('cashierName');
-    localStorage.removeItem('cashierRole');
+    localStorage.clear();
+    sessionStorage.clear();
     router.push('/login');
   }, 5 * 60 * 1000); // 5 minutes
 };

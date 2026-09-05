@@ -1,22 +1,32 @@
 import type { Invoice, Customer, StoreSettings } from '../models/types';
 import { formatCurrency } from '../models/mockData';
 
+export function escapeHtml(str: unknown): string {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function generateInvoicePdf(invoice: Invoice, customer?: Customer | null, settings?: StoreSettings | null) {
-  const storeName = settings?.name || 'Jenga Store';
-  const storeTin = settings?.tin || '100-200-300';
-  const storeAddress = settings?.physicalAddress || 'Dar es Salaam, Tanzania';
-  const storePhone = settings?.phone || '+255 700 000 000';
-  const storeEmail = settings?.email || 'info@dukapro.tz';
+  const storeName = escapeHtml(settings?.name || 'Jenga Store');
+  const storeTin = escapeHtml(settings?.tin || '100-200-300');
+  const storeAddress = escapeHtml(settings?.physicalAddress || 'Dar es Salaam, Tanzania');
+  const storePhone = escapeHtml(settings?.phone || '+255 700 000 000');
+  const storeEmail = escapeHtml(settings?.email || 'info@dukapro.tz');
 
-  const customerName = customer?.displayName || customer?.companyName || `${customer?.firstName || ''} ${customer?.lastName || ''}`.trim() || invoice.customerName || 'Valued Customer';
-  const customerCode = customer?.code || invoice.customerCode || 'N/A';
-  const customerTin = customer?.tinNumber || 'N/A';
-  const customerPhone = customer?.phone || 'N/A';
-  const customerEmail = customer?.email || 'N/A';
-  const customerAddress = customer?.address || 'N/A';
+  const customerName = escapeHtml(customer?.displayName || customer?.companyName || `${customer?.firstName || ''} ${customer?.lastName || ''}`.trim() || invoice.customerName || 'Valued Customer');
+  const customerCode = escapeHtml(customer?.code || invoice.customerCode || 'N/A');
+  const customerTin = escapeHtml(customer?.tinNumber || 'N/A');
+  const customerPhone = escapeHtml(customer?.phone || 'N/A');
+  const customerEmail = escapeHtml(customer?.email || 'N/A');
+  const customerAddress = escapeHtml(customer?.address || 'N/A');
 
-  const dateIssued = invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : new Date().toLocaleDateString();
-  const dueDate = invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'On Receipt';
+  const dateIssued = escapeHtml(invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : new Date().toLocaleDateString());
+  const dueDate = escapeHtml(invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'On Receipt');
 
   let statusColor = '#059669'; // Emerald for Paid
   let statusBg = '#d1fae5';
@@ -272,10 +282,10 @@ export function generateInvoicePdf(invoice: Invoice, customer?: Customer | null,
           <!-- INVOICE INFO -->
           <div class="info-card">
             <div class="info-card-title">Invoice Details</div>
-            <div class="info-card-text">Invoice #: <strong class="font-mono primary-highlight">${invoice.invoiceNumber}</strong></div>
+            <div class="info-card-text">Invoice #: <strong class="font-mono primary-highlight">${escapeHtml(invoice.invoiceNumber)}</strong></div>
             <div class="info-card-text">Date Issued: <strong class="primary-highlight">${dateIssued}</strong></div>
             <div class="info-card-text">Due Date: <strong class="primary-highlight">${dueDate}</strong></div>
-            <div class="info-card-text">Branch: <strong class="primary-highlight">${invoice.branchName || 'Main Branch'}</strong></div>
+            <div class="info-card-text">Branch: <strong class="primary-highlight">${escapeHtml(invoice.branchName || 'Main Branch')}</strong></div>
           </div>
         </div>
 
@@ -296,8 +306,8 @@ export function generateInvoicePdf(invoice: Invoice, customer?: Customer | null,
                 ${invoice.items.map(item => `
                   <tr>
                     <td>
-                      <strong style="font-size: 13px; color: #0f172a;">${item.productName || 'Product'}</strong>
-                      ${item.productBarcode ? `<br><span style="font-size: 10px; color: #64748b; font-family: ui-monospace, monospace;">Barcode: ${item.productBarcode}</span>` : ''}
+                      <strong style="font-size: 13px; color: #0f172a;">${escapeHtml(item.productName || 'Product')}</strong>
+                      ${item.productBarcode ? `<br><span style="font-size: 10px; color: #64748b; font-family: ui-monospace, monospace;">Barcode: ${escapeHtml(item.productBarcode)}</span>` : ''}
                     </td>
                     <td class="text-right font-mono font-bold">${item.quantity}</td>
                     <td class="text-right font-mono">${formatCurrency(item.unitPrice)}</td>
@@ -320,8 +330,8 @@ export function generateInvoicePdf(invoice: Invoice, customer?: Customer | null,
               <tbody>
                 <tr>
                   <td>
-                    <strong style="font-size: 14px; color: #0f172a;">${invoice.notes || `Sales Invoice #${invoice.invoiceNumber}`}</strong><br>
-                    <span style="font-size: 11px; color: #64748b;">Ref Code: ${invoice.saleId || invoice.invoiceNumber}</span>
+                    <strong style="font-size: 14px; color: #0f172a;">${escapeHtml(invoice.notes || `Sales Invoice #${invoice.invoiceNumber}`)}</strong><br>
+                    <span style="font-size: 11px; color: #64748b;">Ref Code: ${escapeHtml(invoice.saleId || invoice.invoiceNumber)}</span>
                   </td>
                   <td class="text-right font-mono font-bold">${formatCurrency(invoice.totalAmount)}</td>
                   <td class="text-right font-mono font-bold" style="color: #059669;">${formatCurrency(invoice.paidAmount)}</td>
@@ -358,7 +368,7 @@ export function generateInvoicePdf(invoice: Invoice, customer?: Customer | null,
         <div class="notes-section">
           <div class="notes-title">Payment Terms & Instructions</div>
           <div class="notes-text">
-            ${invoice.notes || 'Please settle the balance due by the specified due date. Payments can be made via Cash, Bank Transfer, Card, or Mobile Money.'}
+            ${escapeHtml(invoice.notes || 'Please settle the balance due by the specified due date. Payments can be made via Cash, Bank Transfer, Card, or Mobile Money.')}
           </div>
         </div>
 

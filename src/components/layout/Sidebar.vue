@@ -66,14 +66,14 @@
           >
             <button
               v-for="sub in item.children"
-              :key="sub.tab"
-              @click="navigateToSubmenu(item.id, sub.tab)"
+              :key="sub.path || sub.tab"
+              @click="navigateToSubmenu(item, sub)"
               class="py-2 px-2.5 flex items-center gap-2.5 rounded-lg text-xs font-semibold transition-all text-left cursor-pointer"
-              :class="isSubmenuActive(item.id, sub.tab)
+              :class="isSubmenuActive(item, sub)
                 ? 'bg-primary text-on-primary font-bold shadow-xs'
                 : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'"
             >
-              <component :is="sub.icon" class="w-3.5 h-3.5 shrink-0" :class="isSubmenuActive(item.id, sub.tab) ? 'text-on-primary' : 'text-on-surface-variant'" />
+              <component :is="sub.icon" class="w-3.5 h-3.5 shrink-0" :class="isSubmenuActive(item, sub) ? 'text-on-primary' : 'text-on-surface-variant'" />
               <span class="truncate">{{ sub.label }}</span>
             </button>
           </div>
@@ -146,7 +146,8 @@ import {
   Store, 
   ChevronLeft,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  ShoppingBag
 } from 'lucide-vue-next';
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
 import { t } from '../../i18n';
@@ -163,7 +164,8 @@ const router = useRouter();
 const route = useRoute();
 
 interface SubMenuItem {
-  tab: string;
+  tab?: string;
+  path?: string;
   label: string;
   icon: any;
 }
@@ -178,6 +180,7 @@ interface MenuItem {
 }
 
 const expandedMenus = ref<Record<string, boolean>>({
+  inventory_group: false,
   finance: false
 });
 
@@ -187,13 +190,26 @@ watch(() => route.path, (newPath) => {
   } else {
     expandedMenus.value.finance = false;
   }
+  if (newPath.startsWith('/inventory') || newPath.startsWith('/purchases')) {
+    expandedMenus.value.inventory_group = true;
+  } else {
+    expandedMenus.value.inventory_group = false;
+  }
 }, { immediate: true });
 
 const menuItems = computed<MenuItem[]>(() => {
   const raw: MenuItem[] = [
     { id: 'dashboard', label: t('sidebar.dashboard'), icon: LayoutDashboard },
     { id: 'checkout', label: t('sidebar.checkout'), icon: CreditCard },
-    { id: 'inventory', label: t('sidebar.inventory'), icon: Package },
+    { 
+      id: 'inventory_group', 
+      label: 'Inventory & purchases', 
+      icon: Package, 
+      children: [
+        { path: '/inventory', label: 'Inventory', icon: Package },
+        { path: '/purchases', label: 'Purchases', icon: ShoppingBag },
+      ]
+    },
     { id: 'suppliers', label: t('sidebar.suppliers'), icon: Truck },
     { id: 'customers', label: t('sidebar.customers'), icon: Users },
     { id: 'users', label: t('sidebar.users'), icon: UserCog },
@@ -214,6 +230,9 @@ const menuItems = computed<MenuItem[]>(() => {
   ];
 
   return raw.filter(item => {
+    if (item.id === 'inventory_group') {
+      return userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN' || vm.hasPermission('inventory:view');
+    }
     if (item.id === 'finance') {
       return userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN' || vm.hasPermission('finance:view');
     }
@@ -226,36 +245,54 @@ const menuItems = computed<MenuItem[]>(() => {
 
 const isActive = (view: string) => {
   const currentView = route.path.substring(1) || 'dashboard';
-  return currentView === view || (view === 'inventory' && currentView === 'stock-in');
+  return currentView === view;
 };
 
 const isParentActive = (item: MenuItem) => {
+  if (item.children && item.children.some(c => c.path)) {
+    return item.children.some(c => c.path && route.path.startsWith(c.path));
+  }
   const currentView = route.path.substring(1) || 'dashboard';
   return currentView.startsWith(item.id);
 };
 
-const isSubmenuActive = (parentId: string, tab: string) => {
+const isSubmenuActive = (item: MenuItem, sub: SubMenuItem) => {
+  if (sub.path) {
+    return route.path.startsWith(sub.path);
+  }
   const currentView = route.path.substring(1) || 'dashboard';
-  if (!currentView.startsWith(parentId)) return false;
+  if (!currentView.startsWith(item.id)) return false;
   const currentTab = (route.query.tab as string) || 'statements';
-  return currentTab === tab;
+  return currentTab === sub.tab;
 };
 
 const handleParentClick = (item: MenuItem) => {
   if (sidebarCollapsed.value) {
     sidebarCollapsed.value = false;
     expandedMenus.value[item.id] = true;
-    router.push('/' + item.id);
+    if (item.children && item.children[0]?.path) {
+      router.push(item.children[0].path);
+    } else {
+      router.push('/' + item.id);
+    }
     return;
   }
   expandedMenus.value[item.id] = !expandedMenus.value[item.id];
   if (!isParentActive(item)) {
-    router.push('/' + item.id);
+    if (item.children && item.children[0]?.path) {
+      router.push(item.children[0].path);
+    } else {
+      router.push('/' + item.id);
+    }
   }
 };
 
-const navigateToSubmenu = (parentId: string, tab: string) => {
-  router.push({ path: '/' + parentId, query: { tab } });
+const navigateToSubmenu = (item: MenuItem, sub: SubMenuItem) => {
+  if (sub.path) {
+    router.push(sub.path);
+  } else {
+    router.push({ path: '/' + item.id, query: { tab: sub.tab } });
+  }
 };
 
 const alertHelp = () => {

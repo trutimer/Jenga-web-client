@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { exec } from 'node:child_process'
@@ -37,8 +37,32 @@ function createWindow() {
     webPreferences: {
       preload: join(__dirname, 'preload.mjs'),
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      sandbox: true,
+      webSecurity: true
     },
+  })
+
+  // Intercept child window creation and route external URLs to the default system browser
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https:') || url.startsWith('http:')) {
+      shell.openExternal(url)
+    }
+    return { action: 'deny' }
+  })
+
+  // Prevent top-level navigation away from the bundled application
+  win.webContents.on('will-navigate', (event, navigationUrl) => {
+    if (VITE_DEV_SERVER_URL && navigationUrl.startsWith(VITE_DEV_SERVER_URL)) {
+      return
+    }
+    const currentUrl = win?.webContents.getURL() || ''
+    if (navigationUrl !== currentUrl && !navigationUrl.startsWith('file://')) {
+      event.preventDefault()
+      if (navigationUrl.startsWith('https:') || navigationUrl.startsWith('http:')) {
+        shell.openExternal(navigationUrl)
+      }
+    }
   })
 
   win.webContents.on('did-finish-load', () => {
@@ -137,9 +161,9 @@ app.whenReady().then(() => {
     return db.getBranchCustomers(branchId)
   })
 
-  ipcMain.handle('db:cache-auth', (_, { user, token, branchId }) => {
+  ipcMain.handle('db:cache-auth', (_, { user, token, branchId, passwordHash, passwordSalt }) => {
     if (!user || !branchId) return
-    db.cacheUserAuth(user, token, branchId)
+    db.cacheUserAuth(user, token, branchId, passwordHash, passwordSalt)
     setSyncAuthToken(token)
     return { success: true }
   })

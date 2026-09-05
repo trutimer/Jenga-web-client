@@ -48,6 +48,39 @@ export interface Transaction {
   status?: 'PAID' | 'UNPAID' | 'VOID' | 'PARTIALLY_PAID' | 'SUCCESS' | string;
 }
 
+export type PurchaseStatus = 'COMPLETED' | 'PARTIALLY_RETURNED' | 'REVERSED';
+export type PurchasePaymentType = 'CASH' | 'TRANSFER' | 'CREDIT';
+
+export interface PurchaseItem {
+  id: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitCost: number;
+  currentStock: number;
+  maxReturnableQuantity: number;
+  isWholesale?: boolean;
+}
+
+export interface Purchase {
+  id: string;
+  branchId: string;
+  branchName?: string;
+  supplierId?: string;
+  supplierName?: string;
+  totalCost: number;
+  paymentType: PurchasePaymentType;
+  status: PurchaseStatus;
+  returnedQuantity?: number;
+  returnedAmount?: number;
+  reversedAt?: string;
+  reversedById?: string;
+  reversedByName?: string;
+  reversalReason?: string;
+  createdAt: string;
+  items: PurchaseItem[];
+}
+
 export interface Supplier {
   id: string;
   code: string;

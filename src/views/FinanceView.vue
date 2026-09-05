@@ -129,22 +129,28 @@
           </div>
 
           <!-- Date Filters & Branch Filter -->
-          <div class="flex flex-wrap items-center gap-3">
-            <!-- Period Presets for P&L -->
-            <div v-if="statementType === 'pnl'" class="flex items-center gap-1">
-              <button 
-                v-for="preset in ['this_month', 'last_month', 'this_quarter', 'this_year']" 
-                :key="preset"
-                @click="applyDatePreset(preset)"
-                class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer"
-                :class="activePreset === preset ? 'bg-primary/10 border-primary text-primary' : 'bg-surface border-outline-variant text-on-surface-variant hover:bg-surface-container'"
+          <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Period Dropdown for P&L -->
+            <div v-if="statementType === 'pnl'" class="flex items-center gap-2 bg-surface-container-low border border-outline-variant rounded-xl px-3 py-1.5 focus-within:border-primary transition-colors shadow-xs">
+              <Calendar class="w-4 h-4 text-on-surface-variant shrink-0" />
+              <select 
+                v-model="activePreset" 
+                @change="handleStatementPresetChange"
+                class="bg-transparent border-none text-xs font-bold text-on-surface focus:outline-none cursor-pointer pr-1"
               >
-                {{ formatPresetLabel(preset) }}
-              </button>
+                <option value="this_month">{{ $t('dashboard.thisMonth') }}</option>
+                <option value="last_month">Last Month</option>
+                <option value="this_quarter">This Quarter</option>
+                <option value="this_year">{{ $t('dashboard.thisYear') }}</option>
+                <option value="custom">Custom Range</option>
+              </select>
+              <span v-if="activePreset !== 'custom' && statementStartDate" class="text-[10px] font-mono text-primary font-bold hidden sm:inline-block border-l border-outline-variant/60 pl-2">
+                {{ statementStartDate }} <span v-if="statementEndDate && statementEndDate !== statementStartDate">→ {{ statementEndDate }}</span>
+              </span>
             </div>
 
-            <!-- Start Date / End Date (P&L) or As-Of Date (Balance Sheet & Trial Balance) -->
-            <template v-if="statementType === 'pnl'">
+            <!-- Start Date / End Date (P&L when activePreset === 'custom') -->
+            <template v-if="statementType === 'pnl' && activePreset === 'custom'">
               <div class="flex items-center gap-1.5">
                 <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">{{ $t('reports.fromDate') }}</span>
                 <input 
@@ -162,7 +168,8 @@
                 />
               </div>
             </template>
-            <template v-else>
+            <!-- As-Of Date (Balance Sheet & Trial Balance) -->
+            <template v-else-if="statementType !== 'pnl'">
               <div class="flex items-center gap-1.5">
                 <span class="text-[11px] font-mono font-bold text-on-surface-variant uppercase">{{ $t('finance.asOf') }}</span>
                 <input 
@@ -176,7 +183,7 @@
             <!-- Submit Button -->
             <button 
               @click="loadStatements"
-              class="h-9 px-4 rounded-lg bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 hover:bg-opacity-90 active:scale-95 cursor-pointer transition-all shadow-xs"
+              class="h-9 px-3.5 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 hover:bg-opacity-90 active:scale-95 cursor-pointer transition-all shadow-xs"
             >
               <Activity class="w-3.5 h-3.5" />
               <span>{{ $t('reports.applyFilters') }}</span>
@@ -1108,7 +1115,7 @@
 
           <div v-if="currentPeriod && currentPeriod.status === 'OPEN'">
             <button 
-              @click="openClosePeriodConfirmModal"
+              @click="openClosePeriodConfirmModal()"
               class="px-5 py-2.5 rounded-xl bg-amber-600 text-white font-bold text-xs hover:bg-amber-700 active:scale-95 transition-all shadow-sm flex items-center gap-2 cursor-pointer"
             >
               <Lock class="w-4 h-4" />
@@ -1119,8 +1126,9 @@
 
         <!-- All Periods History -->
         <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden">
-          <div class="p-4 bg-surface-container-low border-b border-outline-variant">
+          <div class="p-4 bg-surface-container-low border-b border-outline-variant flex flex-col sm:flex-row justify-between sm:items-center gap-2">
             <h3 class="text-sm font-black text-on-surface uppercase tracking-wide">Fiscal Periods Audit History</h3>
+            <span class="text-xs text-on-surface-variant font-medium">Select and close any open period individually</span>
           </div>
 
           <div class="overflow-x-auto">
@@ -1132,7 +1140,8 @@
                   <th class="p-4">{{ $t('reports.toDate') }}</th>
                   <th class="p-4 text-center">{{ $t('customers.tableStatus') }}</th>
                   <th class="p-4">Closed At</th>
-                  <th class="p-4 pr-5">Closed By</th>
+                  <th class="p-4">Closed By</th>
+                  <th class="p-4 pr-5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-surface-variant">
@@ -1156,10 +1165,22 @@
                   <td class="p-4 font-mono text-xs text-on-surface-variant">
                     {{ p.closedAt ? new Date(p.closedAt).toLocaleString() : '-' }}
                   </td>
-                  <td class="p-4 pr-5 text-on-surface font-medium">{{ p.closedByName || '-' }}</td>
+                  <td class="p-4 text-on-surface font-medium">{{ p.closedByName || '-' }}</td>
+                  <td class="p-4 pr-5 text-right">
+                    <button 
+                      v-if="p.status === 'OPEN'"
+                      @click="openClosePeriodConfirmModal(p)"
+                      class="px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-800 hover:bg-amber-500/25 active:scale-95 font-bold text-xs inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                      title="Close this specific period"
+                    >
+                      <Lock class="w-3.5 h-3.5" />
+                      <span>Close Period</span>
+                    </button>
+                    <span v-else class="text-on-surface-variant/40 font-mono text-xs italic">Locked</span>
+                  </td>
                 </tr>
                 <tr v-if="periods.length === 0">
-                  <td colspan="6" class="p-8 text-center text-on-surface-variant font-medium">
+                  <td colspan="7" class="p-8 text-center text-on-surface-variant font-medium">
                     No financial periods recorded yet.
                   </td>
                 </tr>
@@ -1525,13 +1546,13 @@
           <div>
             <h4 class="font-bold text-amber-900 text-sm">Important Accounting Action</h4>
             <p class="text-xs text-amber-800 leading-relaxed mt-1">
-              Closing period <strong class="font-mono">{{ currentPeriod?.name }}</strong> will permanently lock entries for this date range and roll forward retained earnings into the next period.
+              Closing period <strong class="font-mono">{{ periodToClose?.name }}</strong> will permanently lock entries for this date range ({{ periodToClose?.startDate }} to {{ periodToClose?.endDate }}).
             </p>
           </div>
         </div>
 
         <p class="text-on-surface-variant leading-relaxed">
-          Are you sure you want to finalize and close period <strong>{{ currentPeriod?.name }}</strong> ({{ currentPeriod?.startDate }} to {{ currentPeriod?.endDate }})?
+          Are you sure you want to finalize and close period <strong>{{ periodToClose?.name }}</strong>?
         </p>
 
         <div class="flex justify-end items-center gap-3 pt-2">
@@ -1584,6 +1605,7 @@ import {
   FileSpreadsheet,
   Layers,
   BookOpen,
+  Calendar,
   CalendarCheck,
   RotateCw,
   Download,
@@ -1736,6 +1758,7 @@ const accountStatement = ref<AccountLedgerStatementReport | null>(null);
 
 // Financial Periods State
 const currentPeriod = ref<FinancialPeriod | null>(null);
+const periodToClose = ref<FinancialPeriod | null>(null);
 const periods = ref<FinancialPeriod[]>([]);
 const showClosePeriodModal = ref(false);
 const isClosingPeriod = ref(false);
@@ -1962,8 +1985,16 @@ const refreshActiveTab = () => {
 // ACTIONS & HANDLERS
 // ==========================================
 
+const handleStatementPresetChange = () => {
+  if (activePreset.value !== 'custom') {
+    applyDatePreset(activePreset.value);
+  }
+};
+
 const applyDatePreset = (preset: string) => {
   activePreset.value = preset;
+  if (preset === 'custom') return;
+  
   const d = new Date();
   if (preset === 'this_month') {
     statementStartDate.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
@@ -1990,6 +2021,7 @@ const formatPresetLabel = (preset: string) => {
   if (preset === 'last_month') return 'Last Month';
   if (preset === 'this_quarter') return 'This Quarter';
   if (preset === 'this_year') return t('dashboard.thisYear');
+  if (preset === 'custom') return 'Custom Range';
   return preset;
 };
 
@@ -2106,15 +2138,17 @@ const openVoucherModal = async (je: JournalEntry) => {
   }
 };
 
-const openClosePeriodConfirmModal = () => {
+const openClosePeriodConfirmModal = (period?: FinancialPeriod) => {
+  periodToClose.value = period || currentPeriod.value;
   showClosePeriodModal.value = true;
 };
 
 const confirmClosePeriod = async () => {
-  if (!currentPeriod.value) return;
+  const target = periodToClose.value || currentPeriod.value;
+  if (!target) return;
   isClosingPeriod.value = true;
   try {
-    const closed = await financeService.closePeriod(currentPeriod.value.id);
+    const closed = await financeService.closePeriod(target.id);
     showToast(`Fiscal Period '${closed.name}' closed and locked successfully`, 'success');
     showClosePeriodModal.value = false;
     await loadCurrentPeriod();
