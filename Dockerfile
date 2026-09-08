@@ -19,21 +19,19 @@ COPY . .
 RUN npm run build
 
 # --- Production Stage ---
-FROM --platform=linux/amd64 node:20-alpine
+FROM --platform=linux/amd64 nginx:alpine
 
-WORKDIR /app
+# Remove default Nginx website
+RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/default.conf
 
-# Install a lightweight static server
-RUN npm install -g serve
+# Copy custom hardened Nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy built files with non-root ownership
-COPY --from=build-stage --chown=node:node /app/dist ./dist
+# Copy built files
+COPY --from=build-stage /app/dist /usr/share/nginx/html
 
-# Run as non-root user
-USER node
+# Expose HTTP ports (both 80 and 3030 for backward compatibility)
+EXPOSE 80 3030
 
-# Expose internal port
-EXPOSE 3030
-
-# Run static server
-CMD ["serve", "-s", "dist", "-l", "3030"]
+# Start Nginx in foreground
+CMD ["nginx", "-g", "daemon off;"]

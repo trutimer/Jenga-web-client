@@ -370,13 +370,25 @@
     </div>
     
     <template #footer>
-      <button 
-        @click="handleOpenShift" 
-        :disabled="isOpeningShift || !openingCashInput"
-        class="w-full py-3.5 bg-primary text-on-primary hover:bg-opacity-95 active:scale-95 rounded-xl transition-all font-bold text-sm cursor-pointer border-0 shadow-lg shadow-primary/20 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {{ isOpeningShift ? $t('common.loading') : $t('checkout.openingShiftBtn') }}
-      </button>
+      <div class="flex flex-col gap-2.5 w-full">
+        <button 
+          @click="handleOpenShift" 
+          :disabled="isOpeningShift || !openingCashInput"
+          class="w-full py-3.5 bg-primary text-on-primary hover:bg-opacity-95 active:scale-95 rounded-xl transition-all font-bold text-sm cursor-pointer border-0 shadow-lg shadow-primary/20 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {{ isOpeningShift ? $t('common.loading') : $t('checkout.openingShiftBtn') }}
+        </button>
+
+        <button 
+          type="button"
+          @click="handleShiftLogout" 
+          :disabled="isOpeningShift"
+          class="w-full py-2.5 flex items-center justify-center gap-2 text-error hover:bg-error/10 active:scale-95 rounded-xl transition-all font-semibold text-xs cursor-pointer border border-error/20 hover:border-error/40 disabled:opacity-50"
+        >
+          <LogOut class="w-4 h-4 stroke-[2px]" />
+          <span>{{ $t('auth.logoutCashier') }}</span>
+        </button>
+      </div>
     </template>
   </Modal>
 
@@ -474,7 +486,8 @@ import {
   AlertCircle,
   Grid,
   UserCheck,
-  Search
+  Search,
+  LogOut
 } from 'lucide-vue-next';
 
 const vm = useAppViewModel();
@@ -574,6 +587,10 @@ const handleOpenShift = async () => {
   if (success) {
     openingCashInput.value = '';
   }
+};
+
+const handleShiftLogout = () => {
+  vm.handleLogout();
 };
 
 onMounted(() => {

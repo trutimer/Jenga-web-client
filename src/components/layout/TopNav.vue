@@ -1,5 +1,5 @@
 <template>
-  <header class="bg-surface border-b border-outline-variant flex justify-between items-center w-full px-margin-page h-16 z-30 sticky top-0 shrink-0 font-sans">
+  <header class="bg-surface border-b border-outline-variant flex justify-between items-center w-full px-6 md:px-8 h-16 z-30 sticky top-0 shrink-0 font-sans">
     <div class="flex items-center gap-4">
       <button 
         v-if="userRole !== 'CASHIER'"
@@ -286,6 +286,9 @@
 
       <!-- Status Actions -->
       <div class="flex items-center gap-1 text-on-surface-variant">
+        <!-- Desktop Auto-Update Status & Restart Button -->
+        <AppUpdateBadge />
+
         <!-- Cloud Sync & Offline Status -->
         <SyncStatusBadge />
 
@@ -364,6 +367,7 @@ import Modal from '../common/Modal.vue';
 import LicenseModal from '../common/LicenseModal.vue';
 import LicenseExpiryAlertModal from '../common/LicenseExpiryAlertModal.vue';
 import SyncStatusBadge from '../SyncStatusBadge.vue';
+import AppUpdateBadge from '../AppUpdateBadge.vue';
 import NotificationDropdown from '../notifications/NotificationDropdown.vue';
 import LanguageSelector from '../common/LanguageSelector.vue';
 import { t } from '../../i18n';

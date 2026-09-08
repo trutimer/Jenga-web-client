@@ -651,3 +651,181 @@ export interface UnreadCountResponse {
   unreadCount: number;
 }
 
+// ==========================================
+// CASHFLOW & DASHBOARD V2 TYPES
+// ==========================================
+
+export interface PaymentChannelDetail {
+  amount: number;
+  count: number;
+}
+
+export interface DebtorSummaryItem {
+  id: string;
+  name: string;
+  code: string;
+  phone: string;
+  outstandingBalance: number;
+  creditLimit: number;
+}
+
+export interface CreditorSummaryItem {
+  id: string;
+  name: string;
+  code: string;
+  contactPerson: string;
+  phone: string;
+  category: string;
+  balance: number;
+}
+
+export interface CashflowVelocityTrendPoint {
+  label: string;
+  date: string;
+  salesRevenue: number;
+  debtCollections: number;
+  pettyExpenses: number;
+  netCashflow: number;
+}
+
+export interface CashflowOverview {
+  period: string;
+  netCashflow: number;
+  netCashflowStatus: 'SURPLUS' | 'DEFICIT';
+  cashOnHand: number;
+  activeShiftsCount: number;
+  activeRegisters: Array<{
+    shiftId: string;
+    terminalId: string;
+    cashierName: string;
+    openedAt: string;
+    expectedCash: number;
+  }>;
+  sales: {
+    totalSales: number;
+    todaySales: number;
+    transactionsCount: number;
+    avgTicket: number;
+    grossProfit: number;
+  };
+  paymentBreakdown: {
+    cash: PaymentChannelDetail;
+    mobile: PaymentChannelDetail;
+    card: PaymentChannelDetail;
+    credit: PaymentChannelDetail;
+  };
+  debtors: {
+    totalOutstanding: number;
+    totalCreditLimit: number;
+    debtorsCount: number;
+    collectedInPeriod: number;
+    overdueCount: number;
+    topDebtors: DebtorSummaryItem[];
+  };
+  creditors: {
+    totalPayables: number;
+    creditorsCount: number;
+    purchasesInPeriod: number;
+    netTradeGap: number;
+    topCreditors: CreditorSummaryItem[];
+  };
+  cashMovements: {
+    payIn: number;
+    payOut: number;
+    cashDrop: number;
+    netMovement: number;
+  };
+  velocityTrends: CashflowVelocityTrendPoint[];
+  topSellingProducts: Array<{
+    name: string;
+    quantity: number;
+    revenue: number;
+  }>;
+  inventoryAlerts: {
+    lowStockCount: number;
+    outOfStockCount: number;
+    soonToExpireCount: number;
+  };
+  collection?: CollectionIntelligence;
+  inventoryValuation?: InventoryValuationIntelligence;
+}
+
+export interface RiskDebtorItem {
+  customerId: string;
+  customerName: string;
+  phone: string;
+  amount: number;
+  daysOverdue: number;
+  oldestDueDate: string;
+}
+
+export interface AgingBucket {
+  amount: number;
+  count: number;
+}
+
+export interface MoneyToCollectBreakdown {
+  total: number;
+  dueToday: number;
+  dueThisWeek: number;
+  overdue: number;
+  debtorsCount: number;
+}
+
+export interface MoneyOwedSuppliersBreakdown {
+  total: number;
+  dueToday: number;
+  dueThisWeek: number;
+  overdue: number;
+  creditorsCount: number;
+  topCreditors: CreditorSummaryItem[];
+}
+
+export interface CollectionIntelligence {
+  collectionRate: number;
+  amountCollected: number;
+  amountDue: number;
+  moneyToCollect: MoneyToCollectBreakdown;
+  debtAging: {
+    current: AgingBucket;
+    days8to30: AgingBucket;
+    days31to60: AgingBucket;
+    days60plus: AgingBucket;
+    riskAmount: number;
+    highRiskAmount: number;
+  };
+  riskDebtors: RiskDebtorItem[];
+  moneyOwedSuppliers: MoneyOwedSuppliersBreakdown;
+}
+
+export interface DeadStockProductItem {
+  id: string;
+  name: string;
+  sku: string;
+  barcode: string;
+  category: string;
+  quantity: number;
+  costPrice: number;
+  sellingPrice: number;
+  capitalTiedUp: number;
+  daysDormant: number;
+}
+
+export interface StockVelocityBucket {
+  capital: number;
+  count: number;
+  percent: number;
+}
+
+export interface InventoryValuationIntelligence {
+  totalCapital: number;
+  potentialRevenue: number;
+  unrealizedProfit: number;
+  inStockCount: number;
+  fastMoving: StockVelocityBucket;
+  slowMoving: StockVelocityBucket;
+  deadStock: StockVelocityBucket;
+  deadStockProducts: DeadStockProductItem[];
+  recommendations: string[];
+}
+

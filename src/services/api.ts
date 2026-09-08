@@ -38,6 +38,10 @@ export async function apiRequest<T = any>(
   const token = localStorage.getItem('accessToken');
   const headers = new Headers(options.headers);
 
+  if (isElectron()) {
+    headers.set('X-Client-Platform', 'desktop-electron');
+  }
+
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
     if (isElectron()) {

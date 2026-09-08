@@ -9,7 +9,8 @@ import type {
   IncomeStatementReport,
   BalanceSheetReport,
   AccountLedgerStatementReport,
-  PageResponse
+  PageResponse,
+  CashflowOverview
 } from '../models/types';
 
 export const financeService = {
@@ -158,5 +159,19 @@ export const financeService = {
    */
   async createJournalEntry(request: CreateJournalEntryRequest): Promise<JournalEntry> {
     return api.post<JournalEntry>('/api/ledger/entries', request);
+  },
+
+  // ==========================================
+  // 5. CASHFLOW & DASHBOARD V2 ANALYTICS
+  // ==========================================
+
+  /**
+   * Fetch comprehensive real-time cashflow, sales, debtors, and creditors overview.
+   */
+  async getCashflowOverview(branchId: string, period = 'today'): Promise<CashflowOverview> {
+    const query = new URLSearchParams();
+    if (branchId) query.append('storeBranchId', branchId);
+    if (period) query.append('period', period);
+    return api.get<CashflowOverview>(`/api/analytics/cashflow-overview?${query.toString()}`);
   }
 };

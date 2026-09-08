@@ -74,6 +74,21 @@
           <User class="w-4.5 h-4.5" />
           <span>{{ $t('settings.accountProfile') }}</span>
         </button>
+
+        <div v-if="isElectronApp" class="border-t border-outline-variant/50 my-1"></div>
+
+        <button 
+          v-if="isElectronApp"
+          type="button"
+          @click="activeSection = 'updates'"
+          class="text-left text-xs px-4 py-3 h-11 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-semibold border-0"
+          :class="activeSection === 'updates' 
+            ? 'bg-primary-container text-on-primary-container font-extrabold translate-x-1' 
+            : 'text-on-surface-variant hover:bg-surface-container bg-transparent'"
+        >
+          <RefreshCw class="w-4.5 h-4.5" />
+          <span>{{ $t('settings.appUpdates') }}</span>
+        </button>
       </div>
 
       <!-- Right column Form Panel (3 columns) -->
@@ -88,6 +103,7 @@
               <span v-else-if="activeSection === 'finance'">{{ $t('settings.financeAccounts') }}</span>
               <span v-else-if="activeSection === 'hardware'">{{ $t('settings.hardwareBarcode') }}</span>
               <span v-else-if="activeSection === 'account'">{{ $t('settings.accountProfile') }}</span>
+              <span v-else-if="activeSection === 'updates'">{{ $t('settings.appUpdates') }}</span>
             </h3>
             <p class="text-xs text-on-surface-variant font-semibold mt-1">
               <span v-if="activeSection === 'profile'">{{ $t('settings.storeProfileDesc') }}</span>
@@ -95,6 +111,7 @@
               <span v-else-if="activeSection === 'finance'">{{ $t('settings.financeGlDesc') }}</span>
               <span v-else-if="activeSection === 'hardware'">{{ $t('settings.hardwareDesc') }}</span>
               <span v-else-if="activeSection === 'account'">{{ $t('settings.accountProfileDesc') }}</span>
+              <span v-else-if="activeSection === 'updates'">{{ $t('settings.appUpdatesDesc') }}</span>
             </p>
           </div>
 
@@ -1251,8 +1268,114 @@
 
           </div>
 
+          <!-- SECTION 6: APP UPDATES (ELECTRON ONLY) -->
+          <div v-else-if="activeSection === 'updates'" class="space-y-6">
+            <!-- App Version Overview Card -->
+            <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-primary-container/30 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                  <Laptop class="w-7 h-7" />
+                </div>
+                <div>
+                  <h4 class="text-base font-black text-on-surface flex items-center gap-2">
+                    <span>Jenga POS Desktop</span>
+                    <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">Electron</span>
+                  </h4>
+                  <p class="text-xs text-on-surface-variant font-mono mt-0.5">
+                    {{ $t('updater.currentVersion') }}: <span class="font-bold text-on-surface">v{{ appVersion }}</span>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Manual Check for Updates Button -->
+              <button 
+                type="button"
+                @click="checkForUpdatesManual"
+                :disabled="isCheckingUpdates || updateInfo.status === 'downloading'"
+                class="px-5 py-2.5 rounded-xl text-xs font-bold bg-surface-container border border-outline-variant hover:bg-surface-container-high active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw class="w-3.5 h-3.5 text-primary" :class="isCheckingUpdates ? 'animate-spin' : ''" />
+                <span>{{ isCheckingUpdates ? $t('updater.checking') : $t('updater.checkNow') }}</span>
+              </button>
+            </div>
+
+            <!-- Status Details Card -->
+            <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 shadow-xs space-y-4">
+              <h4 class="text-xs font-bold font-mono uppercase tracking-wider text-on-surface-variant">Update Status</h4>
+
+              <!-- Downloaded / Ready to apply -->
+              <div v-if="updateInfo.status === 'downloaded'" class="p-5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Sparkles class="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h5 class="text-sm font-bold text-emerald-950 dark:text-emerald-100">
+                      {{ $t('updater.updateReady', { version: updateInfo.latestVersion || '' }) }}
+                    </h5>
+                    <p class="text-xs text-emerald-800 dark:text-emerald-300 mt-0.5">
+                      The update is downloaded and ready to install. Restart Jenga to complete.
+                    </p>
+                  </div>
+                </div>
+
+                <button 
+                  type="button"
+                  @click="restartAndInstallFromSettings"
+                  class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition-all flex items-center gap-2 cursor-pointer shadow-sm shrink-0"
+                >
+                  <RefreshCw class="w-3.5 h-3.5" />
+                  <span>{{ $t('updater.restartToUpdate') }}</span>
+                </button>
+              </div>
+
+              <!-- Downloading Progress -->
+              <div v-else-if="updateInfo.status === 'downloading'" class="p-5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 space-y-3">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                    <ArrowDownCircle class="w-4 h-4 text-blue-600 animate-bounce" />
+                    {{ $t('updater.downloading', { percent: updateInfo.downloadProgress || 0 }) }}
+                  </span>
+                  <span class="font-mono text-[11px] text-blue-700 dark:text-blue-300">
+                    {{ Math.round((updateInfo.downloadedBytes || 0) / (1024 * 1024)) }} MB / {{ Math.round((updateInfo.totalBytes || 0) / (1024 * 1024)) }} MB
+                  </span>
+                </div>
+                <div class="w-full bg-blue-200 dark:bg-blue-900 rounded-full h-2 overflow-hidden">
+                  <div 
+                    class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    :style="{ width: `${updateInfo.downloadProgress || 0}%` }"
+                  ></div>
+                </div>
+              </div>
+
+              <!-- Error State -->
+              <div v-else-if="updateInfo.status === 'error'" class="p-4 rounded-xl bg-error-container/20 border border-error/20 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <AlertCircle class="w-5 h-5 text-error shrink-0" />
+                  <div>
+                    <span class="text-xs font-bold text-error block">{{ $t('updater.updateFailed') }}</span>
+                    <span class="text-[11px] text-on-surface-variant">{{ updateInfo.error }}</span>
+                  </div>
+                </div>
+                <button 
+                  type="button"
+                  @click="checkForUpdatesManual"
+                  class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-error text-white hover:bg-error/90 cursor-pointer shrink-0"
+                >
+                  Retry
+                </button>
+              </div>
+
+              <!-- Up to Date -->
+              <div v-else class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-center gap-3 text-xs text-on-surface-variant">
+                <CheckCircle2 class="w-5 h-5 text-emerald-600 shrink-0" />
+                <span>{{ $t('updater.upToDate') }}</span>
+              </div>
+            </div>
+          </div>
+
           <!-- Form actions footer -->
-          <div v-if="activeSection !== 'hardware' && activeSection !== 'account'" class="flex justify-end gap-3.5 pt-6 border-t border-outline-variant mt-2">
+          <div v-if="activeSection !== 'hardware' && activeSection !== 'account' && activeSection !== 'updates'" class="flex justify-end gap-3.5 pt-6 border-t border-outline-variant mt-2">
             <button 
               type="button"
               @click="handleSave"
@@ -1271,7 +1394,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { api } from '../services/api';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
@@ -1314,14 +1437,76 @@ import {
   ShieldCheck,
   ShieldAlert,
   Clock,
-  Copy
+  Copy,
+  RefreshCw,
+  Sparkles,
+  ArrowDownCircle,
+  Laptop
 } from 'lucide-vue-next';
 
 const router = useRouter();
 const vm = useAppViewModel();
 const { userRole, userId, activeBranchId } = vm;
 
-const activeSection = ref<'profile' | 'defaults' | 'finance' | 'hardware' | 'account'>('profile');
+const isElectronApp = ref(typeof window !== 'undefined' && (window as any).ipcRenderer !== undefined);
+const activeSection = ref<'profile' | 'defaults' | 'finance' | 'hardware' | 'account' | 'updates'>('profile');
+const appVersion = ref(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '2.6.0');
+
+// Desktop Updates state
+const updateInfo = ref<{
+  status: 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error';
+  currentVersion: string;
+  latestVersion?: string;
+  downloadProgress?: number;
+  downloadSpeed?: number;
+  downloadedBytes?: number;
+  totalBytes?: number;
+  releaseNotes?: string;
+  error?: string;
+}>({
+  status: 'idle',
+  currentVersion: '2.6.0',
+});
+const isCheckingUpdates = ref(false);
+
+const onUpdateStatusChanged = (_: any, data: any) => {
+  if (data) {
+    updateInfo.value = { ...updateInfo.value, ...data };
+  }
+};
+
+const checkForUpdatesManual = async () => {
+  if (!isElectronApp.value) return;
+  isCheckingUpdates.value = true;
+  try {
+    const status = await (window as any).ipcRenderer.invoke('updater:check-for-updates');
+    if (status) {
+      updateInfo.value = { ...updateInfo.value, ...status };
+      if (status.status === 'idle') {
+        showToast(t('updater.upToDate'), 'info');
+      }
+    }
+  } catch (err: any) {
+    console.error('Failed to check for updates:', err);
+    showToast(err?.message || 'Failed to check for updates', 'error');
+  } finally {
+    isCheckingUpdates.value = false;
+  }
+};
+
+const restartAndInstallFromSettings = async () => {
+  if (!isElectronApp.value) return;
+  try {
+    const res = await (window as any).ipcRenderer.invoke('updater:restart-and-install');
+    if (res && res.success && res.message) {
+      showToast(res.message, 'info');
+    }
+  } catch (err: any) {
+    console.error('Failed to restart for update:', err);
+    showToast(err?.message || 'Failed to restart for update', 'error');
+  }
+};
+
 const accountSubView = ref<'overview' | 'identity' | 'password' | 'two-factor'>('overview');
 
 // 2FA Reactive States
@@ -1708,6 +1893,23 @@ onMounted(async () => {
   storeCurrency.value = vm.settings.value.currency;
   storeTimezone.value = vm.settings.value.timezone;
   enablePerpetualCogs.value = !!vm.settings.value.enablePerpetualCogs;
+
+  // Initialize Desktop Auto-Updater listener
+  if (isElectronApp.value) {
+    (window as any).ipcRenderer.on('updater:status-changed', onUpdateStatusChanged);
+    try {
+      const initial = await (window as any).ipcRenderer.invoke('updater:get-status');
+      if (initial) {
+        updateInfo.value = { ...updateInfo.value, ...initial };
+      }
+    } catch (_) {}
+  }
+});
+
+onUnmounted(() => {
+  if (isElectronApp.value && (window as any).ipcRenderer?.off) {
+    (window as any).ipcRenderer.off('updater:status-changed', onUpdateStatusChanged);
+  }
 });
 
 const handleSave = async () => {

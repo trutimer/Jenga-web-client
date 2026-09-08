@@ -13,7 +13,8 @@ if (typeof globalThis.require === 'undefined') {
 }
 
 import * as db from './db'
-import { startSyncEngine, setApiBaseUrl, processSyncQueue, broadcastSyncStatus, setSyncAuthToken } from './syncEngine'
+import { startSyncEngine, setApiBaseUrl, processSyncQueue, broadcastSyncStatus, setSyncAuthToken, checkHealth, getApiBaseUrl, getIsOnline, getIsSyncing } from './syncEngine'
+import { initUpdateManager, getUpdateStatus, restartAndInstall, broadcastStatus as broadcastUpdateStatus, checkForUpdates } from './updateManager'
 
 
 const execAsync = promisify(exec)
@@ -67,7 +68,10 @@ function createWindow() {
 
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', (new Date()).toLocaleString())
-    if (win) broadcastSyncStatus([win])
+    if (win) {
+      broadcastSyncStatus([win])
+      broadcastUpdateStatus([win])
+    }
   })
 
   if (VITE_DEV_SERVER_URL) {
@@ -100,6 +104,9 @@ app.whenReady().then(() => {
 
   // Start Sync Engine Worker
   startSyncEngine(() => (win ? [win] : []))
+
+  // Initialize Desktop Auto-Updater (checks every 30m)
+  initUpdateManager(() => (win ? [win] : []), getApiBaseUrl)
 
   // Fingerprint Handler
   ipcMain.handle('get-fingerprint', async () => {
@@ -207,20 +214,46 @@ app.whenReady().then(() => {
   ipcMain.handle('sync:get-status', (_, { branchId } = {}) => {
     const stats = db.getOutboxStats(branchId)
     return {
+      isOnline: getIsOnline(),
+      isSyncing: getIsSyncing(),
       pendingCount: stats.pendingCount,
       totalCount: stats.totalCount
     }
   })
 
   ipcMain.handle('sync:trigger-now', () => {
-    if (win) processSyncQueue(() => (win ? [win] : []))
+    db.reconcileAndCleanOutbox()
+    if (win) {
+      broadcastSyncStatus([win])
+      processSyncQueue(() => (win ? [win] : []))
+    }
     return { success: true }
+  })
+
+  ipcMain.handle('sync:clean-stuck-items', (_, { branchId } = {}) => {
+    const result = db.reconcileAndCleanOutbox(branchId)
+    if (win) broadcastSyncStatus([win], branchId)
+    return result
   })
 
   ipcMain.handle('sync:set-config', (_, { apiBaseUrl, token }) => {
     if (apiBaseUrl) setApiBaseUrl(apiBaseUrl)
     if (token) setSyncAuthToken(token)
     return { success: true }
+  })
+
+  // ------------ Desktop Auto-Updater IPC Handlers ------------ //
+
+  ipcMain.handle('updater:get-status', () => {
+    return getUpdateStatus()
+  })
+
+  ipcMain.handle('updater:check-for-updates', async () => {
+    return checkForUpdates(getApiBaseUrl(), () => (win ? [win] : []))
+  })
+
+  ipcMain.handle('updater:restart-and-install', () => {
+    return restartAndInstall()
   })
 
   createWindow()

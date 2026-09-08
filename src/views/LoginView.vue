@@ -197,13 +197,13 @@
             <ArrowRight v-if="!isLoggingIn" class="w-5 h-5" />
           </button>
 
-          <!-- Cloudflare Turnstile Bot Defense Widget -->
-          <div class="w-full my-1">
+          <div v-if="!isElectron()" class="w-full my-1">
             <TurnstileWidget 
               ref="turnstileRef"
               action="login"
               @success="handleTurnstileSuccess"
               @expire="handleTurnstileExpire"
+              @error="handleTurnstileError"
             />
           </div>
         </form>
@@ -261,6 +261,7 @@
           </div>
 
           <TurnstileWidget 
+            v-if="!isElectron()"
             ref="resetTurnstileRef"
             action="password_reset_request"
             @success="token => resetTurnstileToken = token"
@@ -316,6 +317,7 @@
           </div>
 
           <TurnstileWidget 
+            v-if="!isElectron()"
             ref="confirmTurnstileRef"
             action="password_reset_confirm"
             @success="token => confirmTurnstileToken = token"
@@ -413,7 +415,7 @@ import {
 
 const vm = useAppViewModel();
 
-const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v2.5.0';
+const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v2.6.0';
 
 const phone = ref(localStorage.getItem('lastPhone') || '');
 const password = ref('');
@@ -451,6 +453,16 @@ const handleTurnstileSuccess = (token: string) => {
 
 const handleTurnstileExpire = () => {
   turnstileToken.value = '';
+};
+
+const handleTurnstileError = (err: any) => {
+  console.warn('[Cloudflare Turnstile] Verification notice/error:', err);
+  turnstileToken.value = '';
+  const errStr = String(err);
+  if (errStr.includes('110200')) {
+    error.value = 'Turnstile error: Domain not allowed (Code 110200). Ensure this domain is added to your Cloudflare Dashboard.';
+  }
+  // Transient timeouts (like 600010) or heartbeats (300030) are handled by Turnstile's built-in auto-retry
 };
 
 const getDeviceFingerprint = async () => {

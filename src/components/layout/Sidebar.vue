@@ -68,13 +68,22 @@
               v-for="sub in item.children"
               :key="sub.path || sub.tab"
               @click="navigateToSubmenu(item, sub)"
-              class="py-2 px-2.5 flex items-center gap-2.5 rounded-lg text-xs font-semibold transition-all text-left cursor-pointer"
+              class="py-2 px-2.5 flex items-center justify-between gap-2 rounded-lg text-xs font-semibold transition-all text-left cursor-pointer"
               :class="isSubmenuActive(item, sub)
                 ? 'bg-primary text-on-primary font-bold shadow-xs'
                 : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'"
             >
-              <component :is="sub.icon" class="w-3.5 h-3.5 shrink-0" :class="isSubmenuActive(item, sub) ? 'text-on-primary' : 'text-on-surface-variant'" />
-              <span class="truncate">{{ sub.label }}</span>
+              <div class="flex items-center gap-2.5 min-w-0">
+                <component :is="sub.icon" class="w-3.5 h-3.5 shrink-0" :class="isSubmenuActive(item, sub) ? 'text-on-primary' : 'text-on-surface-variant'" />
+                <span class="truncate">{{ sub.label }}</span>
+              </div>
+              <span 
+                v-if="sub.badge" 
+                class="text-[9px] font-mono font-black uppercase px-1.5 py-0.5 rounded leading-none shrink-0 tracking-wider"
+                :class="isSubmenuActive(item, sub) ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary border border-primary/20'"
+              >
+                {{ sub.badge }}
+              </span>
             </button>
           </div>
         </div>
@@ -131,22 +140,22 @@ import {
   CreditCard, 
   Package, 
   Truck, 
-  Users,
+  Users, 
   UserCog, 
   BarChart3, 
-  Landmark,
-  FileSpreadsheet,
-  Layers,
-  BookOpen,
-  Search,
-  CalendarCheck,
+  Landmark, 
+  FileSpreadsheet, 
+  Layers, 
+  BookOpen, 
+  Search, 
+  CalendarCheck, 
   Settings, 
   HelpCircle, 
   LogOut, 
   Store, 
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
+  ChevronLeft, 
+  ChevronRight, 
+  ChevronDown, 
   ShoppingBag
 } from 'lucide-vue-next';
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
@@ -168,6 +177,7 @@ interface SubMenuItem {
   path?: string;
   label: string;
   icon: any;
+  badge?: string;
 }
 
 interface MenuItem {
@@ -250,7 +260,7 @@ const isActive = (view: string) => {
 
 const isParentActive = (item: MenuItem) => {
   if (item.children && item.children.some(c => c.path)) {
-    return item.children.some(c => c.path && route.path.startsWith(c.path));
+    return item.children.some(c => c.path && (route.path === c.path || route.path.startsWith(c.path + '/')));
   }
   const currentView = route.path.substring(1) || 'dashboard';
   return currentView.startsWith(item.id);
@@ -258,7 +268,7 @@ const isParentActive = (item: MenuItem) => {
 
 const isSubmenuActive = (item: MenuItem, sub: SubMenuItem) => {
   if (sub.path) {
-    return route.path.startsWith(sub.path);
+    return route.path === sub.path || route.path.startsWith(sub.path + '/');
   }
   const currentView = route.path.substring(1) || 'dashboard';
   if (!currentView.startsWith(item.id)) return false;

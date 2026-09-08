@@ -1,11 +1,12 @@
 <template>
-  <div class="turnstile-container flex justify-center items-center w-full min-h-[65px] my-2">
+  <div v-if="!isElectron()" class="turnstile-container flex justify-center items-center w-full min-h-[65px] my-2">
     <div ref="containerRef" class="w-full flex justify-center"></div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { isElectron } from '../../services/offlineSalesService';
 
 const props = withDefaults(
   defineProps<{
@@ -31,8 +32,16 @@ const emit = defineEmits<{
 const containerRef = ref<HTMLElement | null>(null);
 let widgetId: string | null = null;
 
+const resolveSiteKey = (): string => {
+  const envKey = import.meta.env.VITE_TURNSTILE_SITEKEY as string;
+  if (envKey && envKey.trim() !== '') {
+    return envKey.trim();
+  }
+  return props.siteKey || '0x4AAAAAAEglhHD6Zy9Hik7e';
+};
+
 const renderWidget = () => {
-  if (!containerRef.value) return;
+  if (isElectron() || !containerRef.value) return;
 
   const turnstile = (window as any).turnstile;
   if (!turnstile || typeof turnstile.render !== 'function') {
@@ -48,20 +57,33 @@ const renderWidget = () => {
     } catch (_) {}
     widgetId = null;
   }
+  if (containerRef.value) {
+    containerRef.value.innerHTML = '';
+  }
 
   try {
+    const activeKey = resolveSiteKey();
     widgetId = turnstile.render(containerRef.value, {
-      sitekey: props.siteKey,
+      sitekey: activeKey,
       action: props.action,
       theme: props.theme,
       size: props.size,
+      retry: 'auto',
+      'retry-interval': 3000,
+      'refresh-expired': 'auto',
       callback: (token: string) => {
         emit('success', token);
       },
       'expired-callback': () => {
         emit('expire');
       },
+      'timeout-callback': () => {
+        console.warn('[Cloudflare Turnstile] Challenge timeout received, auto-resetting...');
+        emit('expire');
+        reset();
+      },
       'error-callback': (err: any) => {
+        console.warn('[Cloudflare Turnstile] Verification error callback received:', err);
         emit('error', err);
       },
     });

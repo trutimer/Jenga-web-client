@@ -82,13 +82,6 @@ function initTables(db: Database.Database) {
       updated_at INTEGER NOT NULL
     );
 
-    try {
-      db.exec(`ALTER TABLE cached_auth ADD COLUMN password_hash TEXT;`);
-    } catch (_) {}
-    try {
-      db.exec(`ALTER TABLE cached_auth ADD COLUMN password_salt TEXT;`);
-    } catch (_) {}
-
     CREATE TABLE IF NOT EXISTS active_shifts (
       id TEXT PRIMARY KEY,
       branch_id TEXT NOT NULL,
@@ -135,6 +128,53 @@ function initTables(db: Database.Database) {
 
     CREATE INDEX IF NOT EXISTS idx_outbox_branch_status ON sync_outbox(branch_id, status);
   `)
+
+  try {
+    db.exec(`ALTER TABLE cached_auth ADD COLUMN password_hash TEXT;`)
+  } catch (_) {}
+  try {
+    db.exec(`ALTER TABLE cached_auth ADD COLUMN password_salt TEXT;`)
+  } catch (_) {}
+
+  try {
+    // Self-healing outbox reconciliation on database initialization
+    const now = Date.now()
+    // 1. Resolve duplicates to COMPLETED
+    db.prepare(`
+      UPDATE sync_outbox
+      SET status = 'COMPLETED', last_error = 'Resolved: Record already exists on server', updated_at = ?
+      WHERE status != 'COMPLETED' AND (
+        last_error LIKE '%duplicate%' 
+        OR last_error LIKE '%already exists%' 
+        OR last_error LIKE '%already recorded%'
+        OR last_error LIKE '%unique constraint%'
+        OR last_error LIKE '%already processed%'
+      )
+    `).run(now)
+
+    // 2. Reset zombie SYNCING items left over from crashes or shutdowns
+    db.prepare(`
+      UPDATE sync_outbox
+      SET status = 'PENDING', updated_at = ?
+      WHERE status = 'SYNCING'
+    `).run(now)
+
+    // 3. Prune unrecoverable dead client errors
+    db.prepare(`
+      DELETE FROM sync_outbox
+      WHERE status = 'FAILED' AND (
+        attempts >= 10 
+        OR last_error LIKE 'Client Error 4%'
+        OR last_error LIKE 'Security Violation%'
+      )
+    `).run()
+
+    // 4. Prune completed outbox records older than 7 days
+    db.prepare(`
+      DELETE FROM sync_outbox
+      WHERE status = 'COMPLETED' AND updated_at < ?
+    `).run(now - 7 * 24 * 60 * 60 * 1000)
+  } catch (_) {}
 }
 
 // ----------------- Product Caching & Querying ----------------- //
@@ -402,16 +442,29 @@ export function getOutboxItemById(id: string): OutboxItem | null {
 
 export function getPendingOutboxItems(branchId?: string, limit: number = 20): OutboxItem[] {
   const db = getDB()
+  const now = Date.now()
+
+  // Auto-recover zombie SYNCING items older than 60 seconds
+  try {
+    db.prepare(`UPDATE sync_outbox SET status = 'PENDING', updated_at = ? WHERE status = 'SYNCING' AND updated_at < ?`).run(now, now - 60000)
+  } catch (_) {}
+
+  // Select truly retryable items (attempts < 5, excluding permanent client validation/security errors)
   if (branchId) {
     return db.prepare(`
       SELECT * FROM sync_outbox
-      WHERE branch_id = ? AND status IN ('PENDING', 'FAILED') AND attempts < 10
+      WHERE branch_id = ? 
+        AND status IN ('PENDING', 'FAILED') 
+        AND attempts < 5
+        AND (last_error IS NULL OR NOT (last_error LIKE 'Client Error 4%' OR last_error LIKE 'Security Violation%'))
       ORDER BY rowid ASC LIMIT ?
     `).all(branchId, limit) as OutboxItem[]
   } else {
     return db.prepare(`
       SELECT * FROM sync_outbox
-      WHERE status IN ('PENDING', 'FAILED') AND attempts < 10
+      WHERE status IN ('PENDING', 'FAILED') 
+        AND attempts < 5
+        AND (last_error IS NULL OR NOT (last_error LIKE 'Client Error 4%' OR last_error LIKE 'Security Violation%'))
       ORDER BY rowid ASC LIMIT ?
     `).all(limit) as OutboxItem[]
   }
@@ -421,14 +474,14 @@ export function updateOutboxItemStatus(id: string, status: 'PENDING' | 'SYNCING'
   const db = getDB()
   const now = Date.now()
   if (status === 'FAILED') {
-    const isClientError = errorMsg && errorMsg.startsWith('Client Error')
+    const isClientError = errorMsg && (errorMsg.startsWith('Client Error') || errorMsg.startsWith('Security Violation'))
+    const currentAttempts = (db.prepare('SELECT attempts FROM sync_outbox WHERE id = ?').get(id) as { attempts?: number } | undefined)?.attempts || 0
     db.prepare(`
       UPDATE sync_outbox
       SET status = ?, attempts = ?, last_error = ?, updated_at = ?
       WHERE id = ?
-    `).run(status, isClientError ? 10 : db.prepare('SELECT attempts FROM sync_outbox WHERE id = ?').get(id)?.attempts + 1 || 1, errorMsg || 'Unknown sync error', now, id)
+    `).run(status, isClientError ? 10 : currentAttempts + 1, errorMsg || 'Unknown sync error', now, id)
   } else {
-
     db.prepare(`
       UPDATE sync_outbox
       SET status = ?, last_error = ?, updated_at = ?
@@ -439,13 +492,86 @@ export function updateOutboxItemStatus(id: string, status: 'PENDING' | 'SYNCING'
 
 export function getOutboxStats(branchId?: string) {
   const db = getDB()
+  const now = Date.now()
+  const staleCutoff = now - 60000
+
+  // Auto-recover zombie SYNCING items older than 60s
+  try {
+    db.prepare(`UPDATE sync_outbox SET status = 'PENDING', updated_at = ? WHERE status = 'SYNCING' AND updated_at < ?`).run(now, staleCutoff)
+  } catch (_) {}
+
+  // A pending item is strictly an item actively waiting to be pushed:
+  // 1. status = 'PENDING'
+  // 2. active 'SYNCING' in-flight (updated within last 60s)
+  // 3. transient 'FAILED' retryable item (attempts < 3, NOT a permanent client validation/security error)
+  const pendingFilter = `
+    (status = 'PENDING')
+    OR (status = 'SYNCING' AND updated_at >= ?)
+    OR (status = 'FAILED' AND attempts < 3 AND (last_error IS NULL OR NOT (last_error LIKE 'Client Error 4%' OR last_error LIKE 'Security Violation%')))
+  `
+
   if (branchId) {
-    const pending = db.prepare(`SELECT COUNT(*) as count FROM sync_outbox WHERE branch_id = ? AND status IN ('PENDING', 'SYNCING', 'FAILED') AND attempts < 10`).get(branchId) as { count: number }
-    const total = db.prepare(`SELECT COUNT(*) as count FROM sync_outbox WHERE branch_id = ?`).get(branchId) as { count: number }
-    return { pendingCount: pending.count, totalCount: total.count }
+    const pending = db.prepare(`SELECT COUNT(*) as count FROM sync_outbox WHERE branch_id = ? AND (${pendingFilter})`).get(branchId, staleCutoff) as { count: number } | undefined
+    const total = db.prepare(`SELECT COUNT(*) as count FROM sync_outbox WHERE branch_id = ? AND status = 'COMPLETED'`).get(branchId) as { count: number } | undefined
+    return { pendingCount: pending?.count || 0, totalCount: total?.count || 0 }
   } else {
-    const pending = db.prepare(`SELECT COUNT(*) as count FROM sync_outbox WHERE status IN ('PENDING', 'SYNCING', 'FAILED') AND attempts < 10`).get() as { count: number }
-    const total = db.prepare(`SELECT COUNT(*) as count FROM sync_outbox WHERE status = ?`).get('COMPLETED') as { count: number }
-    return { pendingCount: pending.count, totalCount: total.count }
+    const pending = db.prepare(`SELECT COUNT(*) as count FROM sync_outbox WHERE ${pendingFilter}`).get(staleCutoff) as { count: number } | undefined
+    const total = db.prepare(`SELECT COUNT(*) as count FROM sync_outbox WHERE status = 'COMPLETED'`).get() as { count: number } | undefined
+    return { pendingCount: pending?.count || 0, totalCount: total?.count || 0 }
+  }
+}
+
+export function reconcileAndCleanOutbox(branchId?: string): { resolvedDuplicates: number; resetZombies: number; prunedDead: number; prunedCompleted: number } {
+  const db = getDB()
+  const now = Date.now()
+
+  // 1. Auto-resolve duplicate records (server returned "duplicate record already exists")
+  // Since the record already exists on the server, mark as COMPLETED
+  const resolveDuplicatesStmt = db.prepare(`
+    UPDATE sync_outbox
+    SET status = 'COMPLETED', last_error = 'Resolved: Record already exists on server', updated_at = ?
+    WHERE status != 'COMPLETED' AND (
+      last_error LIKE '%duplicate%' 
+      OR last_error LIKE '%already exists%' 
+      OR last_error LIKE '%already recorded%'
+      OR last_error LIKE '%unique constraint%'
+      OR last_error LIKE '%already processed%'
+    )
+  `)
+  const dupResult = resolveDuplicatesStmt.run(now)
+
+  // 2. Reset zombie SYNCING items
+  const resetZombiesStmt = db.prepare(`
+    UPDATE sync_outbox
+    SET status = 'PENDING', updated_at = ?
+    WHERE status = 'SYNCING'
+  `)
+  const zombieResult = resetZombiesStmt.run(now)
+
+  // 3. Prune unrecoverable dead client validation errors
+  const pruneDeadStmt = db.prepare(`
+    DELETE FROM sync_outbox
+    WHERE status = 'FAILED' AND (
+      attempts >= 10 
+      OR last_error LIKE 'Client Error 4%'
+      OR last_error LIKE 'Security Violation%'
+    )
+  `)
+  const deadResult = pruneDeadStmt.run()
+
+  // 4. Prune completed outbox records older than 7 days
+  const pruneCompletedStmt = db.prepare(`
+    DELETE FROM sync_outbox
+    WHERE status = 'COMPLETED' AND updated_at < ?
+  `)
+  const completedResult = pruneCompletedStmt.run(now - 7 * 24 * 60 * 60 * 1000)
+
+  console.log(`[DB Outbox Reconcile] Duplicates resolved: ${dupResult.changes}, Zombies reset: ${zombieResult.changes}, Dead pruned: ${deadResult.changes}, Old completed pruned: ${completedResult.changes}`)
+
+  return {
+    resolvedDuplicates: dupResult.changes,
+    resetZombies: zombieResult.changes,
+    prunedDead: deadResult.changes,
+    prunedCompleted: completedResult.changes
   }
 }

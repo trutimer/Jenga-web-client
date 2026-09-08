@@ -14,6 +14,10 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/dashboard2',
+    redirect: '/dashboard'
+  },
+  {
     path: '/checkout',
     name: 'checkout',
     component: () => import('../views/CheckoutView.vue'),

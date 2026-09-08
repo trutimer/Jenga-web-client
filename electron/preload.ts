@@ -17,12 +17,17 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   'db:enqueue-outbox',
   'sync:get-status',
   'sync:trigger-now',
+  'sync:clean-stuck-items',
   'sync:set-config',
+  'updater:check-for-updates',
+  'updater:get-status',
+  'updater:restart-and-install',
 ])
 
 const ALLOWED_LISTEN_CHANNELS = new Set([
   'main-process-message',
   'sync:status-changed',
+  'updater:status-changed',
 ])
 
 // --------- Expose secure, allowlisted API to the Renderer process ---------

@@ -83,9 +83,16 @@ function onStatusUpdate(_: any, data: SyncState) {
 async function triggerSync() {
   if (isElectronApp.value) {
     try {
+      syncState.value.isSyncing = true;
       await (window as any).ipcRenderer.invoke('sync:trigger-now');
+      const updated = await (window as any).ipcRenderer.invoke('sync:get-status');
+      if (updated) {
+        syncState.value = { ...syncState.value, ...updated, isSyncing: false };
+      }
     } catch (err) {
       console.error('Failed to trigger sync:', err);
+    } finally {
+      syncState.value.isSyncing = false;
     }
   }
 }
@@ -96,7 +103,10 @@ onMounted(async () => {
     try {
       const initial = await (window as any).ipcRenderer.invoke('sync:get-status');
       if (initial) {
-        syncState.value.pendingCount = initial.pendingCount || 0;
+        syncState.value = {
+          ...syncState.value,
+          ...initial
+        };
       }
     } catch (err) {
       console.error('Failed to get initial sync status:', err);
