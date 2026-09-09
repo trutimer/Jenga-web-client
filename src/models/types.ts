@@ -707,6 +707,8 @@ export interface CashflowOverview {
     transactionsCount: number;
     avgTicket: number;
     grossProfit: number;
+    grossMarginPercent?: number;
+    cogs?: number;
   };
   paymentBreakdown: {
     cash: PaymentChannelDetail;
@@ -748,6 +750,33 @@ export interface CashflowOverview {
   };
   collection?: CollectionIntelligence;
   inventoryValuation?: InventoryValuationIntelligence;
+  tillDiscrepancies?: TillDiscrepancyOverview;
+}
+
+export interface ShiftAuditItem {
+  shiftId: string;
+  terminalId: string;
+  cashierName: string;
+  openedAt: string;
+  closedAt: string;
+  openingCash: number;
+  expectedCash: number;
+  actualCash: number;
+  discrepancy: number;
+  totalSales: number;
+  notes?: string;
+}
+
+export interface TillDiscrepancyOverview {
+  netDiscrepancy: number;
+  totalShortages: number;
+  totalOverages: number;
+  shortagesCount: number;
+  overagesCount: number;
+  balancedCount: number;
+  closedShiftsCount: number;
+  status: 'BALANCED' | 'SHORTAGE' | 'OVERAGE';
+  recentShifts: ShiftAuditItem[];
 }
 
 export interface RiskDebtorItem {
@@ -822,10 +851,14 @@ export interface InventoryValuationIntelligence {
   potentialRevenue: number;
   unrealizedProfit: number;
   inStockCount: number;
+  stockRunwayDays?: number;
+  dailyCogs?: number;
+  runwayStatus?: 'CRITICAL_LOW' | 'OPTIMAL_LEAN' | 'HEALTHY_BALANCED' | 'OVERSTOCKED' | 'STAGNANT';
   fastMoving: StockVelocityBucket;
   slowMoving: StockVelocityBucket;
   deadStock: StockVelocityBucket;
   deadStockProducts: DeadStockProductItem[];
   recommendations: string[];
 }
+
 

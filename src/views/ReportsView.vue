@@ -185,11 +185,11 @@
             <!-- Revenue (PAID & PARTIAL) -->
             <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
-                <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">{{ $t('reports.paidRevenue') }}</span>
-                  <p class="text-xl font-black font-mono text-emerald-600 leading-tight mt-1">{{ formatCurrency(totalInvoiced, currency) }}</p>
+                <div class="min-w-0">
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400 block truncate">{{ $t('reports.paidRevenue') }}</span>
+                  <p class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-emerald-600 tracking-tight amount-kpi truncate mt-1">{{ formatCurrency(totalInvoiced, currency) }}</p>
                 </div>
-                <Coins class="w-5 h-5 text-emerald-600/70 shrink-0" />
+                <Coins class="w-5 h-5 text-emerald-600/70 shrink-0 ml-2" />
               </div>
               <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">{{ $t('reports.realizedIncomeDesc') }}</div>
             </div>
@@ -197,11 +197,11 @@
             <!-- Unpaid Receivables -->
             <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
-                <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">{{ $t('reports.unpaidReceivables') }}</span>
-                  <p class="text-xl font-black font-mono text-amber-600 leading-tight mt-1">{{ formatCurrency(totalUnpaid, currency) }}</p>
+                <div class="min-w-0">
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 block truncate">{{ $t('reports.unpaidReceivables') }}</span>
+                  <p class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-amber-600 tracking-tight amount-kpi truncate mt-1">{{ formatCurrency(totalUnpaid, currency) }}</p>
                 </div>
-                <Clock class="w-5 h-5 text-amber-600/70 shrink-0" />
+                <Clock class="w-5 h-5 text-amber-600/70 shrink-0 ml-2" />
               </div>
               <div class="text-[10px] text-amber-700/80 font-semibold mt-2">{{ $t('reports.outstandingCreditDesc') }}</div>
             </div>
@@ -209,11 +209,11 @@
             <!-- Voided / Reversed Sales -->
             <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
-                <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-rose-700 dark:text-rose-400">{{ $t('reports.voidedReversed') }}</span>
-                  <p class="text-xl font-black font-mono text-rose-600 leading-tight mt-1">{{ formatCurrency(totalVoided, currency) }}</p>
+                <div class="min-w-0">
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-rose-700 dark:text-rose-400 block truncate">{{ $t('reports.voidedReversed') }}</span>
+                  <p class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-rose-600 tracking-tight amount-kpi truncate mt-1">{{ formatCurrency(totalVoided, currency) }}</p>
                 </div>
-                <Ban class="w-5 h-5 text-rose-600/70 shrink-0" />
+                <Ban class="w-5 h-5 text-rose-600/70 shrink-0 ml-2" />
               </div>
               <div class="text-[10px] text-rose-700/80 font-semibold mt-2">{{ $t('reports.cancelledTotalsDesc') }}</div>
             </div>
@@ -221,16 +221,16 @@
             <!-- Profit / Loss Card -->
             <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
-                <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.profitLoss') }}</span>
+                <div class="min-w-0">
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant block truncate">{{ $t('reports.profitLoss') }}</span>
                   <p 
-                    class="text-xl font-black font-mono leading-tight mt-1"
+                    class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono tracking-tight amount-kpi truncate mt-1"
                     :class="totalProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'"
                   >
                     {{ totalProfit >= 0 ? '+' : '' }}{{ formatCurrency(totalProfit, currency) }}
                   </p>
                 </div>
-                <TrendingUp class="w-5 h-5 shrink-0" :class="totalProfit >= 0 ? 'text-emerald-600/70' : 'text-rose-600/70'" />
+                <TrendingUp class="w-5 h-5 shrink-0 ml-2" :class="totalProfit >= 0 ? 'text-emerald-600/70' : 'text-rose-600/70'" />
               </div>
               <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">{{ $t('reports.netProfitDesc') }}</div>
             </div>
@@ -442,33 +442,33 @@
               
               <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
                 <div class="flex justify-between items-start">
-                  <div>
-                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.totalStockUnits') }}</span>
-                    <p class="text-2xl font-black font-mono text-primary leading-tight mt-1">{{ totalInventoryItems }}</p>
+                  <div class="min-w-0">
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant block truncate">{{ $t('reports.totalStockUnits') }}</span>
+                    <p class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-primary tracking-tight amount-kpi truncate mt-1">{{ totalInventoryItems }}</p>
                   </div>
-                  <Package class="w-5 h-5 text-primary/70 shrink-0" />
+                  <Package class="w-5 h-5 text-primary/70 shrink-0 ml-2" />
                 </div>
                 <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">{{ $t('reports.totalStockUnitsDesc') }}</div>
               </div>
 
               <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
                 <div class="flex justify-between items-start">
-                  <div>
-                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.lowStockItems') }}</span>
-                    <p class="text-2xl font-black font-mono text-tertiary leading-tight mt-1">{{ lowStockItemsCount }}</p>
+                  <div class="min-w-0">
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant block truncate">{{ $t('reports.lowStockItems') }}</span>
+                    <p class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-tertiary tracking-tight amount-kpi truncate mt-1">{{ lowStockItemsCount }}</p>
                   </div>
-                  <AlertTriangle class="w-5 h-5 text-tertiary/70 shrink-0" />
+                  <AlertTriangle class="w-5 h-5 text-tertiary/70 shrink-0 ml-2" />
                 </div>
                 <div class="text-[10px] text-tertiary/90 font-semibold mt-2">{{ $t('reports.lowStockThresholdDesc') }}</div>
               </div>
 
               <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
                 <div class="flex justify-between items-start">
-                  <div>
-                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.inventoryValuation') }}</span>
-                    <p class="text-2xl font-black font-mono text-on-surface leading-tight mt-1">{{ formatCurrency(totalInventoryValuation, currency) }}</p>
+                  <div class="min-w-0">
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant block truncate">{{ $t('reports.inventoryValuation') }}</span>
+                    <p class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate mt-1">{{ formatCurrency(totalInventoryValuation, currency) }}</p>
                   </div>
-                  <TrendingUp class="w-5 h-5 text-outline/70 shrink-0" />
+                  <TrendingUp class="w-5 h-5 text-outline/70 shrink-0 ml-2" />
                 </div>
                 <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">{{ $t('reports.inventoryValuationDesc') }}</div>
               </div>
@@ -603,33 +603,33 @@
               
               <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
                 <div class="flex justify-between items-start">
-                  <div>
-                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.restockLogEntries') }}</span>
-                    <p class="text-2xl font-black font-mono text-primary leading-tight mt-1">{{ filteredStockMovements.length }}</p>
+                  <div class="min-w-0">
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant block truncate">{{ $t('reports.restockLogEntries') }}</span>
+                    <p class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-primary tracking-tight amount-kpi truncate mt-1">{{ filteredStockMovements.length }}</p>
                   </div>
-                  <RefreshCw class="w-5 h-5 text-primary/70 shrink-0" />
+                  <RefreshCw class="w-5 h-5 text-primary/70 shrink-0 ml-2" />
                 </div>
                 <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">{{ $t('reports.totalStockAdditionsRecorded') }}</div>
               </div>
 
               <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
                 <div class="flex justify-between items-start">
-                  <div>
-                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.totalUnitsRestocked') }}</span>
-                    <p class="text-2xl font-black font-mono text-emerald-600 leading-tight mt-1">{{ totalRestockQuantity }}</p>
+                  <div class="min-w-0">
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant block truncate">{{ $t('reports.totalUnitsRestocked') }}</span>
+                    <p class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-emerald-600 tracking-tight amount-kpi truncate mt-1">{{ totalRestockQuantity }}</p>
                   </div>
-                  <Package class="w-5 h-5 text-emerald-600/70 shrink-0" />
+                  <Package class="w-5 h-5 text-emerald-600/70 shrink-0 ml-2" />
                 </div>
                 <div class="text-[10px] text-emerald-700/80 font-semibold mt-2">{{ $t('reports.cumulativeStockAdded') }}</div>
               </div>
 
               <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
                 <div class="flex justify-between items-start">
-                  <div>
-                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.restockValuation') }}</span>
-                    <p class="text-2xl font-black font-mono text-on-surface leading-tight mt-1">{{ formatCurrency(totalRestockValuation, currency) }}</p>
+                  <div class="min-w-0">
+                    <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant block truncate">{{ $t('reports.restockValuation') }}</span>
+                    <p class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate mt-1">{{ formatCurrency(totalRestockValuation, currency) }}</p>
                   </div>
-                  <TrendingUp class="w-5 h-5 text-outline/70 shrink-0" />
+                  <TrendingUp class="w-5 h-5 text-outline/70 shrink-0 ml-2" />
                 </div>
                 <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">{{ $t('reports.monetaryValueEntries') }}</div>
               </div>
@@ -761,33 +761,33 @@
             
             <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
-                <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.totalSuppliers') }}</span>
-                  <p class="text-2xl font-black font-mono text-primary leading-tight mt-1">{{ totalSuppliers }}</p>
+                <div class="min-w-0">
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant block truncate">{{ $t('reports.totalSuppliers') }}</span>
+                  <p class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-primary tracking-tight amount-kpi truncate mt-1">{{ totalSuppliers }}</p>
                 </div>
-                <Users class="w-5 h-5 text-primary/70 shrink-0" />
+                <Users class="w-5 h-5 text-primary/70 shrink-0 ml-2" />
               </div>
               <div class="text-[10px] text-on-surface-variant/80 font-semibold mt-2">{{ $t('reports.totalRegisteredMerchantsDesc') }}</div>
             </div>
 
             <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
-                <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.activeAccounts') }}</span>
-                  <p class="text-2xl font-black font-mono text-primary leading-tight mt-1">{{ activeSuppliers }}</p>
+                <div class="min-w-0">
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant block truncate">{{ $t('reports.activeAccounts') }}</span>
+                  <p class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-primary tracking-tight amount-kpi truncate mt-1">{{ activeSuppliers }}</p>
                 </div>
-                <UserCheck class="w-5 h-5 text-primary/70 shrink-0" />
+                <UserCheck class="w-5 h-5 text-primary/70 shrink-0 ml-2" />
               </div>
               <div class="text-[10px] text-primary/80 font-semibold mt-2">{{ $t('reports.activeVendorSupplyChannels') }}</div>
             </div>
 
             <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant shadow-sm select-none relative overflow-hidden">
               <div class="flex justify-between items-start">
-                <div>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant">{{ $t('reports.outstandingLiabilities') }}</span>
-                  <p class="text-2xl font-black font-mono text-tertiary leading-tight mt-1">{{ formatCurrency(totalOutstandingBalance, currency) }}</p>
+                <div class="min-w-0">
+                  <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-on-surface-variant block truncate">{{ $t('reports.outstandingLiabilities') }}</span>
+                  <p class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-tertiary tracking-tight amount-kpi truncate mt-1">{{ formatCurrency(totalOutstandingBalance, currency) }}</p>
                 </div>
-                <CreditCard class="w-5 h-5 text-tertiary/70 shrink-0" />
+                <CreditCard class="w-5 h-5 text-tertiary/70 shrink-0 ml-2" />
               </div>
               <div class="text-[10px] text-tertiary/95 font-semibold mt-2">{{ $t('reports.totalPayablesAccruedDesc') }}</div>
             </div>

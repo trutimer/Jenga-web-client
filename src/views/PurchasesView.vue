@@ -46,7 +46,7 @@
         </div>
         <div class="min-w-0 flex-1">
           <span class="text-[11px] font-bold uppercase tracking-wider text-outline block">{{ $t('purchases.totalPurchases') }}</span>
-          <p class="text-lg font-black text-on-surface truncate mt-0.5 font-mono">
+          <p class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black text-on-surface tracking-tight truncate mt-0.5 font-mono amount-kpi">
             {{ formatCurrency(summaryTotalCost, currency) }}
           </p>
           <span class="text-[11px] text-on-surface-variant/75 block mt-0.5">{{ $t('purchases.ordersLogged', { count: totalPurchasesCount }) }}</span>
@@ -60,7 +60,7 @@
         </div>
         <div class="min-w-0 flex-1">
           <span class="text-[11px] font-bold uppercase tracking-wider text-outline block">{{ $t('purchases.cashSettled') }}</span>
-          <p class="text-lg font-black text-emerald-700 truncate mt-0.5 font-mono">
+          <p class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black text-emerald-700 tracking-tight truncate mt-0.5 font-mono amount-kpi">
             {{ formatCurrency(summaryCashCost, currency) }}
           </p>
           <span class="text-[11px] text-on-surface-variant/75 block mt-0.5">{{ $t('purchases.paidViaRegister') }}</span>
@@ -74,7 +74,7 @@
         </div>
         <div class="min-w-0 flex-1">
           <span class="text-[11px] font-bold uppercase tracking-wider text-outline block">{{ $t('purchases.onCreditPurchases') }}</span>
-          <p class="text-lg font-black text-amber-800 truncate mt-0.5 font-mono">
+          <p class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black text-amber-800 tracking-tight truncate mt-0.5 font-mono amount-kpi">
             {{ formatCurrency(summaryCreditCost, currency) }}
           </p>
           <span class="text-[11px] text-on-surface-variant/75 block mt-0.5">{{ $t('purchases.payableDebt') }}</span>
@@ -88,7 +88,7 @@
         </div>
         <div class="min-w-0 flex-1">
           <span class="text-[11px] font-bold uppercase tracking-wider text-outline block">{{ $t('purchases.returnedReversed') }}</span>
-          <p class="text-lg font-black text-error truncate mt-0.5 font-mono">
+          <p class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black text-error tracking-tight truncate mt-0.5 font-mono amount-kpi">
             {{ formatCurrency(summaryReturnedAmount, currency) }}
           </p>
           <span class="text-[11px] text-on-surface-variant/75 block mt-0.5">{{ $t('purchases.unitsWrittenBack', { count: summaryReturnedQty }) }}</span>

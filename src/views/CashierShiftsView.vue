@@ -30,23 +30,23 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-surface rounded-2xl border border-outline-variant p-5 shadow-sm flex flex-col gap-1">
           <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.totalShifts') }}</span>
-          <span class="text-2xl font-black text-on-surface font-mono">{{ shifts.length }}</span>
+          <span class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black text-on-surface font-mono tracking-tight amount-kpi">{{ shifts.length }}</span>
         </div>
         <div class="bg-surface rounded-2xl border border-outline-variant p-5 shadow-sm flex flex-col gap-1">
           <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.activeShift') }}</span>
-          <span class="text-xl font-bold font-mono flex items-center gap-2" :class="activeShift ? 'text-emerald-600' : 'text-on-surface-variant'">
+          <span class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-bold font-mono flex items-center gap-2 amount-compact truncate" :class="activeShift ? 'text-emerald-600' : 'text-on-surface-variant'">
             <span class="w-2.5 h-2.5 rounded-full" :class="activeShift ? 'bg-emerald-500 animate-pulse' : 'bg-outline-variant'"></span>
             {{ activeShift ? $t('cashierShifts.openNow') : $t('cashierShifts.noneOpen') }}
           </span>
         </div>
         <div class="bg-surface rounded-2xl border border-outline-variant p-5 shadow-sm flex flex-col gap-1">
           <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.cumulativeSales') }}</span>
-          <span class="text-2xl font-black text-primary font-mono">{{ formatCurrency(totalSalesSum) }}</span>
+          <span class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black text-primary font-mono tracking-tight amount-kpi truncate">{{ formatCurrency(totalSalesSum) }}</span>
         </div>
         <div class="bg-surface rounded-2xl border border-outline-variant p-5 shadow-sm flex flex-col gap-1">
           <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.netDiscrepancies') }}</span>
           <span 
-            class="text-2xl font-black font-mono"
+            class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono tracking-tight amount-kpi truncate"
             :class="totalDiscrepancySum === 0 ? 'text-success' : totalDiscrepancySum < 0 ? 'text-error' : 'text-warning'"
           >
             {{ formatCurrency(totalDiscrepancySum) }}

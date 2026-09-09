@@ -47,44 +47,44 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <!-- Opening Cash -->
         <div class="bg-surface rounded-2xl border border-outline-variant p-4 shadow-sm flex flex-col justify-between">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.openingCash') }}</span>
-          <span class="text-xl font-black text-on-surface font-mono mt-2">{{ formatCurrency(detail.summary.openingCash) }}</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider truncate">{{ $t('cashierShifts.openingCash') }}</span>
+          <span class="text-sm sm:text-base lg:text-sm xl:text-base 2xl:text-lg font-black text-on-surface font-mono tracking-tight amount-compact truncate mt-2">{{ formatCurrency(detail.summary.openingCash) }}</span>
         </div>
 
         <!-- Total Sales -->
         <div class="bg-surface rounded-2xl border border-outline-variant p-4 shadow-sm flex flex-col justify-between">
-          <div class="flex justify-between items-start">
-            <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.totalSales') }}</span>
-            <span class="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">{{ $t('shiftDetails.salesCount', { count: detail.summary.totalTransactions }) }}</span>
+          <div class="flex justify-between items-start gap-1">
+            <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider truncate">{{ $t('cashierShifts.totalSales') }}</span>
+            <span class="text-[10px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full shrink-0">{{ $t('shiftDetails.salesCount', { count: detail.summary.totalTransactions }) }}</span>
           </div>
-          <span class="text-xl font-black text-primary font-mono mt-2">{{ formatCurrency(detail.summary.totalSales) }}</span>
+          <span class="text-sm sm:text-base lg:text-sm xl:text-base 2xl:text-lg font-black text-primary font-mono tracking-tight amount-compact truncate mt-2">{{ formatCurrency(detail.summary.totalSales) }}</span>
         </div>
 
         <!-- Gross Profit -->
         <div class="bg-surface rounded-2xl border border-outline-variant p-4 shadow-sm flex flex-col justify-between">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('shiftDetails.grossProfit') }}</span>
-          <span class="text-xl font-black text-emerald-600 font-mono mt-2">{{ formatCurrency(detail.summary.grossProfit) }}</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider truncate">{{ $t('shiftDetails.grossProfit') }}</span>
+          <span class="text-sm sm:text-base lg:text-sm xl:text-base 2xl:text-lg font-black text-emerald-600 font-mono tracking-tight amount-compact truncate mt-2">{{ formatCurrency(detail.summary.grossProfit) }}</span>
         </div>
 
         <!-- Expected Cash -->
         <div class="bg-surface rounded-2xl border border-outline-variant p-4 shadow-sm flex flex-col justify-between">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('shiftDetails.expectedCash') }}</span>
-          <span class="text-xl font-black text-on-surface font-mono mt-2">{{ formatCurrency(detail.summary.expectedCash) }}</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider truncate">{{ $t('shiftDetails.expectedCash') }}</span>
+          <span class="text-sm sm:text-base lg:text-sm xl:text-base 2xl:text-lg font-black text-on-surface font-mono tracking-tight amount-compact truncate mt-2">{{ formatCurrency(detail.summary.expectedCash) }}</span>
         </div>
 
         <!-- Actual Cash -->
         <div class="bg-surface rounded-2xl border border-outline-variant p-4 shadow-sm flex flex-col justify-between">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.actualCash') }}</span>
-          <span class="text-xl font-black font-mono mt-2" :class="detail.summary.actualCash != null ? 'text-on-surface' : 'text-on-surface-variant/40'">
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider truncate">{{ $t('cashierShifts.actualCash') }}</span>
+          <span class="text-sm sm:text-base lg:text-sm xl:text-base 2xl:text-lg font-black font-mono tracking-tight amount-compact truncate mt-2" :class="detail.summary.actualCash != null ? 'text-on-surface' : 'text-on-surface-variant/40'">
             {{ detail.summary.actualCash != null ? formatCurrency(detail.summary.actualCash) : '-' }}
           </span>
         </div>
 
         <!-- Net Discrepancy -->
         <div class="bg-surface rounded-2xl border border-outline-variant p-4 shadow-sm flex flex-col justify-between">
-          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashierShifts.discrepancy') }}</span>
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider truncate">{{ $t('cashierShifts.discrepancy') }}</span>
           <span 
-            class="text-xl font-black font-mono mt-2"
+            class="text-sm sm:text-base lg:text-sm xl:text-base 2xl:text-lg font-black font-mono tracking-tight amount-compact truncate mt-2"
             :class="detail.summary.totalDiscrepancy === 0 ? 'text-success' : detail.summary.totalDiscrepancy < 0 ? 'text-error' : 'text-warning'"
           >
             {{ formatCurrency(detail.summary.totalDiscrepancy) }}

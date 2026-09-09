@@ -89,7 +89,7 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4" v-if="vm.cashMovementAnalytics.value">
           <div v-for="(stat, period) in periods" :key="period" class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant shadow-sm flex flex-col gap-3">
             <span class="text-xs font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ formatPeriodName(period) }}</span>
-            <span class="text-3xl font-black font-mono text-primary truncate" :class="stat.summary.netMovement < 0 ? 'text-error' : 'text-primary'">
+            <span class="text-xl sm:text-2xl lg:text-xl xl:text-2xl 2xl:text-3xl font-black font-mono tracking-tight amount-hero truncate" :class="stat.summary.netMovement < 0 ? 'text-error' : 'text-primary'">
               {{ formatCurrency(stat.summary.netMovement, settings.currency) }}
             </span>
             <div class="flex justify-between text-xs text-on-surface-variant mt-2 border-t border-outline-variant/50 pt-3 font-mono">

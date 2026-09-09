@@ -35,6 +35,22 @@
   --color-on-warning-container: #78350f;
 }
 
+/* Responsive Dynamic Amount Typography for KPI Cards across all screensizes */
+.amount-kpi {
+  font-size: clamp(1rem, 0.82rem + 0.45vw, 1.35rem) !important;
+  line-height: 1.25 !important;
+}
+
+.amount-hero {
+  font-size: clamp(1.15rem, 0.9rem + 0.55vw, 1.65rem) !important;
+  line-height: 1.2 !important;
+}
+
+.amount-compact {
+  font-size: clamp(0.85rem, 0.72rem + 0.3vw, 1.05rem) !important;
+  line-height: 1.2 !important;
+}
+
 /* Hide default browser-native password eye icon on password input fields */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {

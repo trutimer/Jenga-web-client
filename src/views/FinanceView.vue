@@ -203,7 +203,7 @@
                 </div>
               </div>
               <div class="mt-3">
-                <div class="text-2xl font-black font-mono text-primary">{{ formatCurrency(incomeStatement?.grossRevenue || 0) }}</div>
+                <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-primary tracking-tight amount-kpi truncate">{{ formatCurrency(incomeStatement?.grossRevenue || 0) }}</div>
                 <div class="text-[11px] text-on-surface-variant mt-0.5">{{ $t('finance.grossRevenueDesc') }}</div>
               </div>
             </div>
@@ -216,7 +216,7 @@
                 </div>
               </div>
               <div class="mt-3">
-                <div class="text-2xl font-black font-mono text-emerald-600">{{ formatCurrency(incomeStatement?.grossProfit || 0) }}</div>
+                <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-emerald-600 tracking-tight amount-kpi truncate">{{ formatCurrency(incomeStatement?.grossProfit || 0) }}</div>
                 <div class="text-[11px] text-emerald-700 font-semibold mt-0.5">
                   Margin: {{ calculateMargin(incomeStatement?.grossProfit, incomeStatement?.netRevenue) }}%
                 </div>
@@ -231,7 +231,7 @@
                 </div>
               </div>
               <div class="mt-3">
-                <div class="text-2xl font-black font-mono text-amber-600">{{ formatCurrency(incomeStatement?.totalExpenses || 0) }}</div>
+                <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-amber-600 tracking-tight amount-kpi truncate">{{ formatCurrency(incomeStatement?.totalExpenses || 0) }}</div>
                 <div class="text-[11px] text-on-surface-variant mt-0.5">{{ $t('finance.operatingExpensesDesc') }}</div>
               </div>
             </div>
@@ -245,7 +245,7 @@
               </div>
               <div class="mt-3">
                 <div 
-                  class="text-2xl font-black font-mono"
+                  class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono tracking-tight amount-kpi truncate"
                   :class="(incomeStatement?.netIncome || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'"
                 >
                   {{ (incomeStatement?.netIncome || 0) >= 0 ? '+' : '' }}{{ formatCurrency(incomeStatement?.netIncome || 0) }}
@@ -384,7 +384,7 @@
                     <AlertCircle v-else class="w-6 h-6 text-rose-600" />
                     <span>{{ (incomeStatement?.netIncome || 0) >= 0 ? $t('finance.netProfit') : $t('finance.netLoss') }}</span>
                   </div>
-                  <span class="font-mono text-2xl" :class="(incomeStatement?.netIncome || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'">
+                  <span class="font-mono text-xl sm:text-2xl amount-hero font-bold tracking-tight truncate" :class="(incomeStatement?.netIncome || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'">
                     {{ formatCurrency(incomeStatement?.netIncome || 0) }}
                   </span>
                 </div>
@@ -983,25 +983,25 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs">
               <span class="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashMovements.openingBalance') }}</span>
-              <p class="text-xl font-black font-mono text-on-surface mt-1.5">{{ formatCurrency(accountStatement.openingBalance) }}</p>
+              <p class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate mt-1.5">{{ formatCurrency(accountStatement.openingBalance) }}</p>
               <p class="text-[10px] text-on-surface-variant mt-1">Balance as of {{ accountStatement.startDate }}</p>
             </div>
 
             <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs">
               <span class="text-[10px] font-mono font-bold text-emerald-700 uppercase tracking-wider">{{ $t('finance.debits') }}</span>
-              <p class="text-xl font-black font-mono text-emerald-600 mt-1.5">{{ formatCurrency(accountStatement.totalDebit) }}</p>
+              <p class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-emerald-600 tracking-tight amount-kpi truncate mt-1.5">{{ formatCurrency(accountStatement.totalDebit) }}</p>
               <p class="text-[10px] text-emerald-700 mt-1">Cumulative debits posted</p>
             </div>
 
             <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs">
               <span class="text-[10px] font-mono font-bold text-blue-700 uppercase tracking-wider">{{ $t('finance.credits') }}</span>
-              <p class="text-xl font-black font-mono text-blue-600 mt-1.5">{{ formatCurrency(accountStatement.totalCredit) }}</p>
+              <p class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-blue-600 tracking-tight amount-kpi truncate mt-1.5">{{ formatCurrency(accountStatement.totalCredit) }}</p>
               <p class="text-[10px] text-blue-700 mt-1">Cumulative credits posted</p>
             </div>
 
             <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-xs">
               <span class="text-[10px] font-mono font-bold text-primary uppercase tracking-wider">{{ $t('cashMovements.closingBalance') }}</span>
-              <p class="text-xl font-black font-mono text-primary mt-1.5">{{ formatCurrency(accountStatement.closingBalance) }}</p>
+              <p class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-primary tracking-tight amount-kpi truncate mt-1.5">{{ formatCurrency(accountStatement.closingBalance) }}</p>
               <p class="text-[10px] text-primary mt-1">Ending ledger balance</p>
             </div>
           </div>

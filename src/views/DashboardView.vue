@@ -81,9 +81,58 @@
       <!-- TIER 2: 4 HERO KPI CARDS (FINANCIAL PULSE) -->
       <!-- ========================================== -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-      <!-- KPI 1: Net Cashflow Pulse (Crown Metric) -->
+      <!-- KPI 1: Realized Gross Profit & Margin % (The Profitability Engine) -->
+      <div class="bg-surface-container-lowest rounded-xl p-3.5 sm:p-4 border border-outline-variant/60 shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-emerald-500 transition-all duration-300">
+        <div class="absolute -right-6 -top-6 w-16 h-16 bg-emerald-500/10 rounded-full blur-lg pointer-events-none group-hover:scale-125 transition-transform"></div>
+        <div class="flex justify-between items-center mb-1.5 relative z-10">
+          <span class="text-[11px] font-mono font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            {{ $t('dashboard2.grossProfit') }}
+          </span>
+          <span 
+            class="px-2 py-0.5 rounded-full text-[9px] font-mono font-black uppercase tracking-wider shadow-xs"
+            :class="grossMarginPercent >= 20 ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : grossMarginPercent >= 10 ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20' : 'bg-rose-500/10 text-rose-600 border border-rose-500/20'"
+          >
+            {{ $t('dashboard2.grossMarginBadge', { percent: grossMarginPercent }) }}
+          </span>
+        </div>
+        <div class="relative z-10">
+          <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono tracking-tight text-emerald-600 amount-kpi truncate">
+            {{ formatCurrency(grossProfitAmount, currency) }}
+          </div>
+          <div class="flex items-center text-[11px] text-on-surface-variant font-medium mt-1 gap-1">
+            <span class="font-mono text-[10px] text-outline truncate">
+              {{ $t('dashboard2.cogsCost', { amount: formatCurrency(cogsAmount, currency) }) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI 2: Sales Revenue & Store Traffic (Average Basket / Volume) -->
       <div class="bg-surface-container-lowest rounded-xl p-3.5 sm:p-4 border border-outline-variant/60 shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-primary transition-all duration-300">
-        <div class="absolute -right-6 -top-6 w-16 h-16 bg-primary/10 rounded-full blur-lg pointer-events-none group-hover:scale-125 transition-transform"></div>
+        <div class="flex justify-between items-center mb-1.5">
+          <span class="text-[11px] font-mono font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+            <ShoppingCart class="w-3.5 h-3.5 text-primary" />
+            {{ $t('dashboard2.salesTraffic') }}
+          </span>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-mono font-black uppercase tracking-wider shadow-xs bg-primary/10 text-primary border border-primary/20">
+            {{ $t('dashboard2.receiptsCountBadge', { count: transactionsCount }) }}
+          </span>
+        </div>
+        <div>
+          <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate">
+            {{ formatCurrency(totalPeriodSales, currency) }}
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-on-surface-variant font-medium mt-1">
+            <span class="font-bold text-on-surface truncate">
+              {{ $t('dashboard2.avgBasketFooter', { amount: formatCurrency(avgTicketAmount, currency) }) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI 3: Net Cashflow Pulse -->
+      <div class="bg-surface-container-lowest rounded-xl p-3.5 sm:p-4 border border-outline-variant/60 shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-primary transition-all duration-300">
         <div class="flex justify-between items-center mb-1.5 relative z-10">
           <span class="text-[11px] font-mono font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
             <span class="w-2 h-2 rounded-full" :class="isSurplus ? 'bg-emerald-500' : 'bg-rose-500'"></span>
@@ -98,20 +147,21 @@
         </div>
         <div class="relative z-10">
           <div 
-            class="text-xl sm:text-2xl font-black font-mono tracking-tight"
+            class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono tracking-tight amount-kpi truncate"
             :class="isSurplus ? 'text-emerald-600' : 'text-rose-600'"
           >
             {{ formatCurrency(netCashflowAmount, currency) }}
           </div>
           <div class="flex items-center text-[11px] text-on-surface-variant font-medium mt-1 gap-1">
-            <span class="font-bold text-on-surface">{{ formatCurrency(totalPeriodSales, currency) }}</span>
-            <span>{{ $t('dashboard2.salesRevenue').toLowerCase() }}</span>
+            <span class="font-mono text-[10px] text-outline truncate">
+              In: {{ formatCurrency(totalPeriodSales + debtorsCollected, currency) }} • Out: {{ formatCurrency(payOutAmount + purchasesTotal, currency) }}
+            </span>
           </div>
         </div>
       </div>
 
-      <!-- KPI 2: Cash in Drawer / On Hand -->
-      <div class="bg-surface-container-lowest rounded-xl p-3.5 sm:p-4 border border-outline-variant/60 shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-primary transition-all duration-300">
+      <!-- KPI 4: Cash in Drawer / On Hand -->
+      <div class="bg-surface-container-lowest rounded-xl p-3.5 sm:p-4 border border-outline-variant/60 shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-amber-500 transition-all duration-300">
         <div class="flex justify-between items-center mb-1.5">
           <span class="text-[11px] font-mono font-bold uppercase tracking-wider text-on-surface-variant">{{ $t('dashboard2.cashOnHand') }}</span>
           <span class="p-1.5 rounded-lg bg-amber-500/10 text-amber-600">
@@ -119,57 +169,38 @@
           </span>
         </div>
         <div>
-          <div class="text-xl sm:text-2xl font-black font-mono text-on-surface tracking-tight">
+          <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate">
             {{ formatCurrency(cashOnHandAmount, currency) }}
           </div>
-          <div class="flex items-center text-[11px] text-on-surface-variant font-medium mt-1 gap-1.5">
-            <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            <span>{{ $t('dashboard2.activeRegistersCount', { count: activeRegistersCount }) }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- KPI 3: Debtors / Accounts Receivable -->
-      <div class="bg-surface-container-lowest rounded-xl p-3.5 sm:p-4 border border-outline-variant/60 shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-primary transition-all duration-300">
-        <div class="flex justify-between items-center mb-1.5">
-          <span class="text-[11px] font-mono font-bold uppercase tracking-wider text-on-surface-variant">{{ $t('dashboard2.debtorsReceivables') }}</span>
-          <span class="p-1.5 rounded-lg bg-primary/10 text-primary">
-            <Users class="w-4 h-4 stroke-[2.2px]" />
-          </span>
-        </div>
-        <div>
-          <div class="text-xl sm:text-2xl font-black font-mono text-on-surface tracking-tight">
-            {{ formatCurrency(debtorsTotal, currency) }}
-          </div>
-          <div class="flex items-center justify-between text-[11px] text-on-surface-variant font-medium mt-1">
-            <span class="text-emerald-600 font-bold">
-              {{ $t('dashboard2.collectedInPeriod', { amount: formatCurrency(debtorsCollected, currency) }) }}
-            </span>
-            <span v-if="overdueCount > 0" class="px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-600 font-mono font-bold text-[9px]">
-              {{ $t('dashboard2.overdueInvoices', { count: overdueCount }) }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- KPI 4: Creditors / Accounts Payable -->
-      <div class="bg-surface-container-lowest rounded-xl p-3.5 sm:p-4 border border-outline-variant/60 shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-primary transition-all duration-300">
-        <div class="flex justify-between items-center mb-1.5">
-          <span class="text-[11px] font-mono font-bold uppercase tracking-wider text-on-surface-variant">{{ $t('dashboard2.creditorsPayables') }}</span>
-          <span class="p-1.5 rounded-lg bg-purple-500/10 text-purple-600">
-            <Truck class="w-4 h-4 stroke-[2.2px]" />
-          </span>
-        </div>
-        <div>
-          <div class="text-xl sm:text-2xl font-black font-mono text-on-surface tracking-tight">
-            {{ formatCurrency(creditorsTotal, currency) }}
-          </div>
-          <div class="flex items-center justify-between text-[11px] text-on-surface-variant font-medium mt-1">
-            <span class="font-bold text-on-surface">
-              {{ $t('dashboard2.netTradeGap', { amount: formatCurrency(tradeGapAmount, currency) }) }}
-            </span>
-            <span class="font-mono text-[9px] text-outline">
-              {{ $t('dashboard2.purchasesInPeriod', { amount: formatCurrency(purchasesTotal, currency) }) }}
+          <div class="flex items-center justify-between text-[11px] text-on-surface-variant font-medium mt-1 gap-1.5 flex-wrap">
+            <div class="flex items-center gap-1.5">
+              <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span>{{ $t('dashboard2.activeRegistersCount', { count: activeRegistersCount }) }}</span>
+            </div>
+            <!-- Till Discrepancy Indicator / Audit Trigger -->
+            <button 
+              v-if="closedShiftsCount > 0 || tillDiscrepancy !== 0"
+              @click.stop="showTillAuditModal = true"
+              class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1"
+              :class="tillDiscrepancy < 0 
+                ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 border border-rose-500/20' 
+                : tillDiscrepancy > 0 
+                  ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20' 
+                  : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border border-emerald-500/20'"
+              :title="$t('dashboard2.inspectTillAudit')"
+            >
+              <AlertTriangle v-if="tillDiscrepancy !== 0" class="w-2.5 h-2.5 shrink-0" />
+              <CheckCircle2 v-else class="w-2.5 h-2.5 shrink-0 text-emerald-600" />
+              <span>
+                {{ tillDiscrepancy < 0 
+                  ? $t('dashboard2.tillShortageBadge', { amount: formatCurrency(Math.abs(tillDiscrepancy), currency) }) 
+                  : tillDiscrepancy > 0 
+                    ? $t('dashboard2.tillOverageBadge', { amount: formatCurrency(tillDiscrepancy, currency) }) 
+                    : $t('dashboard2.tillBalanced') }}
+              </span>
+            </button>
+            <span v-else class="text-[9px] font-mono text-outline">
+              {{ $t('dashboard2.tillBalanced') }}
             </span>
           </div>
         </div>
@@ -432,10 +463,14 @@
 
         <!-- Inflow vs Outflow Footer Pills -->
         <div class="mt-8 pt-4 border-t border-outline-variant/40 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-          <div class="flex items-center gap-4">
+          <div class="flex flex-wrap items-center gap-4">
             <span class="flex items-center gap-1.5 font-bold text-on-surface">
               <span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
               Sales: {{ formatCurrency(totalPeriodSales, currency) }}
+            </span>
+            <span class="flex items-center gap-1.5 font-bold text-emerald-600">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              Profit: {{ formatCurrency(grossProfitAmount, currency) }} ({{ grossMarginPercent }}%)
             </span>
             <span class="flex items-center gap-1.5 font-bold text-emerald-600">
               <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
@@ -593,7 +628,7 @@
 
           <div>
             <div class="flex items-baseline gap-2">
-              <span class="text-3xl font-black font-mono tracking-tight" :class="collectionRate >= 75 ? 'text-emerald-600' : 'text-on-surface'">
+              <span class="text-2xl sm:text-3xl lg:text-2xl xl:text-3xl font-black font-mono tracking-tight amount-hero" :class="collectionRate >= 75 ? 'text-emerald-600' : 'text-on-surface'">
                 {{ collectionRate }}%
               </span>
               <span class="text-xs font-mono text-on-surface-variant">{{ $t('dashboard2.collectionRateDesc') }}</span>
@@ -630,7 +665,7 @@
                 + {{ $t('dashboard2.collect') }}
               </button>
             </div>
-            <div class="text-2xl sm:text-3xl font-black font-mono text-on-surface tracking-tight mt-1">
+            <div class="text-xl sm:text-2xl lg:text-xl xl:text-2xl 2xl:text-3xl font-black font-mono text-on-surface tracking-tight mt-1 amount-hero truncate">
               {{ formatCurrency(moneyToCollect.total, currency) }}
             </div>
           </div>
@@ -639,15 +674,15 @@
           <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-outline-variant/40 text-center font-mono">
             <div class="bg-surface-container-low p-2 rounded-xl border border-outline-variant/30">
               <p class="text-[10px] uppercase font-bold text-on-surface-variant truncate">{{ $t('dashboard2.dueToday') }}</p>
-              <p class="text-xs font-black text-on-surface mt-0.5">{{ formatCurrency(moneyToCollect.dueToday, currency) }}</p>
+              <p class="text-xs font-black text-on-surface mt-0.5 truncate">{{ formatCurrency(moneyToCollect.dueToday, currency) }}</p>
             </div>
             <div class="bg-surface-container-low p-2 rounded-xl border border-outline-variant/30">
               <p class="text-[10px] uppercase font-bold text-on-surface-variant truncate">{{ $t('dashboard2.dueThisWeek') }}</p>
-              <p class="text-xs font-black text-amber-700 mt-0.5">{{ formatCurrency(moneyToCollect.dueThisWeek, currency) }}</p>
+              <p class="text-xs font-black text-amber-700 mt-0.5 truncate">{{ formatCurrency(moneyToCollect.dueThisWeek, currency) }}</p>
             </div>
             <div class="bg-rose-500/10 p-2 rounded-xl border border-rose-500/20">
               <p class="text-[10px] uppercase font-bold text-rose-700 truncate">{{ $t('dashboard2.overdue') }}</p>
-              <p class="text-xs font-black text-rose-600 mt-0.5">{{ formatCurrency(moneyToCollect.overdue, currency) }}</p>
+              <p class="text-xs font-black text-rose-600 mt-0.5 truncate">{{ formatCurrency(moneyToCollect.overdue, currency) }}</p>
             </div>
           </div>
         </div>
@@ -661,13 +696,13 @@
                 {{ $t('dashboard2.moneyOwedSuppliers') }}
               </span>
               <button 
-                @click="router.push('/purchases')"
+                @click="openPaySupplierModal()"
                 class="px-2.5 py-1 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-[10px] font-mono font-bold border border-outline-variant/60 shadow-xs cursor-pointer transition-colors"
               >
                 {{ $t('dashboard2.balanceDue') }}
               </button>
             </div>
-            <div class="text-2xl sm:text-3xl font-black font-mono text-purple-700 tracking-tight mt-1">
+            <div class="text-xl sm:text-2xl lg:text-xl xl:text-2xl 2xl:text-3xl font-black font-mono text-purple-700 tracking-tight mt-1 amount-hero truncate">
               {{ formatCurrency(moneyOwedSuppliers.total, currency) }}
             </div>
           </div>
@@ -716,7 +751,7 @@
         <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           <div class="text-left sm:text-right">
             <span class="text-xs font-mono font-bold text-rose-800 block uppercase">Total at Risk</span>
-            <span class="text-xl sm:text-2xl font-mono font-black text-rose-600">{{ formatCurrency(displayedRiskAmount, currency) }}</span>
+            <span class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-mono font-black text-rose-600 amount-kpi truncate">{{ formatCurrency(displayedRiskAmount, currency) }}</span>
           </div>
           <button 
             type="button"
@@ -753,7 +788,7 @@
         <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           <div class="text-left sm:text-right">
             <span class="text-xs font-mono font-bold text-emerald-800 block uppercase">Total at Risk</span>
-            <span class="text-xl sm:text-2xl font-mono font-black text-emerald-600">{{ formatCurrency(0, currency) }}</span>
+            <span class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-mono font-black text-emerald-600 amount-kpi truncate">{{ formatCurrency(0, currency) }}</span>
           </div>
           <div class="px-3 py-2 rounded-xl bg-emerald-600/15 text-emerald-700 text-xs font-black font-mono flex items-center gap-1.5 shrink-0">
             <CheckCircle2 class="w-4 h-4" />
@@ -771,7 +806,7 @@
           </div>
           <div class="text-xs font-mono text-on-surface-variant flex items-center gap-2">
             <span>Total Receivables:</span>
-            <strong class="text-on-surface font-black">{{ formatCurrency(moneyToCollect.total, currency) }}</strong>
+            <strong class="text-on-surface font-black truncate">{{ formatCurrency(moneyToCollect.total, currency) }}</strong>
           </div>
         </div>
 
@@ -785,7 +820,7 @@
               </span>
               <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 font-bold">Safe</span>
             </div>
-            <div class="text-xl font-black font-mono text-on-surface">
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-on-surface amount-compact truncate">
               {{ formatCurrency(debtAging.current.amount, currency) }}
             </div>
             <div class="text-[11px] font-mono text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/30 flex justify-between">
@@ -803,7 +838,7 @@
               </span>
               <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 font-bold">Watch</span>
             </div>
-            <div class="text-xl font-black font-mono text-amber-700">
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-amber-700 amount-compact truncate">
               {{ formatCurrency(debtAging.days8to30.amount, currency) }}
             </div>
             <div class="text-[11px] font-mono text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/30 flex justify-between">
@@ -821,7 +856,7 @@
               </span>
               <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-700 font-bold">Overdue</span>
             </div>
-            <div class="text-xl font-black font-mono text-orange-700">
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-orange-700 amount-compact truncate">
               {{ formatCurrency(debtAging.days31to60.amount, currency) }}
             </div>
             <div class="text-[11px] font-mono text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/30 flex justify-between">
@@ -842,7 +877,7 @@
               </span>
               <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-600 text-white font-bold">High Risk</span>
             </div>
-            <div class="text-xl font-black font-mono text-rose-600">
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-rose-600 amount-compact truncate">
               {{ formatCurrency(debtAging.days60plus.amount, currency) }}
             </div>
             <div class="text-[11px] font-mono text-rose-800 mt-2 pt-2 border-t border-rose-500/20 flex justify-between items-center">
@@ -953,7 +988,7 @@
                   <div class="text-right shrink-0">
                     <span class="text-xs font-mono font-black text-purple-700 block">{{ formatCurrency(cred.balance, currency) }}</span>
                     <button 
-                      @click="router.push('/purchases')"
+                      @click="openPaySupplierModal(cred)"
                       class="mt-1 px-2.5 py-1 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-[10px] font-bold font-mono border border-outline-variant/60 shadow-xs cursor-pointer transition-colors"
                     >
                       {{ $t('dashboard2.balanceDue') }}
@@ -978,7 +1013,7 @@
     <!-- ========================================== -->
     <div v-else-if="activeMainTab === 'stock'" class="space-y-6">
       <!-- CAPITAL INVENTORY VALUATION HERO CARDS -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Capital at Cost -->
         <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/60 shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-primary transition-all">
           <div class="flex justify-between items-center mb-2">
@@ -989,7 +1024,7 @@
             <span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-mono font-black uppercase">At Cost</span>
           </div>
           <div>
-            <div class="text-2xl sm:text-3xl font-black font-mono text-on-surface tracking-tight">
+            <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate">
               {{ formatCurrency(inventoryTotalCapital, currency) }}
             </div>
             <p class="text-xs text-on-surface-variant mt-1">Total tied working capital across branch stock</p>
@@ -1006,7 +1041,7 @@
             <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-mono font-black uppercase">Retail Value</span>
           </div>
           <div>
-            <div class="text-2xl sm:text-3xl font-black font-mono text-emerald-600 tracking-tight">
+            <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-emerald-600 tracking-tight amount-kpi truncate">
               {{ formatCurrency(inventoryPotentialRevenue, currency) }}
             </div>
             <p class="text-xs text-on-surface-variant mt-1">Expected turnover at current catalog selling prices</p>
@@ -1023,11 +1058,43 @@
             <span class="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-700 text-[10px] font-mono font-black uppercase">Projected Gain</span>
           </div>
           <div>
-            <div class="text-2xl sm:text-3xl font-black font-mono text-purple-700 tracking-tight">
+            <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-purple-700 tracking-tight amount-kpi truncate">
               {{ formatCurrency(inventoryUnrealizedProfit, currency) }}
             </div>
             <p class="text-xs text-on-surface-variant mt-1">
               Projected margin: <strong>{{ inventoryTotalCapital > 0 ? Math.round((inventoryUnrealizedProfit / inventoryTotalCapital) * 100) : 0 }}%</strong> markup on cost
+            </p>
+          </div>
+        </div>
+
+        <!-- Stock Runway (Days Sales of Inventory / DSI) -->
+        <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/60 shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-blue-500 transition-all">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+              <Hourglass class="w-4 h-4 text-blue-600" />
+              {{ $t('dashboard2.stockRunway') }}
+            </span>
+            <span 
+              class="px-2 py-0.5 rounded-full text-[10px] font-mono font-black uppercase shadow-xs"
+              :class="stockRunwayStatus === 'CRITICAL_LOW' 
+                ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20' 
+                : stockRunwayStatus === 'OPTIMAL_LEAN' 
+                  ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' 
+                  : stockRunwayStatus === 'HEALTHY_BALANCED'
+                    ? 'bg-blue-500/10 text-blue-600 border border-blue-500/20'
+                    : stockRunwayStatus === 'OVERSTOCKED'
+                      ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
+                      : 'bg-surface-container text-on-surface-variant'"
+            >
+              {{ stockRunwayStatus === 'CRITICAL_LOW' ? $t('dashboard2.runwayCritical') : stockRunwayStatus === 'OPTIMAL_LEAN' ? $t('dashboard2.runwayOptimal') : stockRunwayStatus === 'HEALTHY_BALANCED' ? $t('dashboard2.runwayHealthy') : stockRunwayStatus === 'OVERSTOCKED' ? $t('dashboard2.runwayOverstocked') : $t('dashboard2.runwayStagnant') }}
+            </span>
+          </div>
+          <div>
+            <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate">
+              {{ stockRunwayDays > 0 ? $t('dashboard2.daysRunway', { days: stockRunwayDays }) : '—' }}
+            </div>
+            <p class="text-xs text-on-surface-variant mt-1">
+              {{ stockDailyCogs > 0 ? $t('dashboard2.dailyBurnRate', { amount: formatCurrency(stockDailyCogs, currency) }) : $t('dashboard2.stockRunwayDesc') }}
             </p>
           </div>
         </div>
@@ -1047,7 +1114,7 @@
                 {{ fastMovingStock.count }} products
               </span>
             </div>
-            <div class="text-2xl font-black font-mono text-emerald-600 tracking-tight">
+            <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-emerald-600 tracking-tight amount-kpi truncate">
               {{ formatCurrency(fastMovingStock.capital, currency) }}
             </div>
             <p class="text-xs text-on-surface-variant mt-1">{{ $t('dashboard2.fastMovingDesc') }}</p>
@@ -1070,7 +1137,7 @@
                 {{ slowMovingStock.count }} products
               </span>
             </div>
-            <div class="text-2xl font-black font-mono text-amber-700 tracking-tight">
+            <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-amber-700 tracking-tight amount-kpi truncate">
               {{ formatCurrency(slowMovingStock.capital, currency) }}
             </div>
             <p class="text-xs text-on-surface-variant mt-1">{{ $t('dashboard2.slowMovingDesc') }}</p>
@@ -1093,7 +1160,7 @@
                 {{ deadStock.count }} products
               </span>
             </div>
-            <div class="text-2xl font-black font-mono text-rose-600 tracking-tight">
+            <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-rose-600 tracking-tight amount-kpi truncate">
               {{ formatCurrency(deadStock.capital, currency) }}
             </div>
             <p class="text-xs text-rose-900/80 mt-1">{{ $t('dashboard2.deadStockDesc') }}</p>
@@ -1130,7 +1197,7 @@
         <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           <div class="text-left sm:text-right">
             <span class="text-xs font-mono font-bold text-rose-800 block uppercase">Dormant Capital</span>
-            <span class="text-xl sm:text-2xl font-mono font-black text-rose-600">{{ formatCurrency(deadStock.capital, currency) }}</span>
+            <span class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-mono font-black text-rose-600 amount-kpi truncate">{{ formatCurrency(deadStock.capital, currency) }}</span>
           </div>
           <button 
             type="button"
@@ -1152,22 +1219,30 @@
           <span class="text-xs font-mono text-on-surface-variant">Automated Recommendations</span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4">
           <div 
             v-for="(rec, rIdx) in inventoryRecommendations" 
             :key="rIdx"
             class="p-4 rounded-xl border flex flex-col justify-between transition-all"
-            :class="rec.type === 'DISCOUNT_DORMANT' ? 'bg-rose-500/5 border-rose-500/20 hover:border-rose-500/40' : (rec.type === 'STOP_REORDER' ? 'bg-amber-500/5 border-amber-500/20 hover:border-amber-500/40' : 'bg-primary/5 border-primary/20 hover:border-primary/40')"
+            :class="rec.type === 'DISCOUNT_DORMANT' 
+              ? 'bg-rose-500/5 border-rose-500/20 hover:border-rose-500/40' 
+              : (rec.type === 'STOP_REORDER' 
+                ? 'bg-amber-500/5 border-amber-500/20 hover:border-amber-500/40' 
+                : (rec.type === 'REPLENISH_FAST' 
+                  ? 'bg-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/40' 
+                  : 'bg-primary/5 border-primary/20 hover:border-primary/40'))"
           >
             <div>
               <div class="flex items-center justify-between mb-2">
                 <span 
                   class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider"
-                  :class="rec.priority === 'HIGH' ? 'bg-rose-600 text-white' : 'bg-surface-container-high text-on-surface-variant'"
+                  :class="rec.priority === 'HIGH' ? 'bg-rose-600 text-white' : (rec.priority === 'MEDIUM' ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold' : 'bg-surface-container-high text-on-surface-variant')"
                 >
                   {{ rec.priority }} PRIORITY
                 </span>
-                <span class="text-[10px] font-mono font-bold text-on-surface-variant">{{ rec.count }} items</span>
+                <span class="text-[10px] font-mono font-bold text-on-surface-variant">
+                  {{ rec.count }} {{ rec.title.includes('Runway') || rec.actionLabel.includes('Runway') ? 'days' : 'items' }}
+                </span>
               </div>
               <h4 class="text-xs font-black text-on-surface tracking-tight">{{ rec.title }}</h4>
               <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">{{ rec.description }}</p>
@@ -1176,7 +1251,7 @@
             <button 
               @click="rec.type === 'DISCOUNT_DORMANT' || rec.type === 'STOP_REORDER' ? (showDeadStockModal = true) : router.push('/inventory')"
               class="mt-4 w-full py-2 rounded-lg font-mono font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
-              :class="rec.type === 'DISCOUNT_DORMANT' ? 'bg-rose-600 hover:bg-rose-700 text-white' : 'bg-surface-container-high hover:bg-surface-container-highest text-on-surface border border-outline-variant/40'"
+              :class="rec.type === 'DISCOUNT_DORMANT' ? 'bg-rose-600 hover:bg-rose-700 text-white' : (rec.type === 'REPLENISH_FAST' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-surface-container-high hover:bg-surface-container-highest text-on-surface border border-outline-variant/40')"
             >
               <span>{{ rec.actionLabel }}</span>
               <ArrowRight class="w-3 h-3" />
@@ -1627,6 +1702,215 @@
         </div>
       </div>
     </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL: CASHIER TILL DISCREPANCIES AUDIT    -->
+    <!-- ========================================== -->
+    <div v-if="showTillAuditModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-surface-container-lowest rounded-2xl max-w-2xl w-full p-6 border border-outline-variant/60 shadow-xl max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center pb-4 border-b border-outline-variant/40 shrink-0">
+          <div class="flex items-center gap-2.5">
+            <div class="p-2 rounded-xl bg-amber-500/10 text-amber-600">
+              <Banknote class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="text-base font-black text-on-surface">{{ $t('dashboard2.tillAuditModalTitle') }}</h3>
+              <p class="text-xs text-on-surface-variant font-medium">{{ $t('dashboard2.tillAuditSummary') }}</p>
+            </div>
+          </div>
+          <button @click="showTillAuditModal = false" class="text-on-surface-variant hover:text-on-surface cursor-pointer p-1 rounded-lg">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <!-- Metric Summary Chips -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 my-4 shrink-0">
+          <div class="bg-surface-container-low p-3 rounded-xl border border-outline-variant/30">
+            <div class="text-[10px] font-mono uppercase text-on-surface-variant font-bold">{{ $t('dashboard2.netTillDiscrepancy') }}</div>
+            <div 
+              class="text-base font-mono font-black mt-0.5"
+              :class="tillDiscrepancy < 0 ? 'text-rose-600' : tillDiscrepancy > 0 ? 'text-amber-600' : 'text-emerald-600'"
+            >
+              {{ tillDiscrepancy < 0 ? '-' : tillDiscrepancy > 0 ? '+' : '' }}{{ formatCurrency(Math.abs(tillDiscrepancy), currency) }}
+            </div>
+          </div>
+          <div class="bg-surface-container-low p-3 rounded-xl border border-outline-variant/30">
+            <div class="text-[10px] font-mono uppercase text-on-surface-variant font-bold">{{ $t('dashboard2.totalShortages') }}</div>
+            <div class="text-base font-mono font-black text-rose-600 mt-0.5">
+              -{{ formatCurrency(tillTotalShortages, currency) }}
+            </div>
+          </div>
+          <div class="bg-surface-container-low p-3 rounded-xl border border-outline-variant/30">
+            <div class="text-[10px] font-mono uppercase text-on-surface-variant font-bold">{{ $t('dashboard2.totalOverages') }}</div>
+            <div class="text-base font-mono font-black text-amber-600 mt-0.5">
+              +{{ formatCurrency(tillTotalOverages, currency) }}
+            </div>
+          </div>
+          <div class="bg-surface-container-low p-3 rounded-xl border border-outline-variant/30">
+            <div class="text-[10px] font-mono uppercase text-on-surface-variant font-bold">{{ $t('dashboard2.closedShiftsCount', { count: closedShiftsCount }) }}</div>
+            <div class="text-base font-mono font-black text-on-surface mt-0.5">
+              {{ closedShiftsCount }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Closed Shifts Table -->
+        <div class="overflow-y-auto flex-1 min-h-0 border border-outline-variant/40 rounded-xl">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-surface-container-low text-[10px] uppercase text-on-surface-variant font-bold border-b border-outline-variant/40 sticky top-0">
+              <tr>
+                <th class="p-3">Cashier & Terminal</th>
+                <th class="p-3 text-right">{{ $t('dashboard2.expectedCash') }}</th>
+                <th class="p-3 text-right">{{ $t('dashboard2.actualCash') }}</th>
+                <th class="p-3 text-right">{{ $t('dashboard2.discrepancy') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-outline-variant/30 text-on-surface">
+              <tr v-if="closedShiftsList.length === 0">
+                <td colspan="4" class="p-6 text-center text-on-surface-variant">
+                  {{ $t('dashboard2.noClosedShifts') }}
+                </td>
+              </tr>
+              <tr v-for="shift in closedShiftsList" :key="shift.shiftId" class="hover:bg-surface-container-low/50">
+                <td class="p-3">
+                  <div class="font-bold text-on-surface">{{ shift.cashierName }}</div>
+                  <div class="text-[10px] text-outline flex items-center gap-1 mt-0.5">
+                    <span>{{ shift.terminalId }}</span>
+                    <span v-if="shift.closedAt">• {{ formatTime(shift.closedAt) }}</span>
+                  </div>
+                  <div v-if="shift.notes" class="text-[10px] text-on-surface-variant italic mt-1 bg-surface-container-high/40 p-1 rounded">
+                    "{{ shift.notes }}"
+                  </div>
+                </td>
+                <td class="p-3 text-right font-medium text-on-surface-variant">
+                  {{ formatCurrency(shift.expectedCash, currency) }}
+                </td>
+                <td class="p-3 text-right font-medium text-on-surface">
+                  {{ formatCurrency(shift.actualCash, currency) }}
+                </td>
+                <td class="p-3 text-right">
+                  <span 
+                    class="px-2 py-0.5 rounded font-black text-[10px]"
+                    :class="shift.discrepancy < 0 
+                      ? 'bg-rose-500/10 text-rose-600' 
+                      : shift.discrepancy > 0 
+                        ? 'bg-amber-500/10 text-amber-600' 
+                        : 'bg-emerald-500/10 text-emerald-600'"
+                  >
+                    {{ shift.discrepancy < 0 ? '-' : shift.discrepancy > 0 ? '+' : '' }}{{ formatCurrency(Math.abs(shift.discrepancy), currency) }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex justify-end pt-4 border-t border-outline-variant/40 mt-4 shrink-0">
+          <button 
+            @click="showTillAuditModal = false"
+            class="px-4 py-2 rounded-xl bg-surface-container-high hover:bg-surface-container text-on-surface font-bold text-xs cursor-pointer"
+          >
+            {{ $t('dashboard2.cancel') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL: PAY SUPPLIER OUTSTANDING BALANCE    -->
+    <!-- ========================================== -->
+    <Modal
+      v-if="selectedSupplierForPay"
+      :isOpen="showPaySupplierModal"
+      :onClose="() => showPaySupplierModal = false"
+      @close="showPaySupplierModal = false"
+      :title="$t('suppliers.payModalTitle')"
+      :subtitle="$t('suppliers.payModalSubtitle', { name: selectedSupplierForPay.name })"
+    >
+      <form id="pay-supplier-dashboard-form" @submit.prevent="handlePaySupplier" class="flex flex-col gap-4">
+        <!-- Supplier Selector if multiple creditors have balance -->
+        <div v-if="creditorSuppliers.length > 1" class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+            {{ $t('suppliers.supplierNameRequired') }}
+          </label>
+          <select
+            v-model="selectedSupplierIdForPay"
+            @change="onSupplierSelectChange"
+            class="w-full h-11 px-3.5 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-xs font-bold text-on-surface cursor-pointer"
+          >
+            <option v-for="sup in creditorSuppliers" :key="sup.id" :value="sup.id">
+              {{ sup.name }} — {{ currency }} {{ Number(sup.balance).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Outstanding Balance Display -->
+        <div class="p-4 rounded-xl border border-outline-variant/60 bg-surface-container-low/50">
+          <div class="flex items-center justify-between">
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('suppliers.currentOutstandingBalance') }}</p>
+            <span v-if="selectedSupplierForPay.category" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-700 font-bold">
+              {{ selectedSupplierForPay.category }}
+            </span>
+          </div>
+          <p class="text-xl font-bold font-mono text-error mt-1">
+            {{ currency }} {{ Number(selectedSupplierForPay.balance).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}
+          </p>
+        </div>
+
+        <!-- Payment Amount input -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('suppliers.paymentAmountRequired', { currency }) }}</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold font-mono text-on-surface-variant/50">{{ currency }}</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              :max="selectedSupplierForPay.balance"
+              required
+              v-model="supplierPaymentAmount"
+              placeholder="0.00"
+              class="w-full h-11 pl-14 pr-4 rounded-xl border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm font-mono text-on-surface"
+            />
+          </div>
+          <div class="flex gap-2 mt-1">
+            <button
+              type="button"
+              @click="supplierPaymentAmount = String(selectedSupplierForPay.balance)"
+              class="px-3 py-1 rounded-lg border border-outline-variant hover:bg-surface-container-high text-xs font-bold cursor-pointer transition-all bg-white text-on-surface"
+            >
+              {{ $t('suppliers.payFullBalance') }}
+            </button>
+            <button
+              type="button"
+              @click="supplierPaymentAmount = String((selectedSupplierForPay.balance / 2).toFixed(2))"
+              class="px-3 py-1 rounded-lg border border-outline-variant hover:bg-surface-container-high text-xs font-bold cursor-pointer transition-all bg-white text-on-surface"
+            >
+              {{ $t('suppliers.payHalf') }}
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <template #footer>
+        <button
+          type="button"
+          @click="showPaySupplierModal = false"
+          class="h-11 px-5 rounded-xl border border-outline-variant text-on-surface hover:bg-surface-container-high font-bold text-sm cursor-pointer transition-all active:scale-[0.98] bg-white"
+        >
+          {{ $t('dashboard2.cancel') }}
+        </button>
+        <button
+          type="submit"
+          form="pay-supplier-dashboard-form"
+          :disabled="isSubmittingSupplierPay"
+          class="h-11 px-6 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-sm rounded-xl cursor-pointer transition-all active:scale-[0.98] shadow-sm border-0 flex items-center gap-2"
+        >
+          <RefreshCw v-if="isSubmittingSupplierPay" class="w-4 h-4 animate-spin" />
+          <span>{{ $t('suppliers.recordPayment') }}</span>
+        </button>
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -1657,7 +1941,8 @@ import {
   AlertOctagon,
   Percent,
   TrendingUp,
-  ShieldCheck
+  ShieldCheck,
+  Hourglass
 } from 'lucide-vue-next';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { formatCurrency } from '../models/mockData';
@@ -1665,13 +1950,18 @@ import { financeService } from '../services/financeService';
 import { customerService } from '../services/customerService';
 import { showToast } from '../services/toastService';
 import { t, currentLocale } from '../i18n';
+import Modal from '../components/common/Modal.vue';
+import { api } from '../services/api';
 import type {
   CashflowOverview,
   Customer,
+  Supplier,
   AgingBucket,
   StockVelocityBucket,
   RiskDebtorItem,
-  DeadStockProductItem
+  DeadStockProductItem,
+  ShiftAuditItem,
+  TillDiscrepancyOverview
 } from '../models/types';
 
 const vm = useAppViewModel();
@@ -1680,6 +1970,12 @@ const router = useRouter();
 const activeMainTab = ref<'summary' | 'collection' | 'stock'>('summary');
 const showRiskDebtorsModal = ref(false);
 const showDeadStockModal = ref(false);
+const showTillAuditModal = ref(false);
+const showPaySupplierModal = ref(false);
+const selectedSupplierForPay = ref<Supplier | null>(null);
+const selectedSupplierIdForPay = ref<string>('');
+const supplierPaymentAmount = ref<string>('');
+const isSubmittingSupplierPay = ref(false);
 
 const selectedPeriod = ref('today');
 const activeStream = ref<'ALL' | 'SALES' | 'COLLECTIONS' | 'EXPENSES'>('ALL');
@@ -1731,11 +2027,13 @@ onMounted(() => {
   vm.fetchSettings();
   fetchData();
   fetchCustomersForDropdown();
+  vm.fetchSuppliers();
 });
 
 watch(() => vm.activeBranchId.value, () => {
   fetchData();
   fetchCustomersForDropdown();
+  vm.fetchSuppliers();
 });
 
 const fetchData = async () => {
@@ -1772,8 +2070,21 @@ const fetchCustomersForDropdown = async () => {
 const netCashflowAmount = computed(() => Number(cashflowData.value?.netCashflow) || 0);
 const isSurplus = computed(() => (cashflowData.value?.netCashflowStatus || 'SURPLUS') === 'SURPLUS');
 const totalPeriodSales = computed(() => Number(cashflowData.value?.sales?.totalSales) || 0);
+const grossProfitAmount = computed(() => Number(cashflowData.value?.sales?.grossProfit) || 0);
+const grossMarginPercent = computed(() => Number(cashflowData.value?.sales?.grossMarginPercent) || 0);
+const cogsAmount = computed(() => Number(cashflowData.value?.sales?.cogs) || Math.max(0, totalPeriodSales.value - grossProfitAmount.value));
+const transactionsCount = computed(() => Number(cashflowData.value?.sales?.transactionsCount) || 0);
+const avgTicketAmount = computed(() => Number(cashflowData.value?.sales?.avgTicket) || (transactionsCount.value > 0 ? Math.round(totalPeriodSales.value / transactionsCount.value) : 0));
 const cashOnHandAmount = computed(() => Number(cashflowData.value?.cashOnHand) || 0);
 const activeRegistersCount = computed(() => Number(cashflowData.value?.activeShiftsCount) || 0);
+
+// Till Discrepancies & Shift Audit
+const tillOverview = computed(() => cashflowData.value?.tillDiscrepancies);
+const tillDiscrepancy = computed(() => Number(tillOverview.value?.netDiscrepancy) || 0);
+const tillTotalShortages = computed(() => Number(tillOverview.value?.totalShortages) || 0);
+const tillTotalOverages = computed(() => Number(tillOverview.value?.totalOverages) || 0);
+const closedShiftsCount = computed(() => Number(tillOverview.value?.closedShiftsCount) || 0);
+const closedShiftsList = computed(() => tillOverview.value?.recentShifts || []);
 
 const debtorsTotal = computed(() => Number(cashflowData.value?.debtors?.totalOutstanding) || 0);
 const debtorsCollected = computed(() => Number(cashflowData.value?.debtors?.collectedInPeriod) || 0);
@@ -1810,12 +2121,14 @@ const amountDue = computed(() => {
     : (debtorsTotal.value + debtorsCollected.value);
 });
 const moneyToCollect = computed(() => {
-  return collectionIntel.value?.moneyToCollect || {
-    total: debtorsTotal.value,
-    dueToday: 0,
-    dueThisWeek: 0,
-    overdue: debtorsTotal.value,
-    debtorsCount: topDebtors.value.length
+  const intel = collectionIntel.value?.moneyToCollect;
+  const masterTotal = debtorsTotal.value;
+  return {
+    total: masterTotal > 0 ? masterTotal : (Number(intel?.total) || 0),
+    dueToday: Number(intel?.dueToday) || 0,
+    dueThisWeek: Number(intel?.dueThisWeek) || 0,
+    overdue: intel?.overdue !== undefined ? Math.min(Number(intel.overdue), masterTotal > 0 ? masterTotal : Number(intel.overdue)) : masterTotal,
+    debtorsCount: intel?.debtorsCount || topDebtors.value.length
   };
 });
 const moneyOwedSuppliers = computed(() => {
@@ -1908,6 +2221,9 @@ const fastMovingStock = computed<StockVelocityBucket>(() => inventoryIntel.value
 const slowMovingStock = computed<StockVelocityBucket>(() => inventoryIntel.value?.slowMoving || { capital: 0, count: 0, percent: 0 });
 const deadStock = computed<StockVelocityBucket>(() => inventoryIntel.value?.deadStock || { capital: 0, count: 0, percent: 0 });
 const deadStockProducts = computed<DeadStockProductItem[]>(() => inventoryIntel.value?.deadStockProducts || []);
+const stockRunwayDays = computed(() => Number(inventoryIntel.value?.stockRunwayDays) || 0);
+const stockDailyCogs = computed(() => Number(inventoryIntel.value?.dailyCogs) || 0);
+const stockRunwayStatus = computed(() => inventoryIntel.value?.runwayStatus || 'STAGNANT');
 
 interface FormattedRecommendation {
   type: 'DISCOUNT_DORMANT' | 'STOP_REORDER' | 'REPLENISH_FAST' | 'GENERAL';
@@ -1925,8 +2241,8 @@ const inventoryRecommendations = computed<FormattedRecommendation[]>(() => {
       {
         type: 'DISCOUNT_DORMANT',
         priority: 'HIGH',
-        title: 'Discount Dormant Stock',
-        description: `Consider discounting dormant products by 15-20% to liquidate trapped capital.`,
+        title: 'Liquidate Dormant Stock',
+        description: 'Consider discounting dormant products by 15-20% to liquidate trapped capital.',
         count: deadStock.value.count,
         actionLabel: 'Inspect Dormant Items'
       },
@@ -1941,18 +2257,43 @@ const inventoryRecommendations = computed<FormattedRecommendation[]>(() => {
       {
         type: 'REPLENISH_FAST',
         priority: 'MEDIUM',
-        title: 'Protect High Velocity Stock',
+        title: 'Reorder Critical Stock',
         description: 'Ensure fast moving products have a safe 14-day stock buffer to avoid stockouts.',
         count: fastMovingStock.value.count,
         actionLabel: 'Check Fast Movers'
+      },
+      {
+        type: 'GENERAL',
+        priority: stockRunwayStatus.value === 'CRITICAL_LOW' ? 'HIGH' : (stockRunwayStatus.value === 'OVERSTOCKED' ? 'MEDIUM' : 'LOW'),
+        title: stockRunwayStatus.value === 'CRITICAL_LOW' 
+          ? 'Stockout Risk Alert' 
+          : (stockRunwayStatus.value === 'OVERSTOCKED' ? 'Excess Inventory Runway' : 'Inventory Runway Health'),
+        description: stockRunwayDays.value > 0 
+          ? `Current inventory provides ~${stockRunwayDays.value} days of runway at active burn rate. Maintain optimal replenishment cycles.`
+          : 'Monitor product sales velocity to optimize replenishment cycles and prevent stockouts.',
+        count: stockRunwayDays.value > 0 ? stockRunwayDays.value : fastMovingStock.value.count,
+        actionLabel: 'Audit Stock Runway'
       }
     ];
   }
 
-  return list.map((recStr) => {
-    const isDiscount = recStr.toLowerCase().includes('discount');
-    const isStop = recStr.toLowerCase().includes('stop reorder') || recStr.toLowerCase().includes('inactive');
-    const isReplenish = recStr.toLowerCase().includes('replenish') || recStr.toLowerCase().includes('low stock');
+  const seenTitles = new Set<string>();
+
+  const mapped: FormattedRecommendation[] = list.map((recStr) => {
+    const lower = recStr.toLowerCase();
+    
+    // 1. Runway checks must come first to prevent "slow stock" matching "low stock"
+    const isCriticalRunway = lower.includes('critical inventory runway') || lower.includes('stockout') || (lower.includes('runway') && lower.includes('critical'));
+    const isOverstockedRunway = lower.includes('high stock runway') || lower.includes('overstock') || (lower.includes('runway') && (lower.includes('slow') || lower.includes('liquidity')));
+    const isGeneralRunway = lower.includes('runway');
+    
+    // 2. Dormant & Stop Reorders
+    const isDiscount = lower.includes('discount') || lower.includes('liquidate');
+    const isStop = lower.includes('stop reorder') || lower.includes('inactive');
+    
+    // 3. Replenishment & Low Stock (strictly excluding 'slow stock')
+    const hasLowStockPhrase = lower.includes('low stock') && !lower.includes('slow stock');
+    const isReplenish = lower.includes('replenish') || lower.includes('reorder threshold') || hasLowStockPhrase;
 
     let type: FormattedRecommendation['type'] = 'GENERAL';
     let priority: FormattedRecommendation['priority'] = 'MEDIUM';
@@ -1960,7 +2301,25 @@ const inventoryRecommendations = computed<FormattedRecommendation[]>(() => {
     let count = 0;
     let actionLabel = 'Review Inventory';
 
-    if (isDiscount) {
+    if (isCriticalRunway) {
+      type = 'GENERAL';
+      priority = 'HIGH';
+      title = 'Stockout Risk Alert';
+      count = stockRunwayDays.value;
+      actionLabel = 'Audit Stock Runway';
+    } else if (isOverstockedRunway) {
+      type = 'GENERAL';
+      priority = 'MEDIUM';
+      title = 'Excess Inventory Runway';
+      count = stockRunwayDays.value;
+      actionLabel = 'Audit Working Capital';
+    } else if (isGeneralRunway) {
+      type = 'GENERAL';
+      priority = 'LOW';
+      title = 'Inventory Runway Health';
+      count = stockRunwayDays.value;
+      actionLabel = 'Audit Runway';
+    } else if (isDiscount) {
       type = 'DISCOUNT_DORMANT';
       priority = 'HIGH';
       title = 'Liquidate Dormant Stock';
@@ -1974,11 +2333,24 @@ const inventoryRecommendations = computed<FormattedRecommendation[]>(() => {
       actionLabel = 'View Inactive Items';
     } else if (isReplenish) {
       type = 'REPLENISH_FAST';
-      priority = 'MEDIUM';
-      title = 'Replenish Fast Movers';
-      count = inventoryAlerts.value.lowStockCount;
+      priority = 'HIGH';
+      title = 'Reorder Critical Stock';
+      count = inventoryAlerts.value.lowStockCount || fastMovingStock.value.count;
       actionLabel = 'View Low Stock';
     }
+
+    // Deduplicate titles if any duplicate occurs
+    if (seenTitles.has(title)) {
+      if (title === 'Reorder Critical Stock') {
+        title = 'Protect Fast Movers';
+        actionLabel = 'Check Fast Movers';
+      } else if (title === 'Liquidate Dormant Stock') {
+        title = 'Dormant Capital Relief';
+      } else {
+        title = `${title} (Follow-Up)`;
+      }
+    }
+    seenTitles.add(title);
 
     return {
       type,
@@ -1989,6 +2361,48 @@ const inventoryRecommendations = computed<FormattedRecommendation[]>(() => {
       actionLabel
     };
   });
+
+  // If 3 items are present, add the missing 4th pillar to complete the 2x2 grid
+  if (mapped.length === 3) {
+    const hasRunway = mapped.some(m => m.title.includes('Runway') || m.title.includes('Stockout'));
+    const hasReplenish = mapped.some(m => m.title.includes('Reorder') || m.title.includes('Fast Movers'));
+    const hasDormant = mapped.some(m => m.title.includes('Dormant') || m.title.includes('Discount'));
+
+    if (!hasRunway) {
+      mapped.push({
+        type: 'GENERAL',
+        priority: stockRunwayStatus.value === 'CRITICAL_LOW' ? 'HIGH' : (stockRunwayStatus.value === 'OVERSTOCKED' ? 'MEDIUM' : 'LOW'),
+        title: stockRunwayStatus.value === 'CRITICAL_LOW' 
+          ? 'Stockout Risk Alert' 
+          : (stockRunwayStatus.value === 'OVERSTOCKED' ? 'Excess Inventory Runway' : 'Inventory Runway Health'),
+        description: stockRunwayDays.value > 0 
+          ? `Current inventory provides ~${stockRunwayDays.value} days of runway at active burn rate. Maintain optimal replenishment cycles.`
+          : 'Monitor daily turnover and burn rate to optimize replenishment and prevent stockouts.',
+        count: stockRunwayDays.value > 0 ? stockRunwayDays.value : fastMovingStock.value.count,
+        actionLabel: 'Audit Stock Runway'
+      });
+    } else if (!hasReplenish) {
+      mapped.push({
+        type: 'REPLENISH_FAST',
+        priority: 'MEDIUM',
+        title: 'Protect Fast Movers',
+        description: 'Ensure high velocity items have an adequate safety stock buffer to satisfy demand.',
+        count: fastMovingStock.value.count,
+        actionLabel: 'Check Fast Movers'
+      });
+    } else if (!hasDormant) {
+      mapped.push({
+        type: 'DISCOUNT_DORMANT',
+        priority: 'HIGH',
+        title: 'Liquidate Dormant Stock',
+        description: 'Consider discounting dormant stock to free up cash liquidity.',
+        count: deadStock.value.count,
+        actionLabel: 'Inspect Dormant Items'
+      });
+    }
+  }
+
+  return mapped;
 });
 
 const paymentBreakdown = computed(() => {
@@ -2254,6 +2668,16 @@ const formattedDate = computed(() => {
   });
 });
 
+const formatTime = (isoStr?: string) => {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return isoStr;
+  }
+};
+
 // Quick Action Modal Triggers
 const openCollectPaymentModal = () => {
   paymentForm.value = {
@@ -2328,6 +2752,138 @@ const submitCashMovement = async () => {
     showToast(err.message || 'Failed to record cash movement', 'error');
   } finally {
     isSubmittingMovement.value = false;
+  }
+};
+
+// ==========================================
+// Supplier Debt Settlement Handlers
+// ==========================================
+const creditorSuppliers = computed<Supplier[]>(() => {
+  const map = new Map<string, Supplier>();
+  
+  // 1. From vm.suppliers (active suppliers from DB)
+  (vm.suppliers.value || []).forEach((s) => {
+    if (Number(s.balance) > 0) {
+      map.set(s.id, { ...s, balance: Number(s.balance) });
+    }
+  });
+
+  // 2. Supplement with any creditors returned in dashboard cashflow data
+  (topCreditors.value || []).forEach((c: any) => {
+    if (Number(c.balance) > 0 && !map.has(c.id)) {
+      map.set(c.id, {
+        id: c.id,
+        code: c.code || (c.id ? c.id.slice(0, 6).toUpperCase() : 'SUP'),
+        name: c.name || 'Supplier',
+        contactPerson: c.contactPerson || '',
+        phone: c.phone || '',
+        email: c.email || '',
+        category: c.category || 'Wholesale',
+        balance: Number(c.balance) || 0,
+        status: (c.status || 'Active') as 'Active' | 'Inactive'
+      });
+    }
+  });
+
+  return Array.from(map.values()).sort((a, b) => b.balance - a.balance);
+});
+
+const openPaySupplierModal = (targetCred?: any) => {
+  let target: Supplier | null = null;
+  if (targetCred) {
+    target = creditorSuppliers.value.find((s) => s.id === targetCred.id) ||
+             (vm.suppliers.value || []).find((s) => s.id === targetCred.id) ||
+             {
+               id: targetCred.id,
+               code: targetCred.code || (targetCred.id ? targetCred.id.slice(0, 6).toUpperCase() : 'SUP'),
+               name: targetCred.name || 'Supplier',
+               contactPerson: targetCred.contactPerson || '',
+               phone: targetCred.phone || '',
+               email: targetCred.email || '',
+               category: targetCred.category || 'Wholesale',
+               balance: Number(targetCred.balance) || 0,
+               status: (targetCred.status || 'Active') as 'Active' | 'Inactive'
+             };
+  } else {
+    // Top card "Money You Owe suppliers"
+    if (creditorSuppliers.value.length > 0) {
+      target = creditorSuppliers.value[0] || null;
+    }
+  }
+
+  if (!target || target.balance <= 0) {
+    showToast(t('dashboard2.noCreditors') || 'No outstanding supplier balance to pay.', 'info');
+    return;
+  }
+
+  selectedSupplierForPay.value = target;
+  selectedSupplierIdForPay.value = target.id;
+  supplierPaymentAmount.value = String(target.balance);
+  showPaySupplierModal.value = true;
+};
+
+const onSupplierSelectChange = () => {
+  const found = creditorSuppliers.value.find((s) => s.id === selectedSupplierIdForPay.value);
+  if (found) {
+    selectedSupplierForPay.value = found;
+    supplierPaymentAmount.value = String(found.balance);
+  }
+};
+
+const handlePaySupplier = async () => {
+  if (!selectedSupplierForPay.value) return;
+  const payVal = parseFloat(supplierPaymentAmount.value) || 0;
+  if (payVal <= 0) {
+    showToast(t('suppliers.enterValidPaymentAmount'), 'error');
+    return;
+  }
+  if (payVal > selectedSupplierForPay.value.balance) {
+    showToast(t('suppliers.paymentExceedsBalance'), 'error');
+    return;
+  }
+
+  const newBalance = Math.max(0, selectedSupplierForPay.value.balance - payVal);
+  isSubmittingSupplierPay.value = true;
+
+  try {
+    const storeId = localStorage.getItem('storeId');
+    if (!storeId) {
+      showToast('Error: Store ID is missing. Please log in again.', 'error');
+      return;
+    }
+
+    const updatedSupplier = await api.put<any>(`/api/suppliers/${selectedSupplierForPay.value.id}`, {
+      storeId,
+      code: selectedSupplierForPay.value.code || 'SUP',
+      name: selectedSupplierForPay.value.name,
+      contactPerson: selectedSupplierForPay.value.contactPerson || '',
+      phone: selectedSupplierForPay.value.phone || '',
+      email: selectedSupplierForPay.value.email || '',
+      category: selectedSupplierForPay.value.category || 'Wholesale',
+      balance: newBalance,
+      status: selectedSupplierForPay.value.status || 'Active'
+    });
+
+    const index = vm.suppliers.value.findIndex((s) => s.id === selectedSupplierForPay.value?.id);
+    if (index !== -1 && vm.suppliers.value[index]) {
+      vm.suppliers.value[index] = {
+        ...vm.suppliers.value[index],
+        balance: Number(updatedSupplier?.balance ?? newBalance)
+      };
+    }
+
+    showToast(t('suppliers.paymentRecordedSuccess', {
+      amount: payVal.toLocaleString(),
+      name: updatedSupplier?.name || selectedSupplierForPay.value.name,
+      balance: newBalance.toLocaleString()
+    }));
+
+    showPaySupplierModal.value = false;
+    await fetchData();
+  } catch (err: any) {
+    showToast('Failed to record payment: ' + (err.message || err), 'error');
+  } finally {
+    isSubmittingSupplierPay.value = false;
   }
 };
 </script>

@@ -97,7 +97,7 @@
           </span>
         </div>
         <div>
-          <div class="text-3xl font-black font-mono text-on-surface leading-tight">{{ totalUnitsSold }}</div>
+          <div class="text-xl sm:text-2xl lg:text-xl xl:text-2xl 2xl:text-3xl font-black font-mono text-on-surface leading-tight amount-hero truncate">{{ totalUnitsSold }}</div>
           <p class="text-xs text-on-surface-variant font-medium mt-1">{{ $t('topSelling.cumulativeUnits') }}</p>
         </div>
       </div>
@@ -111,7 +111,7 @@
           </span>
         </div>
         <div>
-          <div class="text-3xl font-black font-mono text-emerald-600 leading-tight">{{ formatCurrency(totalRevenue, currency) }}</div>
+          <div class="text-xl sm:text-2xl lg:text-xl xl:text-2xl 2xl:text-3xl font-black font-mono text-emerald-600 leading-tight amount-hero truncate">{{ formatCurrency(totalRevenue, currency) }}</div>
           <p class="text-xs text-on-surface-variant font-medium mt-1">{{ $t('topSelling.generatedRevenue') }}</p>
         </div>
       </div>
@@ -125,7 +125,7 @@
           </span>
         </div>
         <div>
-          <div class="text-3xl font-black font-mono text-on-surface leading-tight">{{ topSellingProducts.length }}</div>
+          <div class="text-xl sm:text-2xl lg:text-xl xl:text-2xl 2xl:text-3xl font-black font-mono text-on-surface leading-tight amount-hero truncate">{{ topSellingProducts.length }}</div>
           <p class="text-xs text-on-surface-variant font-medium mt-1">{{ $t('topSelling.highVelocityCatalog') }}</p>
         </div>
       </div>
@@ -174,14 +174,14 @@
           </div>
 
           <!-- Metrics Row -->
-          <div class="mt-6 pt-4 border-t border-outline-variant/50 flex justify-between items-end">
-            <div>
+          <div class="mt-6 pt-4 border-t border-outline-variant/50 flex justify-between items-end gap-2">
+            <div class="min-w-0">
               <span class="text-[10px] font-mono font-bold uppercase text-on-surface-variant block">{{ $t('topSelling.volumeSold') }}</span>
-              <span class="text-xl font-black font-mono text-primary">{{ product.totalSold }} {{ product.unitOfMeasure || 'PCS' }}</span>
+              <span class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-primary amount-kpi truncate block">{{ product.totalSold }} {{ product.unitOfMeasure || 'PCS' }}</span>
             </div>
-            <div class="text-right">
+            <div class="text-right min-w-0">
               <span class="text-[10px] font-mono font-bold uppercase text-on-surface-variant block">{{ $t('topSelling.revenue') }}</span>
-              <span class="text-sm font-black font-mono text-emerald-600">{{ formatCurrency((product.totalSold || 0) * (product.sellingPrice || 0), currency) }}</span>
+              <span class="text-xs sm:text-sm font-black font-mono text-emerald-600 amount-compact truncate block">{{ formatCurrency((product.totalSold || 0) * (product.sellingPrice || 0), currency) }}</span>
             </div>
           </div>
         </div>

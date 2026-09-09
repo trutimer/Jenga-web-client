@@ -54,7 +54,7 @@
           </div>
         </div>
         <div class="mt-3">
-          <span class="text-2xl font-black text-primary">{{ stats.totalCount }}</span>
+          <span class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black text-primary tracking-tight amount-kpi">{{ stats.totalCount }}</span>
           <span class="text-xs font-semibold text-on-surface-variant/70 ml-2">{{ $t('customers.activeCount', { count: stats.activeCount }) }}</span>
         </div>
       </div>
@@ -67,7 +67,7 @@
           </div>
         </div>
         <div class="mt-3">
-          <span class="text-2xl font-black text-error">{{ formatCurrency(stats.totalOutstanding) }}</span>
+          <span class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-error tracking-tight amount-kpi truncate block">{{ formatCurrency(stats.totalOutstanding) }}</span>
         </div>
       </div>
 
@@ -79,7 +79,7 @@
           </div>
         </div>
         <div class="mt-3">
-          <span class="text-2xl font-black text-on-surface">{{ formatCurrency(stats.totalCreditLimit) }}</span>
+          <span class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate block">{{ formatCurrency(stats.totalCreditLimit) }}</span>
         </div>
       </div>
 
@@ -91,7 +91,7 @@
           </div>
         </div>
         <div class="mt-3">
-          <span class="text-2xl font-black text-secondary">{{ stats.companyCount }}</span>
+          <span class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black text-secondary tracking-tight amount-kpi">{{ stats.companyCount }}</span>
         </div>
       </div>
     </div>
