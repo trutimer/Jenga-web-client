@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { websocketService } from '../services/websocketService';
 
 const routes = [
   {
@@ -165,6 +166,7 @@ router.beforeEach((to, from, next) => {
                           !!storeId && storeId !== 'null' && storeId !== 'undefined';
 
   if (to.meta.requiresAuth && !isAuthenticated) {
+    websocketService.disconnect();
     if (token) {
       localStorage.clear();
       sessionStorage.clear();

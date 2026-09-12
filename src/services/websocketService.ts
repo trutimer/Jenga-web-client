@@ -92,9 +92,12 @@ class WebSocketService {
     if (!url.endsWith('/ws')) {
       url = `${url.replace(/\/+$/, '')}/ws`;
     }
-    if (token) {
+    if (token && token !== 'null' && token !== 'undefined' && token.trim() !== '') {
+      const cleanToken = token.startsWith('Bearer ') || token.startsWith('bearer ')
+        ? token.substring(7).trim()
+        : token.trim();
       const sep = url.includes('?') ? '&' : '?';
-      url = `${url}${sep}token=${encodeURIComponent(token)}`;
+      url = `${url}${sep}token=${encodeURIComponent(cleanToken)}`;
     }
     return url;
   }
@@ -108,9 +111,13 @@ class WebSocketService {
     }
 
     const token = localStorage.getItem('accessToken');
-    if (!token) {
-      return;
+    if (!token || token === 'null' || token === 'undefined' || token.trim() === '') {
+      return; // No token available; do not attempt connection
     }
+
+    const cleanToken = token.startsWith('Bearer ') || token.startsWith('bearer ')
+      ? token.substring(7).trim()
+      : token.trim();
 
     this.shouldBeConnected = true;
 
@@ -120,24 +127,36 @@ class WebSocketService {
 
     this.connectionState.value = 'CONNECTING';
 
-    const wsUrl = this.getWebSocketUrl(token);
+    const wsUrl = this.getWebSocketUrl(cleanToken);
 
     this.client = new Client({
       brokerURL: wsUrl,
       connectHeaders: {
-        Authorization: `Bearer ${token}`,
-        token: token
+        Authorization: `Bearer ${cleanToken}`,
+        token: cleanToken,
+        passcode: cleanToken
       },
       heartbeatIncoming: 25000,
       heartbeatOutgoing: 25000,
       reconnectDelay: 5000,
       beforeConnect: () => {
-        const freshToken = localStorage.getItem('accessToken') || '';
+        const freshToken = localStorage.getItem('accessToken');
+        if (!freshToken || freshToken === 'null' || freshToken === 'undefined' || freshToken.trim() === '') {
+          console.warn('[WebSocket] Aborting connection: No valid access token found in storage.');
+          this.disconnect();
+          return Promise.reject(new Error('No valid access token'));
+        }
+
+        const cleanFreshToken = freshToken.startsWith('Bearer ') || freshToken.startsWith('bearer ')
+          ? freshToken.substring(7).trim()
+          : freshToken.trim();
+
         if (this.client) {
-          this.client.brokerURL = this.getWebSocketUrl(freshToken);
+          this.client.brokerURL = this.getWebSocketUrl(cleanFreshToken);
           this.client.connectHeaders = {
-            Authorization: `Bearer ${freshToken}`,
-            token: freshToken
+            Authorization: `Bearer ${cleanFreshToken}`,
+            token: cleanFreshToken,
+            passcode: cleanFreshToken
           };
         }
       },
@@ -156,7 +175,15 @@ class WebSocketService {
         console.log('[WebSocket] Disconnected from STOMP broker.');
       },
       onStompError: (frame) => {
-        console.error('[WebSocket] STOMP error frame:', frame.headers['message'], frame.body);
+        const errorMsg = frame.headers['message'] || '';
+        console.error('[WebSocket] STOMP error frame:', errorMsg, frame.body);
+
+        // If server rejected credentials or access is denied, disconnect immediately to prevent connection storm
+        const lower = errorMsg.toLowerCase();
+        if (lower.includes('auth') || lower.includes('token') || lower.includes('access denied')) {
+          console.warn('[WebSocket] Authentication rejected by broker. Terminating connection.');
+          this.disconnect();
+        }
       },
       onWebSocketClose: () => {
         this.isConnected.value = false;

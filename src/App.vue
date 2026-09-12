@@ -190,6 +190,9 @@
     @updated="handle2FaUpdated"
   />
 
+  <!-- Interactive Guided Tour for Admins & Managers -->
+  <AppTourOverlay />
+
   <!-- Global Toast Notification -->
   <Toast 
     v-if="toastMessage"
@@ -202,8 +205,10 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue';
 import Toast from './components/common/Toast.vue';
+import AppTourOverlay from './components/common/AppTourOverlay.vue';
 import { toastMessage, toastType, clearToast, showToast } from './services/toastService';
 import { useAppViewModel } from './viewmodels/useAppViewModel';
+import { websocketService } from './services/websocketService';
 import { useRouter, useRoute } from 'vue-router';
 import Sidebar from './components/layout/Sidebar.vue';
 import TopNav from './components/layout/TopNav.vue';
@@ -256,6 +261,7 @@ watch(
   () => route.path,
   (newPath) => {
     if (newPath === '/login') {
+      websocketService.disconnect();
       user.value = null;
     }
     if (newPath === '/checkout') {

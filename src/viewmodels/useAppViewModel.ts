@@ -4,6 +4,7 @@ import { INITIAL_PRODUCTS, INITIAL_STORE_SETTINGS, INITIAL_SUPPLIERS } from '../
 import { api } from '../services/api';
 import { showToast } from '../services/toastService';
 import { isElectron } from '../services/offlineSalesService';
+import { websocketService } from '../services/websocketService';
 import router from '../router';
 
 
@@ -64,6 +65,7 @@ const resetInactivityTimeout = () => {
     activeBranchId.value = null;
     userPermissions.value = [];
     mobileMenuOpen.value = false;
+    websocketService.disconnect();
     localStorage.clear();
     sessionStorage.clear();
     router.push('/login');
@@ -496,6 +498,7 @@ export function useAppViewModel() {
   };
 
   const handleLogout = () => {
+    websocketService.disconnect();
     user.value = null;
     activeBranchId.value = null;
     mobileMenuOpen.value = false;

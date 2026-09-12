@@ -3,7 +3,7 @@
     <!-- ========================================== -->
     <!-- TIER 1: EXECUTIVE HEADER & ACTION BAR      -->
     <!-- ========================================== -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-container-lowest py-3.5 px-5 rounded-2xl border border-outline-variant/60 shadow-sm">
+    <div data-tour="dashboard-header" class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-container-lowest py-3.5 px-5 rounded-2xl border border-outline-variant/60 shadow-sm">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-inner">
           <Activity class="w-5 h-5 text-primary" />
@@ -33,7 +33,7 @@
       </div>
 
       <!-- Compact Tab Pill (Summary / Collection / Stock) -->
-      <div class="flex items-center bg-surface-container-high/60 p-1 rounded-xl border border-outline-variant/40 text-xs font-bold shadow-inner">
+      <div data-tour="dashboard-tabs" class="flex items-center bg-surface-container-high/60 p-1 rounded-xl border border-outline-variant/40 text-xs font-bold shadow-inner">
         <button 
           @click="activeMainTab = 'summary'"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer select-none"
@@ -65,7 +65,18 @@
       </div>
 
       <!-- Controls -->
-      <div class="flex items-center gap-2.5">
+      <div data-tour="period-controls" class="flex items-center gap-2.5">
+        <!-- Quick Tour Button for Admin / Manager -->
+        <button 
+          v-if="isStoreAdminOrManager"
+          @click="startTour('dashboard')"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-primary/30 bg-primary-container/20 hover:bg-primary-container/40 text-primary text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
+          :title="$t('tour.takeTour')"
+        >
+          <Sparkles class="w-3.5 h-3.5 text-primary animate-pulse" />
+          <span class="hidden sm:inline">{{ $t('tour.quickTour') }}</span>
+        </button>
+
         <!-- Period Selector -->
         <div class="flex items-center bg-surface-container-high/60 p-1 rounded-xl border border-outline-variant/40 text-xs font-bold font-mono">
           <button 
@@ -98,7 +109,7 @@
       <!-- ========================================== -->
       <!-- TIER 2: 4 HERO KPI CARDS (FINANCIAL PULSE) -->
       <!-- ========================================== -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div data-tour="hero-kpis" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       <!-- KPI 1: Realized Gross Profit & Margin % (The Profitability Engine) -->
       <div class="bg-surface-container-lowest rounded-xl p-3.5 sm:p-4 border border-outline-variant/60 shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-emerald-500 transition-all duration-300">
         <div class="absolute -right-6 -top-6 w-16 h-16 bg-emerald-500/10 rounded-full blur-lg pointer-events-none group-hover:scale-125 transition-transform"></div>
@@ -228,7 +239,7 @@
     <!-- ========================================== -->
     <!-- TIER 3: FULL-WIDTH FINANCIAL VELOCITY CHART -->
     <!-- ========================================== -->
-    <div class="w-full bg-surface-container-lowest rounded-2xl border border-outline-variant/60 shadow-sm p-5 sm:p-6 flex flex-col justify-between">
+    <div data-tour="velocity-chart" class="w-full bg-surface-container-lowest rounded-2xl border border-outline-variant/60 shadow-sm p-5 sm:p-6 flex flex-col justify-between">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div class="flex items-center gap-2.5">
             <!-- <h3 class="text-base sm:text-lg font-black text-on-surface tracking-tight">{{ $t('dashboard2.financialVelocity') }}</h3> -->
@@ -632,7 +643,7 @@
     <!-- ========================================== -->
     <div v-else-if="activeMainTab === 'collection'" class="space-y-6">
       <!-- HERO CARDS: COLLECTION RATE, MONEY TO COLLECT, MONEY OWED -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div data-tour="collection-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Card 1: Collection Rate -->
         <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/60 shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-primary transition-all">
           <div class="flex justify-between items-center mb-3">
@@ -1035,7 +1046,7 @@
     <!-- ========================================== -->
     <div v-else-if="activeMainTab === 'stock'" class="space-y-6">
       <!-- CAPITAL INVENTORY VALUATION HERO CARDS -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div data-tour="stock-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Capital at Cost -->
         <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/60 shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-primary transition-all">
           <div class="flex justify-between items-center mb-2">
@@ -2309,7 +2320,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import { useAppTour, registerTabChangeHandler, unregisterTabChangeHandler } from '../composables/useAppTour';
 import { websocketService } from '../services/websocketService';
 import { isElectron } from '../services/offlineSalesService';
 import { useAnimatedNumber, useAnimatedCurrency } from '../utils/useAnimatedNumber';
@@ -2362,6 +2374,8 @@ import type {
 
 const vm = useAppViewModel();
 const router = useRouter();
+const route = useRoute();
+const { isStoreAdminOrManager, startTour, checkAndAutoStart } = useAppTour();
 
 const activeMainTab = ref<'summary' | 'collection' | 'stock'>('summary');
 const showRiskDebtorsModal = ref(false);
@@ -2540,6 +2554,10 @@ const setupWebSocketSubscriptions = () => {
 };
 
 onMounted(() => {
+  registerTabChangeHandler((tab) => {
+    activeMainTab.value = tab;
+  });
+  checkAndAutoStart(route.path);
   vm.fetchSettings();
   fetchData();
   fetchCustomersForDropdown();
@@ -2557,6 +2575,7 @@ watch(() => vm.activeBranchId.value, () => {
 });
 
 onUnmounted(() => {
+  unregisterTabChangeHandler();
   unsubscribeList.forEach((unsub) => unsub());
   unsubscribeList = [];
   if (realtimePulseTimer) clearTimeout(realtimePulseTimer);

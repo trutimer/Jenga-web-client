@@ -2,18 +2,32 @@
   <div class="max-w-7xl mx-auto space-y-6 pb-20 animate-fade-up font-sans select-none">
     
     <!-- Header section -->
-    <div class="mb-2">
-      <h2 class="text-3xl font-black text-on-background tracking-tight">{{ $t('settings.title') }}</h2>
-      <p class="text-sm font-semibold text-on-surface-variant mt-1">{{ $t('settings.subtitle') }}</p>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+      <div>
+        <h2 class="text-3xl font-black text-on-background tracking-tight">{{ $t('settings.title') }}</h2>
+        <p class="text-sm font-semibold text-on-surface-variant mt-1">{{ $t('settings.subtitle') }}</p>
+      </div>
+
+      <!-- Quick Tour Button for Admin / Manager -->
+      <button 
+        v-if="isStoreAdminOrManager"
+        @click="startTour('settings')"
+        class="self-start sm:self-auto flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-primary/30 bg-primary-container/20 hover:bg-primary-container/40 text-primary text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
+        :title="$t('tour.takeTour')"
+      >
+        <Sparkles class="w-4 h-4 text-primary animate-pulse" />
+        <span>{{ $t('tour.quickTour') }}</span>
+      </button>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
       
       <!-- Left column sidebar (Category Switcher) -->
-      <div class="bg-surface-container-lowest border border-outline-variant shadow-sm rounded-xl p-4 flex flex-col gap-1.5 select-none shrink-0 md:col-span-1">
+      <div data-tour="settings-nav" class="bg-surface-container-lowest border border-outline-variant shadow-sm rounded-xl p-4 flex flex-col gap-1.5 select-none shrink-0 md:col-span-1">
         <span class="block text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider mb-2 px-2">{{ $t('settings.storeConfig') }}</span>
         
         <button 
+          data-tour="settings-profile"
           type="button"
           @click="activeSection = 'profile'"
           class="text-left text-xs px-4 py-3 h-11 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-semibold border-0"
@@ -26,6 +40,7 @@
         </button>
 
         <button 
+          data-tour="settings-defaults"
           type="button"
           @click="activeSection = 'defaults'"
           class="text-left text-xs px-4 py-3 h-11 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-semibold border-0"
@@ -38,6 +53,7 @@
         </button>
 
         <button 
+          data-tour="settings-finance"
           type="button"
           @click="activeSection = 'finance'"
           class="text-left text-xs px-4 py-3 h-11 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-semibold border-0"
@@ -50,6 +66,7 @@
         </button>
 
         <button 
+          data-tour="settings-hardware"
           type="button"
           @click="activeSection = 'hardware'"
           class="text-left text-xs px-4 py-3 h-11 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-semibold border-0"
@@ -1395,7 +1412,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import { useAppTour } from '../composables/useAppTour';
 import { api } from '../services/api';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { useBarcodeScanner, playPOSSound } from '../composables/useBarcodeScanner';
@@ -1445,6 +1463,8 @@ import {
 } from 'lucide-vue-next';
 
 const router = useRouter();
+const route = useRoute();
+const { isStoreAdminOrManager, startTour, checkAndAutoStart } = useAppTour();
 const vm = useAppViewModel();
 const { userRole, userId, activeBranchId } = vm;
 
@@ -1881,6 +1901,7 @@ const storeTimezone = ref('');
 const enablePerpetualCogs = ref(false);
 
 onMounted(async () => {
+  checkAndAutoStart(route.path);
   await vm.fetchSettings();
   await fetchUserProfile();
   

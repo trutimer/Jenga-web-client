@@ -186,6 +186,17 @@
             </label>
           </div>
 
+          <!-- Cloudflare Turnstile Bot Defense (Web Only) -->
+          <div v-if="!isElectron()" class="w-full my-1">
+            <TurnstileWidget 
+              ref="turnstileRef"
+              action="login"
+              @success="handleTurnstileSuccess"
+              @expire="handleTurnstileExpire"
+              @error="handleTurnstileError"
+            />
+          </div>
+
           <!-- Submit Action -->
           <button 
             type="submit"
@@ -196,16 +207,6 @@
             <span>{{ isLoggingIn ? $t('auth.authenticating') : $t('auth.signInButton') }}</span>
             <ArrowRight v-if="!isLoggingIn" class="w-5 h-5" />
           </button>
-
-          <div v-if="!isElectron()" class="w-full my-1">
-            <TurnstileWidget 
-              ref="turnstileRef"
-              action="login"
-              @success="handleTurnstileSuccess"
-              @expire="handleTurnstileExpire"
-              @error="handleTurnstileError"
-            />
-          </div>
         </form>
 
         <!-- Footer Status Indicators -->
@@ -495,6 +496,7 @@ const processSuccessfulLogin = async (res: any) => {
   localStorage.setItem('accessToken', res.accessToken);
 
   if (res.user) {
+    localStorage.setItem('userId', res.user.id);
     localStorage.setItem('twoFactorEnabled', String(!!res.user.twoFactorEnabled));
     if (res.user.twoFactorRemindAt) {
       localStorage.setItem('twoFactorRemindAt', res.user.twoFactorRemindAt);
@@ -506,7 +508,34 @@ const processSuccessfulLogin = async (res: any) => {
     }
   }
 
+  // Check if login API includes boolean flag 'hasTakenTour' / 'has_taken_tour'
+  // Activate the tour ONLY if hasTakenTour / has_taken_tour is FALSE
+  const userObj = res.user || {};
+  const hasTourFlag = 'hasTakenTour' in userObj || 'has_taken_tour' in userObj || 'hasTakenTour' in res || 'has_taken_tour' in res;
+  const rawHasTakenTour = userObj.hasTakenTour ?? userObj.has_taken_tour ?? res.hasTakenTour ?? res.has_taken_tour;
+
+  const role = (res.user?.role || '').toUpperCase();
+  const isEligibleRole = role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'MANAGER';
+
+  if (isEligibleRole) {
+    if (hasTourFlag && rawHasTakenTour !== undefined && rawHasTakenTour !== null) {
+      localStorage.setItem('hasTakenTour', String(rawHasTakenTour));
+      // Activate ONLY if hasTakenTour is false (first time)
+      if (!rawHasTakenTour) {
+        sessionStorage.setItem('jenga_tour_pending_poc', 'true');
+      } else {
+        sessionStorage.removeItem('jenga_tour_pending_poc');
+      }
+    } else {
+      // Fallback POC mode if backend doesn't send the field yet
+      sessionStorage.setItem('jenga_tour_pending_poc', 'true');
+    }
+  } else {
+    sessionStorage.removeItem('jenga_tour_pending_poc');
+  }
+
   if (res.user.role === 'ADMIN') {
+    localStorage.setItem('userId', res.user.id);
     localStorage.setItem('cashierId', res.user.id);
     localStorage.setItem('storeId', res.user.storeId || '');
     localStorage.setItem('cashierName', res.user.fullName);
@@ -551,6 +580,7 @@ const processSuccessfulLogin = async (res: any) => {
     }
   }
 
+  localStorage.setItem('userId', res.user.id);
   localStorage.setItem('cashierId', res.user.id);
   localStorage.setItem('storeId', storeId || '');
   localStorage.setItem('branchId', branchId || '');

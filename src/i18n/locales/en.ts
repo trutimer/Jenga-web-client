@@ -1803,4 +1803,62 @@ export const en = {
     paymentCredit: 'Credit',
     paymentTransfer: 'Transfer',
   },
+  tour: {
+    quickTour: 'Quick Tour',
+    takeTour: 'Take a Tour',
+    stepOf: 'Step {current} of {total}',
+    skipTour: 'Skip Tour',
+    previous: 'Previous',
+    next: 'Next',
+    finish: 'Finish Tour',
+    exploreSettings: 'Explore Settings',
+    gotIt: 'Got It',
+    dashboardBadge: 'Executive Dashboard',
+    summaryTabBadge: 'Overview',
+    collectionTabBadge: 'Credit & Debtors',
+    stockTabBadge: 'Inventory Intelligence',
+    settingsBadge: 'Store Settings',
+
+    welcomeTitle: 'Welcome to Jenga POS!',
+    welcomeDesc: 'This is your executive cockpit designed for shop owners and managers. Take this quick guided tour to master your business metrics, collection pipelines, and inventory valuation.',
+
+    kpiTitle: 'Financial Pulse & Core KPIs',
+    kpiDesc: 'Track Realized Gross Profit, Gross Margin %, Sales Traffic, Net Cash Position (Surplus/Deficit), and Live Cash in Drawer at a single glance.',
+
+    periodTitle: 'Timeframe & Real-time Sync',
+    periodDesc: 'Filter your analytics by Today, 7 Days, 30 Days, or Entire Year. The Live Sync indicator ensures real-time cloud data streaming across your branches.',
+
+    velocityTitle: 'Financial Velocity & Cash Streams',
+    velocityDesc: 'Visualize your cashflow momentum. Compare Sales Revenue, Realized Profit, and Operating Expenses on interactive dynamic curves.',
+
+    tabsTitle: '3-Pillar Operational Tabs',
+    tabsDesc: 'Easily navigate between Summary (general financial performance), Collection (debtors and credit tracking), and Stock (inventory valuation & burn rate).',
+
+    collectionTitle: 'Collection Command Center',
+    collectionDesc: 'Keep cash moving into your business! Monitor your Collection Rate %, collect outstanding customer debt, track overdue aging buckets, and manage what you owe suppliers.',
+
+    stockTitle: 'Inventory Valuation & Runway',
+    stockDesc: 'Gain full visibility over your capital. See exact money tied in stock at cost, potential retail turnover, unrealized profit margins, and your days of stock runway.',
+
+    dashboardCompleteTitle: 'You Are Ready to Lead!',
+    dashboardCompleteDesc: 'You now know how to monitor sales, control debt collections, and track inventory health. You can also explore Store Settings to configure your business defaults and receipt printing.',
+
+    settingsWelcomeTitle: 'Store Configuration & Defaults',
+    settingsWelcomeDesc: 'Configure your store profile, financial ledger accounts, currency, and POS hardware peripherals here.',
+
+    settingsProfileTitle: 'Store Profile & Identity',
+    settingsProfileDesc: 'Set your official business name, TIN number, physical storefront address, and customer-facing contact information.',
+
+    settingsDefaultsTitle: 'Regional Defaults & Inventory Costing',
+    settingsDefaultsDesc: 'Configure your currency (e.g. TZS, USD), timezone, and enable Perpetual COGS for precision profit calculation.',
+
+    settingsFinanceTitle: 'Finance & Ledger Accounts',
+    settingsFinanceDesc: 'Manage bank accounts, mobile money wallets (M-Pesa, Airtel Money, Tigo Pesa), and petty cash expense registers.',
+
+    settingsHardwareTitle: 'Hardware & Receipt Printing',
+    settingsHardwareDesc: 'Pair thermal receipt printers, select print templates (80mm / 58mm), configure barcode scanner modes, and customize receipt footers.',
+
+    settingsCompleteTitle: 'Configuration Complete!',
+    settingsCompleteDesc: 'Your store settings are ready. You can relaunch this tour anytime by clicking the Quick Tour button.',
+  },
 };

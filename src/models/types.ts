@@ -281,6 +281,8 @@ export interface AppUser {
   twoFactorEnabled?: boolean;
   twoFactorRemindAt?: string;
   twoFactorPrompt?: boolean;
+  hasTakenTour?: boolean;
+  has_taken_tour?: boolean;
 }
 
 export interface TwoFactorSetupResponse {

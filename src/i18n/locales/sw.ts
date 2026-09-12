@@ -1803,4 +1803,62 @@ export const sw = {
     paymentCredit: 'Mkopo',
     paymentTransfer: 'Benki / Simu',
   },
+  tour: {
+    quickTour: 'Mwongozo Mfupi',
+    takeTour: 'Anza Mwongozo',
+    stepOf: 'Hatua ya {current} kati ya {total}',
+    skipTour: 'Ruka Mwongozo',
+    previous: 'Iliyopita',
+    next: 'Inayofuata',
+    finish: 'Maliza Mwongozo',
+    exploreSettings: 'Angalia Mipangilio',
+    gotIt: 'Nimeelewa',
+    dashboardBadge: 'Dashibodi Kuu',
+    summaryTabBadge: 'Muhtasari',
+    collectionTabBadge: 'Madeni & Makusanyo',
+    stockTabBadge: 'Udhibiti wa Stoo',
+    settingsBadge: 'Mipangilio ya Duka',
+
+    welcomeTitle: 'Karibu Kwenye Jenga POS!',
+    welcomeDesc: 'Hapa ndipo kitovu cha biashara yako kwa wamiliki na mameneja. Fuata mwongozo huu mfupi kujifunza jinsi ya kufuatilia faida, makusanyo ya madeni, na thamani ya bidhaa zako.',
+
+    kpiTitle: 'Vipimo Vikuu vya Kifedha (KPIs)',
+    kpiDesc: 'Tazama Faida Ghafi (Gross Profit), Uwiano wa Faida (Margin %), Mauzo, Salio Halisi la Fedha Taslimu (Surplus/Deficit), na Fedha zilizopo drooni kwa mtazamo mmoja.',
+
+    periodTitle: 'Chaguo la Muda & Muunganisho wa Moja kwa Moja',
+    periodDesc: 'Chuja takwimu zako kwa Leo, Siku 7, Siku 30, au Mwaka Mzima. Kiashiria cha Live Sync kinahakikisha taarifa zote zinasasishwa papo hapo kwenye matawi yako.',
+
+    velocityTitle: 'Mtiririko wa Fedha & Grafu',
+    velocityDesc: 'Tazama mwelekeo wa fedha za duka lako. Linganisha Mapato ya Mauzo, Faida Halisi, na Matumizi madogo madogo kupitia grafu za kisasa.',
+
+    tabsTitle: 'Nguzo 3 za Uendeshaji',
+    tabsDesc: 'Sogeza kirahisi kati ya Muhtasari (Hali ya jumla ya kifedha), Makusanyo (Madeni ya wateja na wasambazaji), na Stoo (Thamani ya bidhaa na kasi ya mauzo).',
+
+    collectionTitle: 'Kituo cha Makusanyo ya Madeni',
+    collectionDesc: 'Hakikisha fedha zinarudi dukani! Fuatilia asilimia ya makusanyo (Collection Rate), dai madeni ya wateja yaliyochelewa, na dhibiti madeni unayodaiwa na wasambazaji.',
+
+    stockTitle: 'Thamani ya Mzigo & Uhai wa Stoo',
+    stockDesc: 'Pata picha kamili ya mtaji uliopo stoo. Tazama fedha zilizolala kwenye bidhaa (Gharama ya ununuzi), makadirio ya mapato ya mauzo, faida inayotarajiwa, na siku ambazo mzigo utadumu.',
+
+    dashboardCompleteTitle: 'Uko Tayari Kusimamia Duka Lako!',
+    dashboardCompleteDesc: 'Sasa unajua jinsi ya kufuatilia mauzo, kusimamia makusanyo ya madeni, na kuangalia afya ya stoo. Unaweza pia kufungua Mipangilio kuweka taarifa za duka na mashine za risiti.',
+
+    settingsWelcomeTitle: 'Mipangilio ya Duka & Mfumo',
+    settingsWelcomeDesc: 'Weka taarifa za duka lako, akaunti za benki na mitandao ya simu, sarafu, na mashine za kuchapisha risiti hapa.',
+
+    settingsProfileTitle: 'Wasifu & Utambulisho wa Duka',
+    settingsProfileDesc: 'Weka jina rasmi la duka, namba ya TIN, eneo la duka lilipo, na namba za simu za kuwasiliana na wateja.',
+
+    settingsDefaultsTitle: 'Sarafu & Hesabu za Gharama za Bidhaa',
+    settingsDefaultsDesc: 'Chagua sarafu unayotumia (k.m. TZS au USD), ukanda wa saa, na uwashe mfumo wa Perpetual COGS kupata faida sahihi kabisa.',
+
+    settingsFinanceTitle: 'Akaunti za Benki & Mitandao ya Simu',
+    settingsFinanceDesc: 'Simamia akaunti zako za benki, lipa namba/simu (M-Pesa, Airtel Money, Tigo Pesa), na fedha ndogo ndogo za matumizi ya duka (Petty Cash).',
+
+    settingsHardwareTitle: 'Mashine za Risiti & Barcode Scanner',
+    settingsHardwareDesc: 'Unganisha printa ya risiti za joto (Thermal Printer 80mm / 58mm), fomu ya risiti, na mashine ya kusoma barcode.',
+
+    settingsCompleteTitle: 'Mipangilio Imekamilika!',
+    settingsCompleteDesc: 'Duka lako liko tayari kufanya kazi kikamilifu. Unaweza kurudia mwongozo huu wakati wowote kwa kubofya kitufe cha Mwongozo Mfupi.',
+  },
 };
