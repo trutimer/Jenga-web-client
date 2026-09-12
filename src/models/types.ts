@@ -683,7 +683,8 @@ export interface CashflowVelocityTrendPoint {
   label: string;
   date: string;
   salesRevenue: number;
-  debtCollections: number;
+  profit?: number;
+  debtCollections?: number;
   pettyExpenses: number;
   netCashflow: number;
 }
@@ -844,6 +845,7 @@ export interface StockVelocityBucket {
   capital: number;
   count: number;
   percent: number;
+  productIds?: string[];
 }
 
 export interface InventoryValuationIntelligence {
@@ -857,6 +859,8 @@ export interface InventoryValuationIntelligence {
   fastMoving: StockVelocityBucket;
   slowMoving: StockVelocityBucket;
   deadStock: StockVelocityBucket;
+  fastMovingProductIds?: string[];
+  slowMovingProductIds?: string[];
   deadStockProducts: DeadStockProductItem[];
   recommendations: string[];
 }

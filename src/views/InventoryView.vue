@@ -40,348 +40,139 @@
       </div>
     </div>
 
-    <!-- MAIN SPLIT PANEL LAYOUT -->
-    <div class="flex flex-col lg:flex-row gap-6 items-start border-t border-outline-variant/50 pt-6">
+    <!-- MAIN INVENTORY WORKBENCH (FULL WIDTH) -->
+    <div class="w-full space-y-4 border-t border-outline-variant/50 pt-4">
       
-      <!-- LEFT COLUMN: FILTERS SECTION -->
-      <div class="w-full lg:w-64 xl:w-72 shrink-0 space-y-6">
-        <div class="flex justify-between items-center mb-1">
-          <h2 class="text-xl font-bold text-on-surface">{{ $t('inventory.filters') }}</h2>
+      <!-- 1. TOP FILTER TOOLBAR (SEARCH & FILTERS BUTTON ONLY) -->
+      <div class="bg-surface-container-lowest p-2.5 sm:p-3 rounded-2xl border border-outline-variant/60 shadow-xs flex items-center justify-between gap-3">
+        <!-- Search Input -->
+        <div class="relative flex-1 max-w-md sm:max-w-lg">
+          <Search class="w-4 h-4 text-outline absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input 
+            type="text"
+            v-model="productNameSearch"
+            @input="currentPage = 1"
+            :placeholder="$t('inventory.searchProductPlaceholder')"
+            class="w-full bg-surface-container-low pl-9 pr-8 py-2 border border-outline-variant rounded-xl text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-semibold placeholder:text-outline text-on-surface"
+          />
+          <button 
+            v-if="productNameSearch"
+            type="button"
+            @click="productNameSearch = ''; currentPage = 1"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface cursor-pointer bg-transparent border-0 p-1"
+          >
+            <X class="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <!-- "Filters" Button opening side panel -->
+        <button 
+          type="button"
+          @click="showFilterDrawer = true"
+          class="h-9 px-4 rounded-xl border text-xs font-bold font-sans flex items-center gap-2 transition-all cursor-pointer shadow-xs shrink-0"
+          :class="activePanelFiltersCount > 0 
+            ? 'bg-primary text-white border-primary shadow-sm hover:opacity-95' 
+            : 'bg-surface-container-low border-outline-variant/60 text-on-surface hover:bg-surface-container hover:border-outline'"
+          title="Open filters"
+        >
+          <SlidersHorizontal class="w-3.5 h-3.5" />
+          <span>{{ $t('inventory.filters') }}</span>
+          <span 
+            v-if="activePanelFiltersCount > 0" 
+            class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-black bg-white text-primary"
+          >
+            {{ activePanelFiltersCount }}
+          </span>
+        </button>
+      </div>
+
+      <!-- 2. ACTIVE FILTER BADGES ROW (WHEN ACTIVE) -->
+      <div v-if="hasActiveFilters" class="flex flex-wrap items-center justify-between gap-2 text-sm select-none py-1 px-1">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs text-on-surface-variant font-bold uppercase tracking-wider">{{ $t('inventory.activeFilterOverlays') }}</span>
+          
+          <!-- Catalog Mode Badge -->
+          <div 
+            v-if="showInactive" 
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-error/10 text-error rounded-full text-xs font-bold border border-error/30 animate-fade-in"
+          >
+            <EyeOff class="w-3 h-3 stroke-[2.5px]" />
+            <span>{{ $t('inventory.catalogInactiveBadge') }}</span>
+            <button 
+              @click="toggleShowInactive(false)"
+              class="text-error/70 hover:text-error cursor-pointer ml-0.5 bg-transparent border-0"
+              :title="$t('inventory.showActiveProducts')"
+            >
+              <X class="w-3 h-3 stroke-[2.5px]" />
+            </button>
+          </div>
+
+          <div 
+            v-if="productNameSearch.trim()" 
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/50"
+          >
+            <span>{{ $t('inventory.searchFilterBadge', { query: productNameSearch }) }}</span>
+            <button 
+              @click="productNameSearch = ''; currentPage = 1"
+              class="text-outline hover:text-on-surface-variant cursor-pointer ml-0.5 bg-transparent border-0"
+            >
+              <X class="w-3 h-3 stroke-[2.5px]" />
+            </button>
+          </div>
+
+          <div 
+            v-for="cat in selectedCategories" 
+            :key="cat" 
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/50"
+          >
+            <span>{{ $t('inventory.categoryFilterBadge', { cat }) }}</span>
+            <button 
+              @click="toggleCategory(cat)"
+              class="text-outline hover:text-on-surface-variant cursor-pointer ml-0.5 bg-transparent border-0"
+            >
+              <X class="w-3 h-3 stroke-[2.5px]" />
+            </button>
+          </div>
+
+          <div 
+            v-if="stockStatus !== 'All'" 
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/50"
+          >
+            <span>{{ $t('inventory.statusFilterBadge', { status: stockStatus }) }}</span>
+            <button 
+              @click="selectStockStatus('All')"
+              class="text-outline hover:text-on-surface-variant cursor-pointer ml-0.5 bg-transparent border-0"
+            >
+              <X class="w-3 h-3 stroke-[2.5px]" />
+            </button>
+          </div>
+
+          <div 
+            v-for="sup in selectedSuppliers" 
+            :key="sup" 
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/50"
+          >
+            <span class="truncate max-w-[120px]">{{ $t('inventory.supplierFilterBadge', { sup }) }}</span>
+            <button 
+              @click="toggleSupplier(sup)"
+              class="text-outline hover:text-on-surface-variant cursor-pointer ml-0.5 bg-transparent border-0"
+            >
+              <X class="w-3 h-3 stroke-[2.5px]" />
+            </button>
+          </div>
+
           <button 
             @click="handleResetFilters"
-            class="text-sm font-semibold hover:opacity-80 cursor-pointer bg-transparent border-0 text-primary"
+            class="text-xs text-primary hover:underline font-bold cursor-pointer bg-transparent border-0 ml-1"
           >
             {{ $t('inventory.resetFilters') }}
           </button>
         </div>
 
-        <!-- FILTER: CATALOG STATUS (Active / Inactive Toggle) -->
-        <div class="space-y-3.5">
-          <div class="flex items-center justify-between">
-            <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">{{ $t('inventory.catalogVisibility') }}</span>
-            <span 
-              v-if="!showInactive && !vm.isFetchingProducts.value"
-              class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/10 text-primary border border-primary/20"
-            >
-              {{ $t('inventory.activeCount', { count: vm.products.value.length }) }}
-            </span>
-            <span 
-              v-else-if="showInactive && hasFetchedInactive && !isFetchingInactive"
-              class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-error/10 text-error border border-error/20"
-            >
-              {{ $t('inventory.inactiveCount', { count: inactiveProducts.length }) }}
-            </span>
-          </div>
-
-          <div 
-            @click="toggleShowInactive(!showInactive)" 
-            class="flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer select-none"
-            :class="showInactive ? 'bg-error/5 border-error/30 text-error hover:bg-error/10' : 'bg-surface-container-low border-outline-variant text-on-surface hover:bg-surface-container'"
-          >
-            <div class="flex items-center gap-2.5">
-              <div 
-                class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                :class="showInactive ? 'bg-error/15 text-error' : 'bg-surface-container-high text-on-surface-variant'"
-              >
-                <EyeOff v-if="showInactive" class="w-4 h-4" />
-                <Eye v-else class="w-4 h-4" />
-              </div>
-              <div class="min-w-0">
-                <div class="flex items-center gap-1.5">
-                  <p class="text-xs font-bold leading-tight truncate">{{ showInactive ? $t('inventory.inactiveProducts') : $t('inventory.activeProducts') }}</p>
-                  <span 
-                    v-if="!showInactive" 
-                    class="text-[11px] font-mono font-bold text-primary"
-                  >
-                    ({{ vm.products.value.length }})
-                  </span>
-                  <span 
-                    v-else-if="hasFetchedInactive && !isFetchingInactive" 
-                    class="text-[11px] font-mono font-bold text-error"
-                  >
-                    ({{ inactiveProducts.length }})
-                  </span>
-                  <RotateCw v-else-if="isFetchingInactive" class="w-3 h-3 animate-spin text-error shrink-0" />
-                </div>
-                <p class="text-[11px] text-on-surface-variant/80 mt-0.5 truncate">
-                  {{ showInactive ? $t('inventory.deactivatedItems') : $t('inventory.liveCatalogItems') }}
-                </p>
-              </div>
-            </div>
-            
-            <!-- Switch slider toggle -->
-            <div 
-              class="w-9 h-5 rounded-full transition-colors relative p-0.5 flex items-center shrink-0"
-              :class="showInactive ? 'bg-error' : 'bg-surface-container-highest'"
-            >
-              <div 
-                class="w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200"
-                :class="showInactive ? 'translate-x-4' : 'translate-x-0'"
-              />
-            </div>
-          </div>
-        </div>
-
-        <hr class="border-outline-variant/65" />
-
-        <!-- FILTER: PRODUCT NAME SEARCH -->
-        <div class="space-y-3.5">
-          <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">{{ $t('inventory.searchProduct') }}</span>
-          <div class="relative">
-            <Search class="w-4 h-4 text-outline absolute left-3 top-1/2 -translate-y-1/2" />
-            <input 
-              type="text"
-              v-model="productNameSearch"
-              @input="currentPage = 1"
-              :placeholder="$t('inventory.searchProductPlaceholder')"
-              class="w-full bg-surface-container-low pl-9 pr-8 py-2 border border-outline-variant rounded-lg text-xs outline-none focus:border-primary transition-all font-semibold placeholder:text-outline text-on-surface"
-            />
-            <button 
-              v-if="productNameSearch"
-              type="button"
-              @click="productNameSearch = ''; currentPage = 1"
-              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface cursor-pointer bg-transparent border-0"
-            >
-              <X class="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        <hr class="border-outline-variant/65" />
-
-        <!-- FILTER: CATEGORY -->
-        <div class="space-y-3.5">
-          <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">{{ $t('inventory.category') }}</span>
-          
-          <div class="space-y-2.5">
-            <!-- Beverages Category line -->
-            <label class="flex items-center gap-3 text-[13px] font-semibold text-on-surface-variant cursor-pointer">
-              <div 
-                @click="toggleCategory('Beverages')"
-                class="w-5 h-5 rounded-md border flex items-center justify-center transition-all bg-surface-container-lowest"
-                :class="selectedCategories.includes('Beverages') ? 'border-0 bg-primary text-on-primary' : 'border-outline bg-surface-container-lowest text-transparent'"
-              >
-                <Check v-if="selectedCategories.includes('Beverages')" class="w-3.5 h-3.5 text-white" />
-              </div>
-              <span>{{ $t('inventory.beverages') }} ({{ countByCategory['Beverages'] || 0 }})</span>
-            </label>
-
-            <!-- Snacks Category line -->
-            <label class="flex items-center gap-3 text-[13px] font-semibold text-on-surface-variant cursor-pointer">
-              <div 
-                @click="toggleCategory('Snacks')"
-                class="w-5 h-5 rounded-md border flex items-center justify-center transition-all bg-surface-container-lowest"
-                :class="selectedCategories.includes('Snacks') ? 'border-0 bg-primary text-on-primary' : 'border-outline bg-surface-container-lowest text-transparent'"
-              >
-                <Check v-if="selectedCategories.includes('Snacks')" class="w-3.5 h-3.5 text-white" />
-              </div>
-              <span>{{ $t('inventory.snacks') }} ({{ countByCategory['Snacks'] || 0 }})</span>
-            </label>
-
-            <!-- Dairy Category line -->
-            <label class="flex items-center gap-3 text-[13px] font-semibold text-on-surface-variant cursor-pointer">
-              <div 
-                @click="toggleCategory('Dairy Products')"
-                class="w-5 h-5 rounded-md border flex items-center justify-center transition-all bg-surface-container-lowest"
-                :class="selectedCategories.includes('Dairy Products') ? 'border-0 bg-primary text-on-primary' : 'border-outline bg-surface-container-lowest text-transparent'"
-              >
-                <Check v-if="selectedCategories.includes('Dairy Products')" class="w-3.5 h-3.5 text-white" />
-              </div>
-              <span>{{ $t('inventory.dairyFresh') }} ({{ countByCategory['Dairy Products'] || 0 }})</span>
-            </label>
-
-            <!-- Household Category line -->
-            <label class="flex items-center gap-3 text-[13px] font-semibold text-on-surface-variant cursor-pointer">
-              <div 
-                @click="toggleCategory('Household')"
-                class="w-5 h-5 rounded-md border flex items-center justify-center transition-all bg-surface-container-lowest"
-                :class="selectedCategories.includes('Household') ? 'border-0 bg-primary text-on-primary' : 'border-outline bg-surface-container-lowest text-transparent'"
-              >
-                <Check v-if="selectedCategories.includes('Household')" class="w-3.5 h-3.5 text-white" />
-              </div>
-              <span>{{ $t('inventory.household') }} ({{ countByCategory['Household'] || 0 }})</span>
-            </label>
-
-            <!-- Show Extra categories if any -->
-            <template v-if="showAllCategories">
-              <label 
-                v-for="cat in extraCategories" 
-                :key="cat" 
-                class="flex items-center gap-3 text-[13px] font-semibold text-on-surface-variant cursor-pointer animate-fade-in"
-              >
-                <div 
-                  @click="toggleCategory(cat)"
-                  class="w-5 h-5 rounded-md border flex items-center justify-center transition-all bg-surface-container-lowest"
-                  :class="selectedCategories.includes(cat) ? 'border-0 bg-primary text-on-primary' : 'border-outline bg-surface-container-lowest text-transparent'"
-                >
-                  <Check v-if="selectedCategories.includes(cat)" class="w-3.5 h-3.5 text-white" />
-                </div>
-                <span>{{ cat }} ({{ countByCategory[cat] || 0 }})</span>
-              </label>
-            </template>
-
-            <button 
-              type="button" 
-              @click="showAllCategories = !showAllCategories"
-              class="text-[12px] font-bold text-on-surface-variant hover:text-on-surface flex items-center gap-1 mt-1 cursor-pointer bg-transparent border-0"
-            >
-              <span>{{ showAllCategories ? $t('inventory.showLess') : $t('inventory.showMore') }}</span>
-              <ChevronDown class="w-3.5 h-3.5 transition-transform" :class="showAllCategories ? 'rotate-180' : ''" />
-            </button>
-          </div>
-        </div>
-
-        <hr class="border-outline-variant/65" />
-
-        <!-- FILTER: STOCK STATUS -->
-        <div class="space-y-3.5">
-          <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">{{ $t('inventory.stockStatus') }}</span>
-          
-          <div class="space-y-3">
-            <label 
-              v-for="st in stockStatuses"
-              :key="st.value"
-              @click="selectStockStatus(st.value)"
-              class="flex items-center gap-3 text-[13px] font-semibold cursor-pointer"
-              :class="st.highlight ? 'text-error' : 'text-on-surface-variant hover:text-on-surface'"
-            >
-              <div class="w-5 h-5 rounded-full border border-outline flex items-center justify-center relative bg-surface-container-lowest">
-                <div 
-                  v-if="stockStatus === st.value"
-                  class="w-2.5 h-2.5 rounded-full bg-primary text-on-primary"
-                />
-              </div>
-              <span>{{ st.label }}</span>
-            </label>
-          </div>
-        </div>
-
-        <hr class="border-outline-variant/65" />
-
-        <!-- FILTER: SUPPLIER SEARCH -->
-        <div class="space-y-4">
-          <span class="block text-[11px] font-bold text-outline uppercase tracking-widest">{{ $t('inventory.supplier') }}</span>
-          
-          <div class="relative">
-            <Search class="w-4 h-4 text-outline absolute left-3 top-1/2 -translate-y-1/2" />
-            <input 
-              type="text"
-              v-model="supplierSearch"
-              :placeholder="$t('inventory.findSupplierPlaceholder')"
-              class="w-full bg-surface-container-low pl-9 pr-3 py-2 border border-outline-variant rounded-lg text-xs outline-none focus:border-primary transition-all font-semibold placeholder:text-outline text-on-surface"
-            />
-          </div>
-
-          <div class="space-y-2.5 max-h-36 overflow-y-auto pr-1">
-            <label 
-              v-for="sup in suppliersList" 
-              :key="sup" 
-              class="flex items-center gap-3 text-[13px] font-semibold text-on-surface-variant cursor-pointer"
-            >
-              <div 
-                @click="toggleSupplier(sup)"
-                class="w-5 h-5 rounded-md border flex items-center justify-center transition-all bg-surface-container-lowest"
-                :class="selectedSuppliers.includes(sup) ? 'border-0 bg-primary text-on-primary' : 'border-outline bg-surface-container-lowest text-transparent'"
-              >
-                <Check v-if="selectedSuppliers.includes(sup)" class="w-3.5 h-3.5 text-white" />
-              </div>
-              <span class="truncate">{{ sup }}</span>
-            </label>
-
-            <span v-if="suppliersList.length === 0" class="text-[11px] text-outline italic font-medium block">
-              {{ $t('inventory.noSuppliersMatch') }}
-            </span>
-          </div>
-        </div>
-
+        <span class="text-xs font-mono font-medium text-outline">
+          Showing {{ filteredProducts.length }} {{ filteredProducts.length === 1 ? 'product' : 'products' }}
+        </span>
       </div>
-
-      <!-- RIGHT COLUMN: LISTING AREA -->
-      <div class="flex-1 min-w-0 border-l border-outline-variant/50 pl-2 lg:pl-6 space-y-5">
-        
-        <!-- ACTIVE FILTER BADGES ROW -->
-        <div class="flex items-center gap-3 text-sm select-none">
-          <span class="text-on-surface-variant font-medium">{{ $t('inventory.activeFilterOverlays') }}</span>
-          
-          <div class="flex flex-wrap gap-2">
-            <!-- Catalog Mode Badge -->
-            <div 
-              v-if="showInactive" 
-              class="inline-flex items-center gap-1.5 px-3 py-1 bg-error/10 text-error rounded-full text-xs font-bold border border-error/30 animate-fade-in"
-            >
-              <EyeOff class="w-3 h-3 stroke-[2.5px]" />
-              <span>{{ $t('inventory.catalogInactiveBadge') }}</span>
-              <button 
-                @click="toggleShowInactive(false)"
-                class="text-error/70 hover:text-error cursor-pointer ml-0.5 bg-transparent border-0"
-                :title="$t('inventory.showActiveProducts')"
-              >
-                <X class="w-3 h-3 stroke-[2.5px]" />
-              </button>
-            </div>
-
-            <div 
-              v-if="productNameSearch.trim()" 
-              class="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/50"
-            >
-              <span>{{ $t('inventory.searchFilterBadge', { query: productNameSearch }) }}</span>
-              <button 
-                @click="productNameSearch = ''; currentPage = 1"
-                class="text-outline hover:text-on-surface-variant cursor-pointer ml-0.5 bg-transparent border-0"
-              >
-                <X class="w-3 h-3 stroke-[2.5px]" />
-              </button>
-            </div>
-
-            <div 
-              v-for="cat in selectedCategories" 
-              :key="cat" 
-              class="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/50"
-            >
-              <span>{{ $t('inventory.categoryFilterBadge', { cat }) }}</span>
-              <button 
-                @click="toggleCategory(cat)"
-                class="text-outline hover:text-on-surface-variant cursor-pointer ml-0.5 bg-transparent border-0"
-              >
-                <X class="w-3 h-3 stroke-[2.5px]" />
-              </button>
-            </div>
-
-            <div 
-              v-if="stockStatus !== 'All'" 
-              class="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/50"
-            >
-              <span>{{ $t('inventory.statusFilterBadge', { status: stockStatus }) }}</span>
-              <button 
-                @click="selectStockStatus('All')"
-                class="text-outline hover:text-on-surface-variant cursor-pointer ml-0.5 bg-transparent border-0"
-              >
-                <X class="w-3 h-3 stroke-[2.5px]" />
-              </button>
-            </div>
-
-            <div 
-              v-for="sup in selectedSuppliers" 
-              :key="sup" 
-              class="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/50"
-            >
-              <span class="truncate max-w-[120px]">{{ $t('inventory.supplierFilterBadge', { sup }) }}</span>
-              <button 
-                @click="toggleSupplier(sup)"
-                class="text-outline hover:text-on-surface-variant cursor-pointer ml-0.5 bg-transparent border-0"
-              >
-                <X class="w-3 h-3 stroke-[2.5px]" />
-              </button>
-            </div>
-
-            <span 
-              v-if="!showInactive && !productNameSearch.trim() && selectedCategories.length === 0 && stockStatus === 'All' && selectedSuppliers.length === 0" 
-              class="text-xs text-outline font-medium italic"
-            >
-              {{ $t('inventory.noFilterOverlays') }}
-            </span>
-          </div>
-        </div>
 
         <!-- Inactive Mode Notice Banner -->
         <div v-if="showInactive" class="p-3.5 bg-amber-500/10 border border-amber-500/25 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900 font-medium animate-fade-in">
@@ -412,7 +203,8 @@
             :sublabel="showInactive ? $t('inventory.loaderArchivedItems') : $t('inventory.loaderSyncingCatalog')" 
           />
 
-          <table class="w-full text-left border-collapse text-[13px] select-all">
+          <div class="overflow-x-auto w-full">
+            <table class="w-full text-left border-collapse text-[13px] select-all">
             <thead class="bg-surface-container-lowest border-b border-outline-variant text-on-surface-variant font-mono text-[11px] uppercase select-none">
               <tr>
                 <th class="px-3 py-3.5 pl-4 w-10 text-center">
@@ -562,6 +354,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
 
           <!-- BOTTOM PAGINATION CONTROLLER CARD -->
           <div class="p-4 bg-surface-container-lowest border-t border-outline-variant/50 flex flex-col sm:flex-row justify-between items-center gap-4 select-none">
@@ -655,10 +448,262 @@
           </div>
 
         </div>
-
       </div>
 
-    </div>
+      <!-- SLIDE-OVER FILTER DRAWER (SHEET) -->
+      <Transition name="drawer">
+        <div v-if="showFilterDrawer" class="fixed inset-0 z-50 overflow-hidden font-sans">
+          <!-- Backdrop -->
+          <div 
+            class="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity" 
+            @click="showFilterDrawer = false"
+          ></div>
+
+          <div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div class="w-screen max-w-md bg-surface-container-lowest shadow-2xl border-l border-outline-variant flex flex-col justify-between drawer-content">
+              
+              <!-- Drawer Header -->
+              <div class="p-5 border-b border-outline-variant/50 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <SlidersHorizontal class="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 class="text-base font-bold text-on-surface">{{ $t('inventory.filters') }}</h3>
+                    <p class="text-xs text-on-surface-variant">Filter products by multiple criteria</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button 
+                    v-if="hasActiveFilters"
+                    @click="handleResetFilters"
+                    class="text-xs font-bold text-primary hover:underline cursor-pointer bg-transparent border-0 px-2 py-1"
+                  >
+                    {{ $t('inventory.resetFilters') }}
+                  </button>
+                  <button 
+                    @click="showFilterDrawer = false"
+                    class="w-8 h-8 rounded-lg hover:bg-surface-container-low text-outline hover:text-on-surface flex items-center justify-center cursor-pointer transition-colors border-0 bg-transparent"
+                  >
+                    <X class="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Drawer Scrollable Body -->
+              <div class="p-5 overflow-y-auto space-y-6 flex-1">
+                
+                <!-- FILTER 1: CATALOG VISIBILITY (ACTIVE / INACTIVE) -->
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-outline uppercase tracking-wider">{{ $t('inventory.catalogVisibility') }}</span>
+                    <span 
+                      v-if="!showInactive"
+                      class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/10 text-primary border border-primary/20"
+                    >
+                      {{ $t('inventory.activeCount', { count: vm.products.value.length }) }}
+                    </span>
+                    <span 
+                      v-else
+                      class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-error/10 text-error border border-error/20"
+                    >
+                      {{ $t('inventory.inactiveCount', { count: inactiveProducts.length }) }}
+                    </span>
+                  </div>
+
+                  <div 
+                    @click="toggleShowInactive(!showInactive)" 
+                    class="flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer select-none"
+                    :class="showInactive ? 'bg-error/5 border-error/30 text-error' : 'bg-surface-container-low border-outline-variant text-on-surface hover:bg-surface-container'"
+                  >
+                    <div class="flex items-center gap-2.5">
+                      <div 
+                        class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                        :class="showInactive ? 'bg-error/15 text-error' : 'bg-surface-container-high text-on-surface-variant'"
+                      >
+                        <EyeOff v-if="showInactive" class="w-4 h-4" />
+                        <Eye v-else class="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p class="text-xs font-bold">{{ showInactive ? $t('inventory.inactiveProducts') : $t('inventory.activeProducts') }}</p>
+                        <p class="text-[11px] text-on-surface-variant/80 mt-0.5">
+                          {{ showInactive ? $t('inventory.deactivatedItems') : $t('inventory.liveCatalogItems') }}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      class="w-9 h-5 rounded-full transition-colors relative p-0.5 flex items-center shrink-0"
+                      :class="showInactive ? 'bg-error' : 'bg-surface-container-highest'"
+                    >
+                      <div 
+                        class="w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200"
+                        :class="showInactive ? 'translate-x-4' : 'translate-x-0'"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- FILTER 2: STOCK STATUS -->
+                <div class="space-y-2.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-outline uppercase tracking-wider">{{ $t('inventory.stockStatus') }}</span>
+                    <span v-if="stockStatus !== 'All'" class="text-[11px] font-mono font-bold text-primary">Filtered</span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <button 
+                      v-for="st in stockStatuses" 
+                      :key="st.value" 
+                      type="button"
+                      @click="selectStockStatus(st.value)"
+                      class="px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-left flex items-center justify-between cursor-pointer"
+                      :class="stockStatus === st.value 
+                        ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs' 
+                        : 'border-outline-variant/60 bg-surface-container-low text-on-surface-variant hover:border-outline'"
+                    >
+                      <div class="flex items-center gap-1.5 truncate">
+                        <span 
+                          class="w-2 h-2 rounded-full shrink-0" 
+                          :class="st.value === 'In Stock' 
+                            ? 'bg-emerald-500' 
+                            : (st.value === 'Low Stock' 
+                              ? 'bg-amber-500' 
+                              : (st.value === 'Out of Stock' || st.value === 'Expired' 
+                                ? 'bg-rose-500' 
+                                : 'bg-outline-variant'))"
+                        ></span>
+                        <span class="truncate">{{ st.label }}</span>
+                      </div>
+                      <Check v-if="stockStatus === st.value" class="w-3.5 h-3.5 text-primary shrink-0" />
+                    </button>
+                  </div>
+                </div>
+
+                <!-- FILTER 3: CATEGORIES -->
+                <div class="space-y-2.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-outline uppercase tracking-wider">{{ $t('inventory.category') }}</span>
+                    <div class="flex items-center gap-2">
+                      <button 
+                        v-if="selectedCategories.length > 0"
+                        @click="selectedCategories = []; currentPage = 1"
+                        class="text-[11px] text-outline hover:text-primary cursor-pointer bg-transparent border-0"
+                      >
+                        Clear
+                      </button>
+                      <span 
+                        v-if="selectedCategories.length > 0" 
+                        class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-primary/10 text-primary"
+                      >
+                        {{ selectedCategories.length }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Category Search within drawer -->
+                  <div class="relative">
+                    <Search class="w-3.5 h-3.5 text-outline absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input 
+                      type="text" 
+                      v-model="categorySearch" 
+                      placeholder="Filter categories..." 
+                      class="w-full bg-surface-container-low pl-8 pr-2 py-1.5 border border-outline-variant rounded-lg text-xs outline-none text-on-surface focus:border-primary font-medium"
+                    />
+                  </div>
+
+                  <div class="space-y-2 max-h-52 overflow-y-auto pr-1">
+                    <label 
+                      v-for="cat in filteredCategoriesList" 
+                      :key="cat" 
+                      class="flex items-center justify-between p-2 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/40 cursor-pointer text-xs font-semibold text-on-surface-variant"
+                    >
+                      <div class="flex items-center gap-2 min-w-0">
+                        <div 
+                          @click="toggleCategory(cat)"
+                          class="w-4 h-4 rounded border flex items-center justify-center transition-all shrink-0"
+                          :class="selectedCategories.includes(cat) ? 'border-primary bg-primary text-white' : 'border-outline bg-surface-container-lowest text-transparent'"
+                        >
+                          <Check v-if="selectedCategories.includes(cat)" class="w-3 h-3 stroke-[3px]" />
+                        </div>
+                        <span class="truncate">{{ cat }}</span>
+                      </div>
+                      <span class="text-[10px] font-mono text-outline font-bold">({{ countByCategory[cat] || 0 }})</span>
+                    </label>
+                    <span v-if="filteredCategoriesList.length === 0" class="text-[11px] text-outline italic block text-center py-2">
+                      No categories found
+                    </span>
+                  </div>
+                </div>
+
+                <!-- FILTER 4: SUPPLIERS -->
+                <div class="space-y-2.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-outline uppercase tracking-wider">{{ $t('inventory.supplier') }}</span>
+                    <button 
+                      v-if="selectedSuppliers.length > 0"
+                      @click="selectedSuppliers = []; currentPage = 1"
+                      class="text-[11px] text-outline hover:text-primary cursor-pointer bg-transparent border-0"
+                    >
+                      Clear ({{ selectedSuppliers.length }})
+                    </button>
+                  </div>
+
+                  <div class="relative">
+                    <Search class="w-3.5 h-3.5 text-outline absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input 
+                      type="text"
+                      v-model="supplierSearch"
+                      :placeholder="$t('inventory.findSupplierPlaceholder')"
+                      class="w-full bg-surface-container-low pl-8 pr-2 py-1.5 border border-outline-variant rounded-lg text-xs outline-none text-on-surface focus:border-primary"
+                    />
+                  </div>
+
+                  <div class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                    <label 
+                      v-for="sup in suppliersList" 
+                      :key="sup" 
+                      class="flex items-center gap-2.5 p-2 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/40 cursor-pointer text-xs font-semibold text-on-surface-variant"
+                    >
+                      <div 
+                        @click="toggleSupplier(sup)"
+                        class="w-4 h-4 rounded border flex items-center justify-center transition-all shrink-0"
+                        :class="selectedSuppliers.includes(sup) ? 'border-primary bg-primary text-white' : 'border-outline bg-surface-container-lowest text-transparent'"
+                      >
+                        <Check v-if="selectedSuppliers.includes(sup)" class="w-3 h-3 stroke-[3px]" />
+                      </div>
+                      <span class="truncate">{{ sup }}</span>
+                    </label>
+                    <span v-if="suppliersList.length === 0" class="text-[11px] text-outline italic block text-center py-2">
+                      {{ $t('inventory.noSuppliersMatch') }}
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Drawer Footer -->
+              <div class="p-4 border-t border-outline-variant/50 bg-surface-container-low flex items-center gap-3">
+                <button 
+                  type="button"
+                  @click="handleResetFilters"
+                  :disabled="!hasActiveFilters"
+                  class="flex-1 py-2.5 rounded-xl border border-outline-variant text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-40 cursor-pointer bg-surface"
+                >
+                  {{ $t('inventory.resetFilters') }}
+                </button>
+                <button 
+                  type="button"
+                  @click="showFilterDrawer = false"
+                  class="flex-1 py-2.5 rounded-xl bg-primary text-white text-xs font-bold transition-all hover:opacity-95 shadow-xs cursor-pointer border-0"
+                >
+                  Show {{ filteredProducts.length }} Products
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </Transition>
 
     <!-- MODAL 1: ADD PRODUCT FORM -->
     <div v-if="showAddModal" class="fixed inset-0 bg-surface-container-highest/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
@@ -1320,7 +1365,8 @@ import {
   AlertTriangle,
   RotateCw,
   Eye,
-  EyeOff
+  EyeOff,
+  SlidersHorizontal
 } from 'lucide-vue-next';
 
 const route = useRoute();
@@ -1335,6 +1381,10 @@ const stockStatus = ref<string>('All');
 const supplierSearch = ref('');
 const selectedSuppliers = ref<string[]>([]);
 const showAllCategories = ref(false);
+
+// Smart Filter & Drawer States
+const showFilterDrawer = ref(false);
+const categorySearch = ref('');
 
 // Pagination
 const currentPage = ref(1);
@@ -1562,6 +1612,29 @@ const extraCategories = computed(() => {
   return uniqueCategories.value.filter(c => !baseList.includes(c));
 });
 
+const filteredCategoriesList = computed(() => {
+  const q = categorySearch.value.trim().toLowerCase();
+  if (!q) return uniqueCategories.value;
+  return uniqueCategories.value.filter(c => c.toLowerCase().includes(q));
+});
+
+const activePanelFiltersCount = computed(() => {
+  let count = 0;
+  if (selectedCategories.value.length) count += selectedCategories.value.length;
+  if (stockStatus.value !== 'All') count++;
+  if (selectedSuppliers.value.length) count += selectedSuppliers.value.length;
+  if (showInactive.value) count++;
+  return count;
+});
+
+const totalActiveFiltersCount = computed(() => {
+  let count = activePanelFiltersCount.value;
+  if (productNameSearch.value.trim()) count++;
+  return count;
+});
+
+const hasActiveFilters = computed(() => totalActiveFiltersCount.value > 0);
+
 const suppliersList = computed(() => {
   const list = Array.from(new Set(products.value.map(p => p.supplier).filter(Boolean))) as string[];
   return list.filter(sup => sup.toLowerCase().includes(supplierSearch.value.toLowerCase()));
@@ -1596,6 +1669,8 @@ const handleResetFilters = () => {
   stockStatus.value = 'All';
   selectedSuppliers.value = [];
   supplierSearch.value = '';
+  categorySearch.value = '';
+  showInactive.value = false;
   currentPage.value = 1;
 };
 
@@ -1617,7 +1692,10 @@ const getProductStatus = (p: Product): string => {
 const filteredProducts = computed(() => {
   const search = productNameSearch.value.trim().toLowerCase();
   return products.value.filter(p => {
-    const matchesName = !search || p.name.toLowerCase().includes(search);
+    const matchesName = !search || 
+      p.name.toLowerCase().includes(search) ||
+      (p.barcode && p.barcode.toLowerCase().includes(search)) ||
+      (p.sku && p.sku.toLowerCase().includes(search));
     const matchesCategory = selectedCategories.value.length === 0 || selectedCategories.value.includes(p.category);
     
     let matchesStock = true;
@@ -2152,3 +2230,26 @@ const handleDeleteProduct = async () => {
   }
 };
 </script>
+
+<style scoped>
+.drawer-enter-active,
+.drawer-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.drawer-enter-from,
+.drawer-leave-to {
+  opacity: 0;
+}
+
+.drawer-enter-active .drawer-content,
+.drawer-leave-active .drawer-content {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-enter-from .drawer-content,
+.drawer-leave-to .drawer-content {
+  transform: translateX(100%);
+}
+</style>
+

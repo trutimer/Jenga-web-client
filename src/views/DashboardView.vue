@@ -10,7 +10,25 @@
         </div>
         <div>
           <!-- <h2 class="text-xl sm:text-2xl font-black text-on-surface tracking-tight">{{ $t('dashboard.title') }}</h2> -->
-          <p class="text-xs font-semibold text-on-surface-variant mt-0.5">{{ branchDisplayName }} • {{ formattedDate }}</p>
+          <div class="flex items-center gap-2.5 mt-0.5">
+            <p class="text-xs font-semibold text-on-surface-variant">{{ branchDisplayName }} • {{ formattedDate }}</p>
+            <div 
+              v-if="!isElectron()"
+              class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold transition-all border shadow-xs select-none"
+              :class="isWsConnected 
+                ? (isRealtimePulsing ? 'bg-emerald-500/20 text-emerald-700 border-emerald-500/40 ring-2 ring-emerald-500/20' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20') 
+                : 'bg-amber-500/10 text-amber-600 border-amber-500/20'"
+              :title="isWsConnected ? 'Connected to live real-time events broker' : 'Connecting to live real-time events broker...'"
+            >
+              <span 
+                class="w-1.5 h-1.5 rounded-full"
+                :class="isWsConnected 
+                  ? (isRealtimePulsing ? 'bg-emerald-500 scale-125 animate-ping' : 'bg-emerald-500 animate-pulse') 
+                  : 'bg-amber-500 animate-pulse'"
+              ></span>
+              <span>{{ isWsConnected ? (isRealtimePulsing ? 'SYNCING' : 'LIVE') : 'CONNECTING' }}</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -63,7 +81,7 @@
 
         <!-- Refresh Button -->
         <button 
-          @click="fetchData"
+          @click="fetchData()"
           :disabled="isLoading"
           class="p-2 rounded-xl border border-outline-variant/60 bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-primary transition-colors cursor-pointer shadow-xs"
           :title="$t('common.retry')"
@@ -93,16 +111,16 @@
             class="px-2 py-0.5 rounded-full text-[9px] font-mono font-black uppercase tracking-wider shadow-xs"
             :class="grossMarginPercent >= 20 ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : grossMarginPercent >= 10 ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20' : 'bg-rose-500/10 text-rose-600 border border-rose-500/20'"
           >
-            {{ $t('dashboard2.grossMarginBadge', { percent: grossMarginPercent }) }}
+            {{ $t('dashboard2.grossMarginBadge', { percent: Math.round(animatedGrossMargin) }) }}
           </span>
         </div>
         <div class="relative z-10">
-          <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono tracking-tight text-emerald-600 amount-kpi truncate">
-            {{ formatCurrency(grossProfitAmount, currency) }}
+          <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono tracking-tight text-emerald-600 amount-kpi truncate">
+            {{ animatedGrossProfit }}
           </div>
           <div class="flex items-center text-[11px] text-on-surface-variant font-medium mt-1 gap-1">
             <span class="font-mono text-[10px] text-outline truncate">
-              {{ $t('dashboard2.cogsCost', { amount: formatCurrency(cogsAmount, currency) }) }}
+              {{ $t('dashboard2.cogsCost', { amount: animatedCogs }) }}
             </span>
           </div>
         </div>
@@ -116,16 +134,16 @@
             {{ $t('dashboard2.salesTraffic') }}
           </span>
           <span class="px-2 py-0.5 rounded-full text-[9px] font-mono font-black uppercase tracking-wider shadow-xs bg-primary/10 text-primary border border-primary/20">
-            {{ $t('dashboard2.receiptsCountBadge', { count: transactionsCount }) }}
+            {{ $t('dashboard2.receiptsCountBadge', { count: Math.round(animatedTransactionsCount) }) }}
           </span>
         </div>
         <div>
-          <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate">
-            {{ formatCurrency(totalPeriodSales, currency) }}
+          <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate">
+            {{ animatedTotalSales }}
           </div>
           <div class="flex items-center justify-between text-[11px] text-on-surface-variant font-medium mt-1">
             <span class="font-bold text-on-surface truncate">
-              {{ $t('dashboard2.avgBasketFooter', { amount: formatCurrency(avgTicketAmount, currency) }) }}
+              {{ $t('dashboard2.avgBasketFooter', { amount: animatedAvgTicket }) }}
             </span>
           </div>
         </div>
@@ -147,14 +165,14 @@
         </div>
         <div class="relative z-10">
           <div 
-            class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono tracking-tight amount-kpi truncate"
+            class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono tracking-tight amount-kpi truncate"
             :class="isSurplus ? 'text-emerald-600' : 'text-rose-600'"
           >
-            {{ formatCurrency(netCashflowAmount, currency) }}
+            {{ (netCashflowAmount < 0 ? '-' : '') + animatedNetCashflow }}
           </div>
           <div class="flex items-center text-[11px] text-on-surface-variant font-medium mt-1 gap-1">
             <span class="font-mono text-[10px] text-outline truncate">
-              In: {{ formatCurrency(totalPeriodSales + debtorsCollected, currency) }} • Out: {{ formatCurrency(payOutAmount + purchasesTotal, currency) }}
+              In: {{ animatedCashInflow }} • Out: {{ animatedCashOutflow }}
             </span>
           </div>
         </div>
@@ -169,13 +187,13 @@
           </span>
         </div>
         <div>
-          <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate">
-            {{ formatCurrency(cashOnHandAmount, currency) }}
+          <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate">
+            {{ animatedCashOnHand }}
           </div>
           <div class="flex items-center justify-between text-[11px] text-on-surface-variant font-medium mt-1 gap-1.5 flex-wrap">
             <div class="flex items-center gap-1.5">
               <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span>{{ $t('dashboard2.activeRegistersCount', { count: activeRegistersCount }) }}</span>
+              <span>{{ $t('dashboard2.activeRegistersCount', { count: Math.round(animatedActiveRegisters) }) }}</span>
             </div>
             <!-- Till Discrepancy Indicator / Audit Trigger -->
             <button 
@@ -193,9 +211,9 @@
               <CheckCircle2 v-else class="w-2.5 h-2.5 shrink-0 text-emerald-600" />
               <span>
                 {{ tillDiscrepancy < 0 
-                  ? $t('dashboard2.tillShortageBadge', { amount: formatCurrency(Math.abs(tillDiscrepancy), currency) }) 
+                  ? $t('dashboard2.tillShortageBadge', { amount: animatedTillDiscrepancy }) 
                   : tillDiscrepancy > 0 
-                    ? $t('dashboard2.tillOverageBadge', { amount: formatCurrency(tillDiscrepancy, currency) }) 
+                    ? $t('dashboard2.tillOverageBadge', { amount: animatedTillDiscrepancy }) 
                     : $t('dashboard2.tillBalanced') }}
               </span>
             </button>
@@ -212,11 +230,19 @@
     <!-- ========================================== -->
     <div class="w-full bg-surface-container-lowest rounded-2xl border border-outline-variant/60 shadow-sm p-5 sm:p-6 flex flex-col justify-between">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-          <div>
+          <div class="flex items-center gap-2.5">
             <!-- <h3 class="text-base sm:text-lg font-black text-on-surface tracking-tight">{{ $t('dashboard2.financialVelocity') }}</h3> -->
             <h3 class="text-base text-on-surface-variant font-medium tracking-tight">{{ selectedPeriodLabel }} cashflow streams velocity</h3>
+            <span 
+              v-if="!isElectron() && isRealtimePulsing" 
+              class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-700 border border-emerald-500/30 animate-pulse shadow-xs"
+            >
+              <Activity class="w-3 h-3 text-emerald-600 animate-spin" />
+              <span>LIVE GRAPH SYNC</span>
+            </span>
           </div>
 
+          <!-- Chart Stream Toggles -->
           <!-- Chart Stream Toggles -->
           <div class="flex flex-wrap items-center gap-1.5 bg-surface-container-low p-1 rounded-xl border border-outline-variant/40 text-[11px] font-mono font-bold">
             <button 
@@ -229,18 +255,18 @@
             <button 
               @click="activeStream = 'SALES'" 
               class="px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1"
-              :class="activeStream === 'SALES' ? 'bg-primary text-on-primary font-black shadow-xs' : 'text-on-surface-variant hover:text-primary'"
+              :class="activeStream === 'SALES' ? 'bg-[#f97316] text-white font-black shadow-xs' : 'text-on-surface-variant hover:text-[#f97316]'"
             >
-              <span class="w-1.5 h-1.5 rounded-full bg-primary" :class="activeStream === 'SALES' ? 'bg-white' : ''"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-[#f97316]" :class="activeStream === 'SALES' ? 'bg-white' : ''"></span>
               {{ $t('dashboard2.salesRevenue') }}
             </button>
             <button 
-              @click="activeStream = 'COLLECTIONS'" 
+              @click="activeStream = 'PROFIT'" 
               class="px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1"
-              :class="activeStream === 'COLLECTIONS' ? 'bg-emerald-600 text-white font-black shadow-xs' : 'text-on-surface-variant hover:text-emerald-600'"
+              :class="activeStream === 'PROFIT' ? 'bg-emerald-600 text-white font-black shadow-xs' : 'text-on-surface-variant hover:text-emerald-600'"
             >
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" :class="activeStream === 'COLLECTIONS' ? 'bg-white' : ''"></span>
-              {{ $t('dashboard2.debtCollections') }}
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" :class="activeStream === 'PROFIT' ? 'bg-white' : ''"></span>
+              {{ $t('dashboard2.profitStream') }}
             </button>
             <button 
               @click="activeStream = 'EXPENSES'" 
@@ -281,16 +307,16 @@
             >
               <defs>
                 <linearGradient id="salesGrad" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stop-color="#F4511E" stop-opacity="0.22"></stop>
-                  <stop offset="100%" stop-color="#F4511E" stop-opacity="0.0"></stop>
+                  <stop offset="0%" stop-color="#f97316" stop-opacity="0.22"></stop>
+                  <stop offset="100%" stop-color="#f97316" stop-opacity="0.0"></stop>
                 </linearGradient>
-                <linearGradient id="collGrad" x1="0" x2="0" y1="0" y2="1">
+                <linearGradient id="profitGrad" x1="0" x2="0" y1="0" y2="1">
                   <stop offset="0%" stop-color="#10b981" stop-opacity="0.20"></stop>
                   <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"></stop>
                 </linearGradient>
                 <linearGradient id="expGrad" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.18"></stop>
-                  <stop offset="100%" stop-color="#f43f5e" stop-opacity="0.0"></stop>
+                  <stop offset="0%" stop-color="#ef4444" stop-opacity="0.18"></stop>
+                  <stop offset="100%" stop-color="#ef4444" stop-opacity="0.0"></stop>
                 </linearGradient>
               </defs>
 
@@ -308,13 +334,13 @@
                 vector-effect="non-scaling-stroke"
               />
 
-              <!-- Sales Stream Area & Line -->
+              <!-- Sales Stream Area & Line (Orange colored line) -->
               <template v-if="activeStream === 'ALL' || activeStream === 'SALES'">
                 <path fill="url(#salesGrad)" :d="salesAreaPath" class="transition-all duration-300 ease-out"></path>
                 <path 
                   fill="none" 
                   :d="salesLinePath" 
-                  stroke="#F4511E" 
+                  stroke="#f97316" 
                   stroke-width="2.5" 
                   stroke-linecap="round" 
                   stroke-linejoin="round"
@@ -323,14 +349,14 @@
                 ></path>
               </template>
 
-              <!-- Debt Collections Stream Area & Line -->
-              <template v-if="activeStream === 'ALL' || activeStream === 'COLLECTIONS'">
-                <path fill="url(#collGrad)" :d="collectionsAreaPath" class="transition-all duration-300 ease-out"></path>
+              <!-- Profit Stream Area & Line (Green colored line) -->
+              <template v-if="activeStream === 'ALL' || activeStream === 'PROFIT'">
+                <path fill="url(#profitGrad)" :d="profitAreaPath" class="transition-all duration-300 ease-out"></path>
                 <path 
                   fill="none" 
-                  :d="collectionsLinePath" 
+                  :d="profitLinePath" 
                   stroke="#10b981" 
-                  stroke-width="2.2" 
+                  stroke-width="2.5" 
                   stroke-linecap="round" 
                   stroke-linejoin="round"
                   vector-effect="non-scaling-stroke" 
@@ -338,7 +364,7 @@
                 ></path>
               </template>
 
-              <!-- Petty Expenses Stream Line & Optional Area -->
+              <!-- Expenses Stream Line & Optional Area (Red colored dotted line) -->
               <template v-if="activeStream === 'ALL' || activeStream === 'EXPENSES'">
                 <path 
                   v-if="activeStream === 'EXPENSES'" 
@@ -349,9 +375,9 @@
                 <path 
                   fill="none" 
                   :d="expensesLinePath" 
-                  stroke="#f43f5e" 
-                  stroke-width="2" 
-                  stroke-dasharray="6 4" 
+                  stroke="#ef4444" 
+                  stroke-width="2.2" 
+                  stroke-dasharray="4 4" 
                   stroke-linecap="round" 
                   stroke-linejoin="round"
                   vector-effect="non-scaling-stroke" 
@@ -368,21 +394,21 @@
               <!-- Sales Indicator Dot -->
               <div 
                 v-if="activeStream === 'ALL' || activeStream === 'SALES'"
-                class="absolute w-3 h-3 rounded-full bg-white border-[2.5px] border-[#F4511E] shadow-md shadow-[#F4511E]/40 ring-4 ring-[#F4511E]/20 -translate-x-1/2 -translate-y-1/2 transition-transform duration-75"
+                class="absolute w-3 h-3 rounded-full bg-white border-[2.5px] border-[#f97316] shadow-md shadow-[#f97316]/40 ring-4 ring-[#f97316]/20 -translate-x-1/2 -translate-y-1/2 transition-transform duration-75"
                 :style="{ left: `${hoveredPoint.x}%`, top: `${hoveredPoint.salesY}%` }"
               ></div>
 
-              <!-- Collections Indicator Dot -->
+              <!-- Profit Indicator Dot -->
               <div 
-                v-if="activeStream === 'ALL' || activeStream === 'COLLECTIONS'"
-                class="absolute w-3 h-3 rounded-full bg-white border-[2.5px] border-emerald-500 shadow-md shadow-emerald-500/40 ring-4 ring-emerald-500/20 -translate-x-1/2 -translate-y-1/2 transition-transform duration-75"
-                :style="{ left: `${hoveredPoint.x}%`, top: `${hoveredPoint.collY}%` }"
+                v-if="activeStream === 'ALL' || activeStream === 'PROFIT'"
+                class="absolute w-3 h-3 rounded-full bg-white border-[2.5px] border-[#10b981] shadow-md shadow-[#10b981]/40 ring-4 ring-[#10b981]/20 -translate-x-1/2 -translate-y-1/2 transition-transform duration-75"
+                :style="{ left: `${hoveredPoint.x}%`, top: `${hoveredPoint.profitY}%` }"
               ></div>
 
               <!-- Expenses Indicator Dot -->
               <div 
                 v-if="activeStream === 'ALL' || activeStream === 'EXPENSES'"
-                class="absolute w-3 h-3 rounded-full bg-white border-[2.5px] border-rose-500 shadow-md shadow-rose-500/40 ring-4 ring-rose-500/20 -translate-x-1/2 -translate-y-1/2 transition-transform duration-75"
+                class="absolute w-3 h-3 rounded-full bg-white border-[2.5px] border-[#ef4444] shadow-md shadow-[#ef4444]/40 ring-4 ring-[#ef4444]/20 -translate-x-1/2 -translate-y-1/2 transition-transform duration-75"
                 :style="{ left: `${hoveredPoint.x}%`, top: `${hoveredPoint.expY}%` }"
               ></div>
             </div>
@@ -393,7 +419,7 @@
               class="absolute z-40 bg-slate-900/95 text-white backdrop-blur-md rounded-xl p-3 shadow-2xl border border-slate-700/60 pointer-events-none transition-all duration-75 min-w-[210px]"
               :style="{
                 left: `${Math.max(16, Math.min(84, hoveredPoint.x))}%`,
-                top: `${Math.max(8, Math.min(60, Math.min(hoveredPoint.salesY, hoveredPoint.collY, hoveredPoint.expY)))}%`,
+                top: `${Math.max(8, Math.min(60, Math.min(hoveredPoint.salesY, hoveredPoint.profitY, hoveredPoint.expY)))}%`,
                 transform: 'translate(-50%, -115%)'
               }"
             >
@@ -405,23 +431,23 @@
               <div class="space-y-1.5 font-mono text-xs">
                 <div v-if="activeStream === 'ALL' || activeStream === 'SALES'" class="flex items-center justify-between gap-3">
                   <span class="flex items-center gap-1.5 text-slate-300">
-                    <span class="w-2 h-2 rounded-full bg-[#F4511E]"></span>
+                    <span class="w-2 h-2 rounded-full bg-[#f97316]"></span>
                     Sales:
                   </span>
                   <span class="font-bold text-white">{{ formatCurrency(hoveredPoint.salesRevenue, currency) }}</span>
                 </div>
 
-                <div v-if="activeStream === 'ALL' || activeStream === 'COLLECTIONS'" class="flex items-center justify-between gap-3">
+                <div v-if="activeStream === 'ALL' || activeStream === 'PROFIT'" class="flex items-center justify-between gap-3">
                   <span class="flex items-center gap-1.5 text-slate-300">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    Collections:
+                    <span class="w-2 h-2 rounded-full bg-[#10b981]"></span>
+                    Profit:
                   </span>
-                  <span class="font-bold text-emerald-400">{{ formatCurrency(hoveredPoint.debtCollections, currency) }}</span>
+                  <span class="font-bold text-emerald-400">{{ formatCurrency(hoveredPoint.profit, currency) }}</span>
                 </div>
 
                 <div v-if="activeStream === 'ALL' || activeStream === 'EXPENSES'" class="flex items-center justify-between gap-3">
                   <span class="flex items-center gap-1.5 text-slate-300">
-                    <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                    <span class="w-2 h-2 rounded-full bg-[#ef4444]"></span>
                     Expenses:
                   </span>
                   <span class="font-bold text-rose-400">{{ formatCurrency(hoveredPoint.pettyExpenses, currency) }}</span>
@@ -465,20 +491,16 @@
         <div class="mt-8 pt-4 border-t border-outline-variant/40 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
           <div class="flex flex-wrap items-center gap-4">
             <span class="flex items-center gap-1.5 font-bold text-on-surface">
-              <span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
-              Sales: {{ formatCurrency(totalPeriodSales, currency) }}
+              <span class="w-2.5 h-2.5 rounded-full bg-[#f97316]"></span>
+              Sales: {{ animatedTotalSales }}
             </span>
             <span class="flex items-center gap-1.5 font-bold text-emerald-600">
               <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-              Profit: {{ formatCurrency(grossProfitAmount, currency) }} ({{ grossMarginPercent }}%)
-            </span>
-            <span class="flex items-center gap-1.5 font-bold text-emerald-600">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-              Collections: {{ formatCurrency(debtorsCollected, currency) }}
+              Profit: {{ animatedGrossProfit }} ({{ Math.round(animatedGrossMargin) }}%)
             </span>
             <span class="flex items-center gap-1.5 font-bold text-rose-600">
               <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-              Expenses: {{ formatCurrency(payOutAmount, currency) }}
+              Expenses: {{ animatedPayOut }}
             </span>
           </div>
           <span class="text-on-surface-variant font-semibold">{{ $t('dashboard.verifiedLedger') }}</span>
@@ -510,7 +532,7 @@
                     <span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
                     {{ $t('dashboard2.cashInTill') }}
                   </span>
-                  <span>{{ formatCurrency(paymentBreakdown.cash.amount, currency) }} ({{ channelPercentages.cash }}%)</span>
+                  <span>{{ animatedPaymentCash }} ({{ channelPercentages.cash }}%)</span>
                 </div>
                 <div class="w-full bg-surface-container-high rounded-full h-2">
                   <div class="bg-primary h-2 rounded-full transition-all duration-500" :style="{ width: `${channelPercentages.cash}%` }"></div>
@@ -524,7 +546,7 @@
                     <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
                     {{ $t('dashboard2.mpesaMobile') }}
                   </span>
-                  <span>{{ formatCurrency(paymentBreakdown.mobile.amount, currency) }} ({{ channelPercentages.mobile }}%)</span>
+                  <span>{{ animatedPaymentMobile }} ({{ channelPercentages.mobile }}%)</span>
                 </div>
                 <div class="w-full bg-surface-container-high rounded-full h-2">
                   <div class="bg-blue-500 h-2 rounded-full transition-all duration-500" :style="{ width: `${channelPercentages.mobile}%` }"></div>
@@ -538,7 +560,7 @@
                     <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
                     {{ $t('dashboard2.cardTerminal') }}
                   </span>
-                  <span>{{ formatCurrency(paymentBreakdown.card.amount, currency) }} ({{ channelPercentages.card }}%)</span>
+                  <span>{{ animatedPaymentCard }} ({{ channelPercentages.card }}%)</span>
                 </div>
                 <div class="w-full bg-surface-container-high rounded-full h-2">
                   <div class="bg-purple-500 h-2 rounded-full transition-all duration-500" :style="{ width: `${channelPercentages.card}%` }"></div>
@@ -552,7 +574,7 @@
                     <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                     {{ $t('dashboard2.creditInvoices') }}
                   </span>
-                  <span>{{ formatCurrency(paymentBreakdown.credit.amount, currency) }} ({{ channelPercentages.credit }}%)</span>
+                  <span>{{ animatedPaymentCredit }} ({{ channelPercentages.credit }}%)</span>
                 </div>
                 <div class="w-full bg-surface-container-high rounded-full h-2">
                   <div class="bg-amber-500 h-2 rounded-full transition-all duration-500" :style="{ width: `${channelPercentages.credit}%` }"></div>
@@ -581,23 +603,23 @@
             <div class="grid grid-cols-3 gap-3 text-center font-mono mb-4">
               <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                 <span class="text-[10px] text-emerald-800 font-bold block uppercase tracking-wider">{{ $t('dashboard2.payIn') }}</span>
-                <span class="text-sm sm:text-base font-black text-emerald-600 mt-1 block">+{{ formatCurrency(payInAmount, currency) }}</span>
+                <span class="text-xs sm:text-sm font-black text-emerald-600 mt-1 block amount-sub truncate">+{{ animatedPayIn }}</span>
               </div>
               <div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
                 <span class="text-[10px] text-rose-800 font-bold block uppercase tracking-wider">{{ $t('dashboard2.payOut') }}</span>
-                <span class="text-sm sm:text-base font-black text-rose-600 mt-1 block">-{{ formatCurrency(payOutAmount, currency) }}</span>
+                <span class="text-xs sm:text-sm font-black text-rose-600 mt-1 block amount-sub truncate">-{{ animatedPayOut }}</span>
               </div>
               <div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/40">
                 <span class="text-[10px] text-on-surface-variant font-bold block uppercase tracking-wider">{{ $t('dashboard2.cashDrop') }}</span>
-                <span class="text-sm sm:text-base font-black text-on-surface mt-1 block">-{{ formatCurrency(cashDropAmount, currency) }}</span>
+                <span class="text-xs sm:text-sm font-black text-on-surface mt-1 block amount-sub truncate">-{{ animatedCashDrop }}</span>
               </div>
             </div>
           </div>
 
           <div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-between text-xs font-mono">
             <span class="text-on-surface-variant">Net Cash Movement:</span>
-            <span class="font-black" :class="(payInAmount - payOutAmount - cashDropAmount) >= 0 ? 'text-emerald-600' : 'text-rose-600'">
-              {{ (payInAmount - payOutAmount - cashDropAmount) >= 0 ? '+' : '' }}{{ formatCurrency(payInAmount - payOutAmount - cashDropAmount, currency) }}
+            <span class="font-black amount-kpi" :class="(payInAmount - payOutAmount - cashDropAmount) >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+              {{ (payInAmount - payOutAmount - cashDropAmount) >= 0 ? '+' : '-' }}{{ animatedNetMovement }}
             </span>
           </div>
         </div>
@@ -628,8 +650,8 @@
 
           <div>
             <div class="flex items-baseline gap-2">
-              <span class="text-2xl sm:text-3xl lg:text-2xl xl:text-3xl font-black font-mono tracking-tight amount-hero" :class="collectionRate >= 75 ? 'text-emerald-600' : 'text-on-surface'">
-                {{ collectionRate }}%
+              <span class="text-xl sm:text-2xl lg:text-xl xl:text-2xl 2xl:text-3xl font-black font-mono tracking-tight amount-hero" :class="collectionRate >= 75 ? 'text-emerald-600' : 'text-on-surface'">
+                {{ Math.round(animatedCollectionRate) }}%
               </span>
               <span class="text-xs font-mono text-on-surface-variant">{{ $t('dashboard2.collectionRateDesc') }}</span>
             </div>
@@ -644,8 +666,8 @@
             </div>
 
             <div class="flex justify-between items-center text-[11px] font-mono mt-3 pt-2.5 border-t border-outline-variant/40 text-on-surface-variant">
-              <span>Collected: <strong class="text-emerald-600 font-black">{{ formatCurrency(amountCollected, currency) }}</strong></span>
-              <span>Due: <strong class="text-on-surface font-black">{{ formatCurrency(amountDue, currency) }}</strong></span>
+              <span>Collected: <strong class="text-emerald-600 font-black amount-sub text-[11px]">{{ animatedAmountCollected }}</strong></span>
+              <span>Due: <strong class="text-on-surface font-black amount-sub text-[11px]">{{ animatedAmountDue }}</strong></span>
             </div>
           </div>
         </div>
@@ -665,8 +687,8 @@
                 + {{ $t('dashboard2.collect') }}
               </button>
             </div>
-            <div class="text-xl sm:text-2xl lg:text-xl xl:text-2xl 2xl:text-3xl font-black font-mono text-on-surface tracking-tight mt-1 amount-hero truncate">
-              {{ formatCurrency(moneyToCollect.total, currency) }}
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-on-surface tracking-tight mt-1 amount-hero truncate">
+              {{ animatedMoneyToCollectTotal }}
             </div>
           </div>
 
@@ -674,15 +696,15 @@
           <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-outline-variant/40 text-center font-mono">
             <div class="bg-surface-container-low p-2 rounded-xl border border-outline-variant/30">
               <p class="text-[10px] uppercase font-bold text-on-surface-variant truncate">{{ $t('dashboard2.dueToday') }}</p>
-              <p class="text-xs font-black text-on-surface mt-0.5 truncate">{{ formatCurrency(moneyToCollect.dueToday, currency) }}</p>
+              <p class="text-[10px] sm:text-[11px] font-black text-on-surface mt-0.5 truncate amount-sub">{{ animatedMoneyToCollectDueToday }}</p>
             </div>
             <div class="bg-surface-container-low p-2 rounded-xl border border-outline-variant/30">
               <p class="text-[10px] uppercase font-bold text-on-surface-variant truncate">{{ $t('dashboard2.dueThisWeek') }}</p>
-              <p class="text-xs font-black text-amber-700 mt-0.5 truncate">{{ formatCurrency(moneyToCollect.dueThisWeek, currency) }}</p>
+              <p class="text-[10px] sm:text-[11px] font-black text-amber-700 mt-0.5 truncate amount-sub">{{ animatedMoneyToCollectDueThisWeek }}</p>
             </div>
             <div class="bg-rose-500/10 p-2 rounded-xl border border-rose-500/20">
               <p class="text-[10px] uppercase font-bold text-rose-700 truncate">{{ $t('dashboard2.overdue') }}</p>
-              <p class="text-xs font-black text-rose-600 mt-0.5 truncate">{{ formatCurrency(moneyToCollect.overdue, currency) }}</p>
+              <p class="text-[10px] sm:text-[11px] font-black text-rose-600 mt-0.5 truncate amount-sub">{{ animatedMoneyToCollectOverdue }}</p>
             </div>
           </div>
         </div>
@@ -702,8 +724,8 @@
                 {{ $t('dashboard2.balanceDue') }}
               </button>
             </div>
-            <div class="text-xl sm:text-2xl lg:text-xl xl:text-2xl 2xl:text-3xl font-black font-mono text-purple-700 tracking-tight mt-1 amount-hero truncate">
-              {{ formatCurrency(moneyOwedSuppliers.total, currency) }}
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-purple-700 tracking-tight mt-1 amount-hero truncate">
+              {{ animatedMoneyOwedTotal }}
             </div>
           </div>
 
@@ -711,15 +733,15 @@
           <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-outline-variant/40 text-center font-mono">
             <div class="bg-surface-container-low p-2 rounded-xl border border-outline-variant/30">
               <p class="text-[10px] uppercase font-bold text-on-surface-variant truncate">{{ $t('dashboard2.dueToday') }}</p>
-              <p class="text-xs font-black text-on-surface mt-0.5">{{ formatCurrency(moneyOwedSuppliers.dueToday, currency) }}</p>
+              <p class="text-[10px] sm:text-[11px] font-black text-on-surface mt-0.5 truncate amount-sub">{{ animatedMoneyOwedDueToday }}</p>
             </div>
             <div class="bg-surface-container-low p-2 rounded-xl border border-outline-variant/30">
               <p class="text-[10px] uppercase font-bold text-on-surface-variant truncate">{{ $t('dashboard2.dueThisWeek') }}</p>
-              <p class="text-xs font-black text-purple-700 mt-0.5">{{ formatCurrency(moneyOwedSuppliers.dueThisWeek, currency) }}</p>
+              <p class="text-[10px] sm:text-[11px] font-black text-purple-700 mt-0.5 truncate amount-sub">{{ animatedMoneyOwedDueThisWeek }}</p>
             </div>
             <div class="bg-amber-500/10 p-2 rounded-xl border border-amber-500/20">
               <p class="text-[10px] uppercase font-bold text-amber-800 truncate">{{ $t('dashboard2.overdue') }}</p>
-              <p class="text-xs font-black text-amber-700 mt-0.5">{{ formatCurrency(moneyOwedSuppliers.overdue, currency) }}</p>
+              <p class="text-[10px] sm:text-[11px] font-black text-amber-700 mt-0.5 truncate amount-sub">{{ animatedMoneyOwedOverdue }}</p>
             </div>
           </div>
         </div>
@@ -751,7 +773,7 @@
         <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           <div class="text-left sm:text-right">
             <span class="text-xs font-mono font-bold text-rose-800 block uppercase">Total at Risk</span>
-            <span class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-mono font-black text-rose-600 amount-kpi truncate">{{ formatCurrency(displayedRiskAmount, currency) }}</span>
+            <span class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-mono font-black text-rose-600 amount-kpi truncate">{{ animatedRiskAmount }}</span>
           </div>
           <button 
             type="button"
@@ -788,7 +810,7 @@
         <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           <div class="text-left sm:text-right">
             <span class="text-xs font-mono font-bold text-emerald-800 block uppercase">Total at Risk</span>
-            <span class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-mono font-black text-emerald-600 amount-kpi truncate">{{ formatCurrency(0, currency) }}</span>
+            <span class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-mono font-black text-emerald-600 amount-kpi truncate">{{ formatCurrency(0, currency) }}</span>
           </div>
           <div class="px-3 py-2 rounded-xl bg-emerald-600/15 text-emerald-700 text-xs font-black font-mono flex items-center gap-1.5 shrink-0">
             <CheckCircle2 class="w-4 h-4" />
@@ -806,7 +828,7 @@
           </div>
           <div class="text-xs font-mono text-on-surface-variant flex items-center gap-2">
             <span>Total Receivables:</span>
-            <strong class="text-on-surface font-black truncate">{{ formatCurrency(moneyToCollect.total, currency) }}</strong>
+            <strong class="text-on-surface font-black truncate amount-kpi">{{ animatedMoneyToCollectTotal }}</strong>
           </div>
         </div>
 
@@ -820,8 +842,8 @@
               </span>
               <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 font-bold">Safe</span>
             </div>
-            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-on-surface amount-compact truncate">
-              {{ formatCurrency(debtAging.current.amount, currency) }}
+            <div class="text-xs sm:text-sm lg:text-xs xl:text-sm 2xl:text-base font-black font-mono text-on-surface amount-compact truncate">
+              {{ animatedDebtAgingCurrent }}
             </div>
             <div class="text-[11px] font-mono text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/30 flex justify-between">
               <span>Healthy terms</span>
@@ -838,8 +860,8 @@
               </span>
               <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 font-bold">Watch</span>
             </div>
-            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-amber-700 amount-compact truncate">
-              {{ formatCurrency(debtAging.days8to30.amount, currency) }}
+            <div class="text-xs sm:text-sm lg:text-xs xl:text-sm 2xl:text-base font-black font-mono text-amber-700 amount-compact truncate">
+              {{ animatedDebtAgingDays8to30 }}
             </div>
             <div class="text-[11px] font-mono text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/30 flex justify-between">
               <span>Grace period</span>
@@ -856,8 +878,8 @@
               </span>
               <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-700 font-bold">Overdue</span>
             </div>
-            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-orange-700 amount-compact truncate">
-              {{ formatCurrency(debtAging.days31to60.amount, currency) }}
+            <div class="text-xs sm:text-sm lg:text-xs xl:text-sm 2xl:text-base font-black font-mono text-orange-700 amount-compact truncate">
+              {{ animatedDebtAgingDays31to60 }}
             </div>
             <div class="text-[11px] font-mono text-on-surface-variant mt-2 pt-2 border-t border-outline-variant/30 flex justify-between">
               <span>Send reminder</span>
@@ -877,8 +899,8 @@
               </span>
               <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-600 text-white font-bold">High Risk</span>
             </div>
-            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-rose-600 amount-compact truncate">
-              {{ formatCurrency(debtAging.days60plus.amount, currency) }}
+            <div class="text-xs sm:text-sm lg:text-xs xl:text-sm 2xl:text-base font-black font-mono text-rose-600 amount-compact truncate">
+              {{ animatedDebtAgingDays60plus }}
             </div>
             <div class="text-[11px] font-mono text-rose-800 mt-2 pt-2 border-t border-rose-500/20 flex justify-between items-center">
               <span class="font-bold underline group-hover:text-rose-950">Inspect debtors</span>
@@ -1024,8 +1046,8 @@
             <span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-mono font-black uppercase">At Cost</span>
           </div>
           <div>
-            <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate">
-              {{ formatCurrency(inventoryTotalCapital, currency) }}
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate">
+              {{ animatedInventoryCapital }}
             </div>
             <p class="text-xs text-on-surface-variant mt-1">Total tied working capital across branch stock</p>
           </div>
@@ -1041,8 +1063,8 @@
             <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-mono font-black uppercase">Retail Value</span>
           </div>
           <div>
-            <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-emerald-600 tracking-tight amount-kpi truncate">
-              {{ formatCurrency(inventoryPotentialRevenue, currency) }}
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-emerald-600 tracking-tight amount-kpi truncate">
+              {{ animatedInventoryPotentialRev }}
             </div>
             <p class="text-xs text-on-surface-variant mt-1">Expected turnover at current catalog selling prices</p>
           </div>
@@ -1058,8 +1080,8 @@
             <span class="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-700 text-[10px] font-mono font-black uppercase">Projected Gain</span>
           </div>
           <div>
-            <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-purple-700 tracking-tight amount-kpi truncate">
-              {{ formatCurrency(inventoryUnrealizedProfit, currency) }}
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-purple-700 tracking-tight amount-kpi truncate">
+              {{ animatedInventoryProfit }}
             </div>
             <p class="text-xs text-on-surface-variant mt-1">
               Projected margin: <strong>{{ inventoryTotalCapital > 0 ? Math.round((inventoryUnrealizedProfit / inventoryTotalCapital) * 100) : 0 }}%</strong> markup on cost
@@ -1090,7 +1112,7 @@
             </span>
           </div>
           <div>
-            <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate">
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-on-surface tracking-tight amount-kpi truncate">
               {{ stockRunwayDays > 0 ? $t('dashboard2.daysRunway', { days: stockRunwayDays }) : '—' }}
             </div>
             <p class="text-xs text-on-surface-variant mt-1">
@@ -1114,8 +1136,8 @@
                 {{ fastMovingStock.count }} products
               </span>
             </div>
-            <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-emerald-600 tracking-tight amount-kpi truncate">
-              {{ formatCurrency(fastMovingStock.capital, currency) }}
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-emerald-600 tracking-tight amount-kpi truncate">
+              {{ animatedFastMovingCapital }}
             </div>
             <p class="text-xs text-on-surface-variant mt-1">{{ $t('dashboard2.fastMovingDesc') }}</p>
           </div>
@@ -1137,8 +1159,8 @@
                 {{ slowMovingStock.count }} products
               </span>
             </div>
-            <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-amber-700 tracking-tight amount-kpi truncate">
-              {{ formatCurrency(slowMovingStock.capital, currency) }}
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-amber-700 tracking-tight amount-kpi truncate">
+              {{ animatedSlowMovingCapital }}
             </div>
             <p class="text-xs text-on-surface-variant mt-1">{{ $t('dashboard2.slowMovingDesc') }}</p>
           </div>
@@ -1160,8 +1182,8 @@
                 {{ deadStock.count }} products
               </span>
             </div>
-            <div class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-black font-mono text-rose-600 tracking-tight amount-kpi truncate">
-              {{ formatCurrency(deadStock.capital, currency) }}
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-rose-600 tracking-tight amount-kpi truncate">
+              {{ animatedDeadStockCapital }}
             </div>
             <p class="text-xs text-rose-900/80 mt-1">{{ $t('dashboard2.deadStockDesc') }}</p>
           </div>
@@ -1197,7 +1219,7 @@
         <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           <div class="text-left sm:text-right">
             <span class="text-xs font-mono font-bold text-rose-800 block uppercase">Dormant Capital</span>
-            <span class="text-lg sm:text-xl lg:text-lg xl:text-xl 2xl:text-2xl font-mono font-black text-rose-600 amount-kpi truncate">{{ formatCurrency(deadStock.capital, currency) }}</span>
+            <span class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-mono font-black text-rose-600 amount-kpi truncate">{{ animatedDeadStockCapital }}</span>
           </div>
           <button 
             type="button"
@@ -1734,22 +1756,22 @@
           <div class="bg-surface-container-low p-3 rounded-xl border border-outline-variant/30">
             <div class="text-[10px] font-mono uppercase text-on-surface-variant font-bold">{{ $t('dashboard2.netTillDiscrepancy') }}</div>
             <div 
-              class="text-base font-mono font-black mt-0.5"
+              class="text-base font-mono font-black mt-0.5 amount-kpi"
               :class="tillDiscrepancy < 0 ? 'text-rose-600' : tillDiscrepancy > 0 ? 'text-amber-600' : 'text-emerald-600'"
             >
-              {{ tillDiscrepancy < 0 ? '-' : tillDiscrepancy > 0 ? '+' : '' }}{{ formatCurrency(Math.abs(tillDiscrepancy), currency) }}
+              {{ tillDiscrepancy < 0 ? '-' : tillDiscrepancy > 0 ? '+' : '' }}{{ animatedTillDiscrepancy }}
             </div>
           </div>
           <div class="bg-surface-container-low p-3 rounded-xl border border-outline-variant/30">
             <div class="text-[10px] font-mono uppercase text-on-surface-variant font-bold">{{ $t('dashboard2.totalShortages') }}</div>
-            <div class="text-base font-mono font-black text-rose-600 mt-0.5">
-              -{{ formatCurrency(tillTotalShortages, currency) }}
+            <div class="text-base font-mono font-black text-rose-600 mt-0.5 amount-kpi">
+              -{{ animatedTillShortages }}
             </div>
           </div>
           <div class="bg-surface-container-low p-3 rounded-xl border border-outline-variant/30">
             <div class="text-[10px] font-mono uppercase text-on-surface-variant font-bold">{{ $t('dashboard2.totalOverages') }}</div>
-            <div class="text-base font-mono font-black text-amber-600 mt-0.5">
-              +{{ formatCurrency(tillTotalOverages, currency) }}
+            <div class="text-base font-mono font-black text-amber-600 mt-0.5 amount-kpi">
+              +{{ animatedTillOverages }}
             </div>
           </div>
           <div class="bg-surface-container-low p-3 rounded-xl border border-outline-variant/30">
@@ -2146,16 +2168,47 @@
 
         <!-- Overstocked / High Capital Products Table -->
         <div class="overflow-y-auto flex-1 pr-1 space-y-2">
-          <h4 class="text-xs font-bold text-on-surface uppercase tracking-wider mb-2">Top Capital-Intensive Products in Inventory</h4>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+            <h4 class="text-xs font-bold text-on-surface uppercase tracking-wider">Top Capital-Intensive Products in Inventory</h4>
+            <!-- Velocity Filter Tabs -->
+            <div class="inline-flex rounded-lg bg-surface-container p-0.5 text-[11px] font-medium">
+              <button 
+                type="button"
+                @click="runwayFilter = 'ALL'"
+                class="px-2.5 py-1 rounded-md transition-all cursor-pointer"
+                :class="runwayFilter === 'ALL' ? 'bg-surface font-bold text-on-surface shadow-xs' : 'text-on-surface-variant hover:text-on-surface'"
+              >
+                {{ $t('dashboard2.filterAllCapital') }}
+              </button>
+              <button 
+                type="button"
+                @click="runwayFilter = 'OVERSTOCKED_ONLY'"
+                class="px-2.5 py-1 rounded-md transition-all cursor-pointer"
+                :class="runwayFilter === 'OVERSTOCKED_ONLY' ? 'bg-surface font-bold text-amber-800 shadow-xs' : 'text-on-surface-variant hover:text-on-surface'"
+              >
+                {{ $t('dashboard2.filterOverstockedOnly') }}
+              </button>
+              <button 
+                type="button"
+                @click="runwayFilter = 'FAST_MOVERS'"
+                class="px-2.5 py-1 rounded-md transition-all cursor-pointer"
+                :class="runwayFilter === 'FAST_MOVERS' ? 'bg-surface font-bold text-emerald-800 shadow-xs' : 'text-on-surface-variant hover:text-on-surface'"
+              >
+                {{ $t('dashboard2.filterFastMovers') }}
+              </button>
+            </div>
+          </div>
+
           <table class="w-full text-left text-xs font-mono border-collapse">
             <thead>
               <tr class="border-b border-outline-variant/40 text-on-surface-variant font-bold text-[11px] uppercase tracking-wider">
                 <th class="pb-2">{{ $t('dashboard2.productCol') }}</th>
+                <th class="pb-2 text-center">{{ $t('dashboard2.velocityCol') }}</th>
                 <th class="pb-2 text-center">{{ $t('dashboard2.qtyCol') }}</th>
                 <th class="pb-2 text-right">{{ $t('dashboard2.costCol') }}</th>
                 <th class="pb-2 text-right">{{ $t('dashboard2.capitalTiedCol') }}</th>
                 <th class="pb-2 text-center">Gross Margin</th>
-                <th class="pb-2 text-center">Suggested Tactic</th>
+                <th class="pb-2 text-center">{{ $t('dashboard2.tacticCol') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-outline-variant/20">
@@ -2163,6 +2216,26 @@
                 <td class="py-2.5 font-sans">
                   <div class="font-black text-on-surface text-xs">{{ item.name }}</div>
                   <div class="text-[11px] font-mono text-on-surface-variant">{{ item.category }} • SKU: {{ item.sku }}</div>
+                </td>
+                <td class="py-2.5 text-center font-sans">
+                  <span 
+                    v-if="item.velocity === 'FAST'" 
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 inline-flex items-center gap-1"
+                  >
+                    <span>⚡</span> {{ $t('dashboard2.fastMoving') }}
+                  </span>
+                  <span 
+                    v-else-if="item.velocity === 'DORMANT'" 
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-700 inline-flex items-center gap-1"
+                  >
+                    <span>⚠️</span> {{ $t('dashboard2.deadStock') }}
+                  </span>
+                  <span 
+                    v-else 
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-700 inline-flex items-center gap-1"
+                  >
+                    <span>⏳</span> {{ $t('dashboard2.slowMoving') }}
+                  </span>
                 </td>
                 <td class="py-2.5 text-center font-mono font-bold text-on-surface">
                   {{ item.stock }} units
@@ -2178,9 +2251,30 @@
                     {{ item.marginPercent }}%
                   </span>
                 </td>
-                <td class="py-2.5 text-center">
-                  <span class="px-2 py-0.5 rounded text-[10px] font-sans font-bold bg-surface-container-high text-on-surface-variant">
-                    {{ item.marginPercent >= 25 ? '15% Promo Discount' : 'Bundle with Fast Mover' }}
+                <td class="py-2.5 text-center font-sans">
+                  <span 
+                    v-if="item.velocity === 'FAST'" 
+                    class="px-2.5 py-1 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 inline-block"
+                  >
+                    {{ $t('dashboard2.protectMarginTactic') }}
+                  </span>
+                  <span 
+                    v-else-if="item.velocity === 'DORMANT'" 
+                    class="px-2.5 py-1 rounded text-[10px] font-bold bg-rose-500/10 text-rose-800 border border-rose-500/20 inline-block"
+                  >
+                    {{ $t('dashboard2.clearanceTactic') }}
+                  </span>
+                  <span 
+                    v-else-if="item.marginPercent >= 25" 
+                    class="px-2.5 py-1 rounded text-[10px] font-bold bg-amber-500/10 text-amber-800 border border-amber-500/20 inline-block"
+                  >
+                    {{ $t('dashboard2.discountTactic') }}
+                  </span>
+                  <span 
+                    v-else 
+                    class="px-2.5 py-1 rounded text-[10px] font-bold bg-indigo-500/10 text-indigo-800 border border-indigo-500/20 inline-block"
+                  >
+                    {{ $t('dashboard2.bundleTactic') }}
                   </span>
                 </td>
               </tr>
@@ -2214,8 +2308,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { websocketService } from '../services/websocketService';
+import { isElectron } from '../services/offlineSalesService';
+import { useAnimatedNumber, useAnimatedCurrency } from '../utils/useAnimatedNumber';
 import {
   Activity,
   Banknote,
@@ -2278,11 +2375,12 @@ const isSubmittingSupplierPay = ref(false);
 
 const showCriticalReorderModal = ref(false);
 const showRunwayAuditModal = ref(false);
+const runwayFilter = ref<'ALL' | 'OVERSTOCKED_ONLY' | 'FAST_MOVERS'>('ALL');
 const restockingItemId = ref<string | null>(null);
 const restockInputQuantities = ref<Record<string, number>>({});
 
 const selectedPeriod = ref('today');
-const activeStream = ref<'ALL' | 'SALES' | 'COLLECTIONS' | 'EXPENSES'>('ALL');
+const activeStream = ref<'ALL' | 'SALES' | 'PROFIT' | 'EXPENSES'>('ALL');
 const isLoading = ref(false);
 const cashflowData = ref<CashflowOverview | null>(null);
 
@@ -2327,12 +2425,127 @@ const selectedPeriodLabel = computed(() => {
   return p ? p.label : 'Period';
 });
 
+// ==========================================
+// REAL-TIME WEBSOCKET REACTION & SYNCHRONIZATION
+// ==========================================
+const isWsConnected = websocketService.isConnected;
+const isRealtimePulsing = ref(false);
+let realtimePulseTimer: any = null;
+let refreshDebounceTimer: any = null;
+let unsubscribeList: Array<() => void> = [];
+
+const triggerRealtimeRefresh = (eventType?: string, payload?: any) => {
+  // 1. Visual real-time synchronization pulse on header & graph
+  isRealtimePulsing.value = true;
+  if (realtimePulseTimer) clearTimeout(realtimePulseTimer);
+  realtimePulseTimer = setTimeout(() => {
+    isRealtimePulsing.value = false;
+  }, 1400);
+
+  // 2. 0ms Optimistic Patch for Instant Responsiveness
+  if (eventType === 'SALE_COMPLETED' && payload && cashflowData.value) {
+    const saleAmount = Number(payload.totalAmount) || 0;
+    if (saleAmount > 0) {
+      if (cashflowData.value.sales) {
+        cashflowData.value.sales.totalSales = (Number(cashflowData.value.sales.totalSales) || 0) + saleAmount;
+        cashflowData.value.sales.transactionsCount = (Number(cashflowData.value.sales.transactionsCount) || 0) + 1;
+        if (cashflowData.value.sales.transactionsCount > 0) {
+          cashflowData.value.sales.avgTicket = Math.round(cashflowData.value.sales.totalSales / cashflowData.value.sales.transactionsCount);
+        }
+      }
+      if (payload.paymentMethod === 'CASH') {
+        cashflowData.value.cashOnHand = (Number(cashflowData.value.cashOnHand) || 0) + saleAmount;
+      }
+      cashflowData.value.netCashflow = (Number(cashflowData.value.netCashflow) || 0) + saleAmount;
+    }
+  } else if (eventType === 'SALE_REVERSED' && payload && cashflowData.value) {
+    const revAmount = Number(payload.reversedAmount) || 0;
+    if (revAmount > 0 && cashflowData.value.sales) {
+      cashflowData.value.sales.totalSales = Math.max(0, (Number(cashflowData.value.sales.totalSales) || 0) - revAmount);
+      cashflowData.value.sales.transactionsCount = Math.max(0, (Number(cashflowData.value.sales.transactionsCount) || 0) - 1);
+      cashflowData.value.netCashflow = (Number(cashflowData.value.netCashflow) || 0) - revAmount;
+    }
+  }
+
+  // 3. Debounced authoritative fetch (coalesces burst sales into 1 smooth refresh)
+  // Ensures every metric, margin, till discrepancy, debt aging, and full SVG curve is 100% synchronized
+  if (refreshDebounceTimer) clearTimeout(refreshDebounceTimer);
+  refreshDebounceTimer = setTimeout(async () => {
+    await fetchData(true);
+    vm.fetchProducts();
+    vm.fetchSuppliers();
+  }, 200);
+};
+
+const setupWebSocketSubscriptions = () => {
+  // Clear any existing listeners
+  unsubscribeList.forEach((unsub) => unsub());
+  unsubscribeList = [];
+
+  if (isElectron()) {
+    return; // Real-time WebSocket does not apply to the desktop version (Electron)
+  }
+
+  const branchId = vm.activeBranchId.value || localStorage.getItem('branchId');
+  if (!branchId || branchId === 'null' || branchId === 'undefined') {
+    return;
+  }
+
+  // Ensure STOMP client is connected
+  websocketService.connect();
+
+  // 1. Real-time Branch Sales (New sales & reversals)
+  unsubscribeList.push(
+    websocketService.onBranchSales(branchId, (sale, envelope) => {
+      console.log('[Dashboard Realtime] Sale event:', envelope.type, sale);
+      triggerRealtimeRefresh(envelope.type, sale);
+    })
+  );
+
+  // 2. Real-time Branch Shifts (Drawer counts, discrepancies, open/close)
+  unsubscribeList.push(
+    websocketService.onBranchShifts(branchId, (shift, envelope) => {
+      console.log('[Dashboard Realtime] Shift event:', envelope.type, shift);
+      triggerRealtimeRefresh(envelope.type, shift);
+    })
+  );
+
+  // 3. Real-time Cash Movements (Pay-in, Pay-out, Cash Drop)
+  unsubscribeList.push(
+    websocketService.onBranchCashMovements(branchId, (movement, envelope) => {
+      console.log('[Dashboard Realtime] Cash movement event:', envelope.type, movement);
+      triggerRealtimeRefresh(envelope.type, movement);
+    })
+  );
+
+  // 4. Real-time Dashboard KPI broadcasts
+  unsubscribeList.push(
+    websocketService.onBranchDashboard(branchId, (dashKpis, envelope) => {
+      console.log('[Dashboard Realtime] Dashboard KPI push:', dashKpis);
+      triggerRealtimeRefresh(envelope.type, dashKpis);
+    })
+  );
+
+  // 5. Store-level listener (multi-branch store owner synchronization)
+  const storeId = localStorage.getItem('storeId');
+  if (storeId) {
+    unsubscribeList.push(
+      websocketService.onStoreSales(storeId, (sale, envelope) => {
+        if (sale.branchId === branchId) {
+          triggerRealtimeRefresh(envelope.type, sale);
+        }
+      })
+    );
+  }
+};
+
 onMounted(() => {
   vm.fetchSettings();
   fetchData();
   fetchCustomersForDropdown();
   vm.fetchSuppliers();
   vm.fetchProducts();
+  setupWebSocketSubscriptions();
 });
 
 watch(() => vm.activeBranchId.value, () => {
@@ -2340,14 +2553,25 @@ watch(() => vm.activeBranchId.value, () => {
   fetchCustomersForDropdown();
   vm.fetchSuppliers();
   vm.fetchProducts();
+  setupWebSocketSubscriptions();
 });
 
-const fetchData = async () => {
+onUnmounted(() => {
+  unsubscribeList.forEach((unsub) => unsub());
+  unsubscribeList = [];
+  if (realtimePulseTimer) clearTimeout(realtimePulseTimer);
+  if (refreshDebounceTimer) clearTimeout(refreshDebounceTimer);
+});
+
+const fetchData = async (silent: boolean | unknown = false) => {
+  const isSilent = silent === true;
   const branchId = vm.activeBranchId.value || localStorage.getItem('branchId');
   if (!branchId || branchId === 'null' || branchId === 'undefined') {
     return;
   }
-  isLoading.value = true;
+  if (!isSilent) {
+    isLoading.value = true;
+  }
   try {
     const res = await financeService.getCashflowOverview(branchId, selectedPeriod.value);
     if (res) {
@@ -2356,7 +2580,9 @@ const fetchData = async () => {
   } catch (err) {
     console.error('Failed to load cashflow overview:', err);
   } finally {
-    isLoading.value = false;
+    if (!isSilent) {
+      isLoading.value = false;
+    }
   }
 };
 
@@ -2530,6 +2756,12 @@ const deadStockProducts = computed<DeadStockProductItem[]>(() => inventoryIntel.
 const stockRunwayDays = computed(() => Number(inventoryIntel.value?.stockRunwayDays) || 0);
 const stockDailyCogs = computed(() => Number(inventoryIntel.value?.dailyCogs) || 0);
 const stockRunwayStatus = computed(() => inventoryIntel.value?.runwayStatus || 'STAGNANT');
+
+const fastMovingProductIds = computed<string[]>(() => inventoryIntel.value?.fastMovingProductIds || inventoryIntel.value?.fastMoving?.productIds || []);
+const slowMovingProductIds = computed<string[]>(() => inventoryIntel.value?.slowMovingProductIds || inventoryIntel.value?.slowMoving?.productIds || []);
+const fastMovingIdSet = computed(() => new Set((fastMovingProductIds.value || []).map((id: any) => String(id))));
+const slowMovingIdSet = computed(() => new Set((slowMovingProductIds.value || []).map((id: any) => String(id))));
+const deadStockIdSet = computed(() => new Set((deadStockProducts.value || []).map((d: any) => String(d.id))));
 
 interface FormattedRecommendation {
   type: 'DISCOUNT_DORMANT' | 'STOP_REORDER' | 'REPLENISH_FAST' | 'GENERAL';
@@ -2743,6 +2975,67 @@ const channelPercentages = computed(() => {
   };
 });
 
+// ==========================================
+// SMOOTH REAL-TIME NUMBER & CURRENCY ANIMATIONS (60 FPS)
+// ==========================================
+const animatedGrossProfit = useAnimatedCurrency(() => grossProfitAmount.value, currency);
+const animatedGrossMargin = useAnimatedNumber(() => grossMarginPercent.value);
+const animatedCogs = useAnimatedCurrency(() => cogsAmount.value, currency);
+const animatedTotalSales = useAnimatedCurrency(() => totalPeriodSales.value, currency);
+const animatedTransactionsCount = useAnimatedNumber(() => transactionsCount.value);
+const animatedAvgTicket = useAnimatedCurrency(() => avgTicketAmount.value, currency);
+const animatedNetCashflow = useAnimatedCurrency(() => Math.abs(netCashflowAmount.value), currency);
+const animatedCashInflow = useAnimatedCurrency(() => totalPeriodSales.value + debtorsCollected.value, currency);
+const animatedCashOutflow = useAnimatedCurrency(() => payOutAmount.value + purchasesTotal.value, currency);
+const animatedCashOnHand = useAnimatedCurrency(() => cashOnHandAmount.value, currency);
+const animatedActiveRegisters = useAnimatedNumber(() => activeRegistersCount.value);
+const animatedTillDiscrepancy = useAnimatedCurrency(() => Math.abs(tillDiscrepancy.value), currency);
+const animatedTillShortages = useAnimatedCurrency(() => tillTotalShortages.value, currency);
+const animatedTillOverages = useAnimatedCurrency(() => tillTotalOverages.value, currency);
+
+// Cash Movements
+const animatedPayIn = useAnimatedCurrency(() => payInAmount.value, currency);
+const animatedPayOut = useAnimatedCurrency(() => payOutAmount.value, currency);
+const animatedCashDrop = useAnimatedCurrency(() => cashDropAmount.value, currency);
+const animatedNetMovement = useAnimatedCurrency(() => Math.abs(payInAmount.value - payOutAmount.value - cashDropAmount.value), currency);
+
+// Collections & Debt Schedule
+const animatedDebtorsCollected = useAnimatedCurrency(() => debtorsCollected.value, currency);
+const animatedAmountCollected = useAnimatedCurrency(() => amountCollected.value, currency);
+const animatedAmountDue = useAnimatedCurrency(() => amountDue.value, currency);
+const animatedMoneyToCollectTotal = useAnimatedCurrency(() => moneyToCollect.value.total, currency);
+const animatedMoneyToCollectDueToday = useAnimatedCurrency(() => moneyToCollect.value.dueToday, currency);
+const animatedMoneyToCollectDueThisWeek = useAnimatedCurrency(() => moneyToCollect.value.dueThisWeek, currency);
+const animatedMoneyToCollectOverdue = useAnimatedCurrency(() => moneyToCollect.value.overdue, currency);
+
+const animatedMoneyOwedTotal = useAnimatedCurrency(() => moneyOwedSuppliers.value.total, currency);
+const animatedMoneyOwedDueToday = useAnimatedCurrency(() => moneyOwedSuppliers.value.dueToday, currency);
+const animatedMoneyOwedDueThisWeek = useAnimatedCurrency(() => moneyOwedSuppliers.value.dueThisWeek, currency);
+const animatedMoneyOwedOverdue = useAnimatedCurrency(() => moneyOwedSuppliers.value.overdue, currency);
+
+const animatedRiskAmount = useAnimatedCurrency(() => displayedRiskAmount.value, currency);
+const animatedCollectionRate = useAnimatedNumber(() => collectionRate.value);
+
+// Debt Aging Buckets
+const animatedDebtAgingCurrent = useAnimatedCurrency(() => debtAging.value.current.amount, currency);
+const animatedDebtAgingDays8to30 = useAnimatedCurrency(() => debtAging.value.days8to30.amount, currency);
+const animatedDebtAgingDays31to60 = useAnimatedCurrency(() => debtAging.value.days31to60.amount, currency);
+const animatedDebtAgingDays60plus = useAnimatedCurrency(() => debtAging.value.days60plus.amount, currency);
+
+// Payment Breakdown
+const animatedPaymentCash = useAnimatedCurrency(() => Number(paymentBreakdown.value.cash.amount) || 0, currency);
+const animatedPaymentMobile = useAnimatedCurrency(() => Number(paymentBreakdown.value.mobile.amount) || 0, currency);
+const animatedPaymentCard = useAnimatedCurrency(() => Number(paymentBreakdown.value.card.amount) || 0, currency);
+const animatedPaymentCredit = useAnimatedCurrency(() => Number(paymentBreakdown.value.credit.amount) || 0, currency);
+
+// Inventory
+const animatedInventoryCapital = useAnimatedCurrency(() => inventoryTotalCapital.value, currency);
+const animatedInventoryPotentialRev = useAnimatedCurrency(() => inventoryPotentialRevenue.value, currency);
+const animatedInventoryProfit = useAnimatedCurrency(() => inventoryUnrealizedProfit.value, currency);
+const animatedFastMovingCapital = useAnimatedCurrency(() => fastMovingStock.value.capital, currency);
+const animatedSlowMovingCapital = useAnimatedCurrency(() => slowMovingStock.value.capital, currency);
+const animatedDeadStockCapital = useAnimatedCurrency(() => deadStock.value.capital, currency);
+
 const topSellingProducts = computed(() => cashflowData.value?.topSellingProducts || []);
 const inventoryAlerts = computed(() => {
   return cashflowData.value?.inventoryAlerts || {
@@ -2766,17 +3059,17 @@ const velocityTrends = computed(() => {
       label: h,
       date: todayStr,
       salesRevenue: 0,
-      debtCollections: 0,
+      profit: 0,
       pettyExpenses: 0,
       netCashflow: 0
     }));
   } else if (selectedPeriod.value === 'month') {
     return [
-      { label: 'W1 (1-7)', date: 'W1', salesRevenue: 0, debtCollections: 0, pettyExpenses: 0, netCashflow: 0 },
-      { label: 'W2 (8-14)', date: 'W2', salesRevenue: 0, debtCollections: 0, pettyExpenses: 0, netCashflow: 0 },
-      { label: 'W3 (15-21)', date: 'W3', salesRevenue: 0, debtCollections: 0, pettyExpenses: 0, netCashflow: 0 },
-      { label: 'W4 (22-28)', date: 'W4', salesRevenue: 0, debtCollections: 0, pettyExpenses: 0, netCashflow: 0 },
-      { label: 'W5 (29+)', date: 'W5', salesRevenue: 0, debtCollections: 0, pettyExpenses: 0, netCashflow: 0 }
+      { label: 'W1 (1-7)', date: 'W1', salesRevenue: 0, profit: 0, pettyExpenses: 0, netCashflow: 0 },
+      { label: 'W2 (8-14)', date: 'W2', salesRevenue: 0, profit: 0, pettyExpenses: 0, netCashflow: 0 },
+      { label: 'W3 (15-21)', date: 'W3', salesRevenue: 0, profit: 0, pettyExpenses: 0, netCashflow: 0 },
+      { label: 'W4 (22-28)', date: 'W4', salesRevenue: 0, profit: 0, pettyExpenses: 0, netCashflow: 0 },
+      { label: 'W5 (29+)', date: 'W5', salesRevenue: 0, profit: 0, pettyExpenses: 0, netCashflow: 0 }
     ];
   } else if (selectedPeriod.value === 'year') {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -2784,7 +3077,7 @@ const velocityTrends = computed(() => {
       label: m,
       date: m,
       salesRevenue: 0,
-      debtCollections: 0,
+      profit: 0,
       pettyExpenses: 0,
       netCashflow: 0
     }));
@@ -2795,7 +3088,7 @@ const velocityTrends = computed(() => {
       label: d,
       date: d,
       salesRevenue: 0,
-      debtCollections: 0,
+      profit: 0,
       pettyExpenses: 0,
       netCashflow: 0
     }));
@@ -2806,7 +3099,7 @@ const chartMax = computed(() => {
   const vals: number[] = [];
   velocityTrends.value.forEach(t => {
     vals.push(Number(t.salesRevenue) || 0);
-    vals.push(Number(t.debtCollections) || 0);
+    vals.push(Number(t.profit) || 0);
     vals.push(Number(t.pettyExpenses) || 0);
   });
   const defaultFloor = currency.value === 'USD' ? 500 : 50000;
@@ -2837,7 +3130,9 @@ const chartPoints = computed(() => {
   return list.map((item, i) => {
     const x = N > 1 ? (i / (N - 1)) * 100 : 50;
     const sVal = Number(item.salesRevenue) || 0;
-    const cVal = Number(item.debtCollections) || 0;
+    const pVal = item.profit !== undefined 
+      ? Number(item.profit) || 0 
+      : (sVal > 0 && grossMarginPercent.value > 0 ? (sVal * (grossMarginPercent.value / 100)) : 0);
     const eVal = Number(item.pettyExpenses) || 0;
 
     // Baseline sits at y = 92 (cleanly visible above bottom axis and never clipped).
@@ -2854,12 +3149,12 @@ const chartPoints = computed(() => {
     return {
       x,
       salesY: calcY(sVal),
-      collY: calcY(cVal),
+      profitY: calcY(pVal),
       expY: calcY(eVal),
       label: item.label,
       date: item.date,
       salesRevenue: sVal,
-      debtCollections: cVal,
+      profit: pVal,
       pettyExpenses: eVal,
       netCashflow: Number(item.netCashflow) || 0
     };
@@ -2868,7 +3163,7 @@ const chartPoints = computed(() => {
 
 // Monotone Cubic Spline (Fritsch-Carlson algorithm)
 // Prevents overshooting, oscillations, and dips below zero
-const buildMonotonePath = (pts: any[], yKey: 'salesY' | 'collY' | 'expY'): string => {
+const buildMonotonePath = (pts: any[], yKey: 'salesY' | 'profitY' | 'expY'): string => {
   if (!pts || pts.length === 0) return '';
   if (pts.length === 1) return `M ${pts[0].x.toFixed(2)} ${pts[0][yKey].toFixed(2)}`;
   if (pts.length === 2) {
@@ -2930,7 +3225,7 @@ const buildMonotonePath = (pts: any[], yKey: 'salesY' | 'collY' | 'expY'): strin
   return path;
 };
 
-const buildMonotoneAreaPath = (pts: any[], yKey: 'salesY' | 'collY' | 'expY'): string => {
+const buildMonotoneAreaPath = (pts: any[], yKey: 'salesY' | 'profitY' | 'expY'): string => {
   if (!pts || pts.length === 0) return '';
   const line = buildMonotonePath(pts, yKey);
   if (!line) return '';
@@ -2943,8 +3238,8 @@ const buildMonotoneAreaPath = (pts: any[], yKey: 'salesY' | 'collY' | 'expY'): s
 const salesLinePath = computed(() => buildMonotonePath(chartPoints.value, 'salesY'));
 const salesAreaPath = computed(() => buildMonotoneAreaPath(chartPoints.value, 'salesY'));
 
-const collectionsLinePath = computed(() => buildMonotonePath(chartPoints.value, 'collY'));
-const collectionsAreaPath = computed(() => buildMonotoneAreaPath(chartPoints.value, 'collY'));
+const profitLinePath = computed(() => buildMonotonePath(chartPoints.value, 'profitY'));
+const profitAreaPath = computed(() => buildMonotoneAreaPath(chartPoints.value, 'profitY'));
 
 const expensesLinePath = computed(() => buildMonotonePath(chartPoints.value, 'expY'));
 const expensesAreaPath = computed(() => buildMonotoneAreaPath(chartPoints.value, 'expY'));
@@ -3252,7 +3547,6 @@ const setRestockQty = (id: string, qty: number) => {
 
 const criticalReorderProducts = computed<CriticalReorderItem[]>(() => {
   const list = vm.products.value || [];
-  const deadStockIdSet = new Set((deadStockProducts.value || []).map((d: any) => String(d.id)));
   return list
     .filter((p) => {
       const stock = Number(p.stock) || 0;
@@ -3260,7 +3554,7 @@ const criticalReorderProducts = computed<CriticalReorderItem[]>(() => {
       // 1. Must be actively in stock, have a positive reorder threshold, and breached that threshold
       const isLowStock = stock > 0 && min > 0 && stock <= min;
       // 2. Safeguard: Exclude dormant / dead stock (zero sales in 60 days) to prevent reordering dead items
-      const isDormant = deadStockIdSet.has(String(p.id));
+      const isDormant = deadStockIdSet.value.has(String(p.id));
       return isLowStock && !isDormant;
     })
     .map((p) => {
@@ -3363,7 +3657,21 @@ const excessRunwaySummary = computed(() => {
   };
 });
 
-const highCapitalOverstockedProducts = computed(() => {
+interface HighCapitalAuditItem {
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  stock: number;
+  cost: number;
+  price: number;
+  capital: number;
+  marginPercent: number;
+  status?: string;
+  velocity: 'FAST' | 'SLOW' | 'DORMANT';
+}
+
+const allHighCapitalProducts = computed<HighCapitalAuditItem[]>(() => {
   const list = vm.products.value || [];
   return list
     .filter((p) => (Number(p.stock) || 0) > 0)
@@ -3373,6 +3681,17 @@ const highCapitalOverstockedProducts = computed(() => {
       const price = Number(p.price) || 0;
       const capital = stock * cost;
       const marginPercent = price > 0 ? Math.round(((price - cost) / price) * 100) : 0;
+      const pidStr = String(p.id);
+
+      let velocity: 'FAST' | 'SLOW' | 'DORMANT' = 'SLOW';
+      if (fastMovingIdSet.value.has(pidStr)) {
+        velocity = 'FAST';
+      } else if (deadStockIdSet.value.has(pidStr)) {
+        velocity = 'DORMANT';
+      } else if (slowMovingIdSet.value.has(pidStr)) {
+        velocity = 'SLOW';
+      }
+
       return {
         id: p.id,
         name: p.name,
@@ -3383,10 +3702,69 @@ const highCapitalOverstockedProducts = computed(() => {
         price,
         capital,
         marginPercent,
-        status: p.status
+        status: p.status,
+        velocity
       };
     })
-    .sort((a, b) => b.capital - a.capital)
-    .slice(0, 15);
+    .sort((a, b) => b.capital - a.capital);
+});
+
+const highCapitalOverstockedProducts = computed<HighCapitalAuditItem[]>(() => {
+  const list = allHighCapitalProducts.value;
+  if (runwayFilter.value === 'OVERSTOCKED_ONLY') {
+    return list.filter((item) => item.velocity === 'SLOW' || item.velocity === 'DORMANT').slice(0, 25);
+  } else if (runwayFilter.value === 'FAST_MOVERS') {
+    return list.filter((item) => item.velocity === 'FAST').slice(0, 25);
+  }
+  return list.slice(0, 25);
 });
 </script>
+
+<style scoped>
+.amount-hero,
+.amount-kpi,
+.amount-compact,
+.amount-sub {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Fluid responsive downscaling for 14-inch screens and below (<= 1536px, <= 1440px, <= 1280px) */
+@media (max-width: 1536px) {
+  .amount-hero {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+  .amount-kpi {
+    font-size: 1.05rem !important;
+    line-height: 1.5rem !important;
+  }
+  .amount-compact {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+  .amount-sub {
+    font-size: 0.6875rem !important;
+    line-height: 1rem !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  .amount-hero {
+    font-size: 1.125rem !important;
+    line-height: 1.5rem !important;
+  }
+  .amount-kpi {
+    font-size: 0.9375rem !important;
+    line-height: 1.35rem !important;
+  }
+  .amount-compact {
+    font-size: 0.8125rem !important;
+    line-height: 1.15rem !important;
+  }
+  .amount-sub {
+    font-size: 0.625rem !important;
+    line-height: 0.875rem !important;
+  }
+}
+</style>

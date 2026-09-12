@@ -317,6 +317,7 @@ export const en = {
     financialVelocity: 'Financial Velocity & Cash Streams',
     allStreams: 'All Streams',
     salesRevenue: 'Sales Revenue',
+    profitStream: 'Profit',
     debtCollections: 'Debt Collections',
     pettyExpenses: 'Petty Expenses',
     paymentChannels: 'Payment Channel Breakdown',
@@ -440,6 +441,15 @@ export const en = {
     clearancePlaybookDesc: 'Discount excess slow-moving items by 15–20% or bundle them with fast movers to release trapped working capital.',
     procurementPauseTitle: 'Procurement Pause Rule',
     procurementPauseDesc: 'Halt purchase orders for overstocked categories until inventory runway drops under 60 days.',
+    velocityCol: 'Velocity',
+    tacticCol: 'Suggested Tactic',
+    protectMarginTactic: 'Core Driver • Protect Margin',
+    discountTactic: '15% Promo Discount',
+    bundleTactic: 'Bundle with Fast Mover',
+    clearanceTactic: 'Clearance Liquidation',
+    filterAllCapital: 'All High-Capital',
+    filterOverstockedOnly: 'Slow & Dormant Only',
+    filterFastMovers: 'Fast Movers Only',
   },
 
   // POS Checkout View

@@ -49,6 +49,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     define: {
+      global: 'window',
       __APP_VERSION__: JSON.stringify(packageJson.version),
       ...(apiUrl ? { 'process.env.VITE_API_URL': JSON.stringify(apiUrl) } : {}),
     },

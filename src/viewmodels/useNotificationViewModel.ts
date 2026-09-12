@@ -1,7 +1,9 @@
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { notificationService } from '../services/notificationService';
 import type { NotificationInboxItem } from '../models/types';
 import { showToast } from '../services/toastService';
+import { websocketService, type RealtimeNotificationEvent } from '../services/websocketService';
+import { isElectron } from '../services/offlineSalesService';
 
 // Global shared state for real-time notification synchronization across views
 const unreadCount = ref<number>(0);
@@ -143,18 +145,104 @@ export function useNotificationViewModel() {
     }
   };
 
-  const startPolling = (intervalMs = 30000) => {
+  let wsUnsubscribe: (() => void) | null = null;
+  let wsReconnectStopWatch: (() => void) | null = null;
+
+  const setupWebSocket = () => {
+    if (isElectron()) return; // Notifications via WebSocket do not apply to Electron desktop
+    if (wsUnsubscribe) return;
+    const userId = localStorage.getItem('userId');
+    const storeId = localStorage.getItem('storeId');
+    if (!userId && !storeId) return;
+
+    // Ensure WebSocket client is connected
+    websocketService.connect();
+
+    const handleIncoming = (event: RealtimeNotificationEvent) => {
+      // Deduplicate by recipientId or notificationId
+      const exists = notifications.value.some(
+        (n) => (event.recipientId && n.recipientId === event.recipientId) ||
+               (event.notificationId && n.notificationId === event.notificationId)
+      );
+      if (exists) return;
+
+      unreadCount.value++;
+      const newNotif: NotificationInboxItem = {
+        recipientId: event.recipientId,
+        notificationId: event.notificationId,
+        title: event.title,
+        message: event.message,
+        type: (event.type as any) || 'GENERAL',
+        priority: (event.priority as any) || 'MEDIUM',
+        actionUrl: event.actionUrl,
+        isRead: false,
+        read: false,
+        createdAt: event.createdAt || new Date().toISOString()
+      };
+      notifications.value = [newNotif, ...notifications.value];
+      totalElements.value++;
+      showToast(`${event.title}: ${event.message}`, 'info');
+    };
+
+    const unsubUser = userId ? websocketService.onUserNotifications(userId, handleIncoming) : () => {};
+    const unsubStore = (storeId && storeId !== 'null' && storeId !== 'undefined')
+      ? websocketService.onStoreNotifications(storeId, handleIncoming)
+      : () => {};
+
+    wsUnsubscribe = () => {
+      unsubUser();
+      unsubStore();
+    };
+
+    // Reconcile unread count once when recovering from a connection interruption
+    if (!wsReconnectStopWatch) {
+      wsReconnectStopWatch = watch(
+        () => websocketService.isConnected.value,
+        (connected, prev) => {
+          if (connected && prev === false) {
+            fetchUnreadCount();
+          }
+        }
+      );
+    }
+  };
+
+  /**
+   * Initializes notification synchronization.
+   * - In the web browser: loads baseline unread count ONCE, then relies 100% on real-time WebSocket push.
+   *   No periodic HTTP polling interval is run.
+   * - In Electron desktop: runs a relaxed fallback polling interval since WebSockets are disabled.
+   */
+  const startPolling = (intervalMs = 60000) => {
+    // 1. Clean up any existing state first
     stopPolling();
+
+    // 2. Baseline fetch: load current unread count once on initialization
     fetchUnreadCount();
-    pollTimer = setInterval(() => {
-      fetchUnreadCount();
-    }, intervalMs);
+
+    // 3. In the browser, listen via real-time WebSocket with ZERO periodic polling
+    if (!isElectron()) {
+      setupWebSocket();
+    } else {
+      // Electron desktop fallback: poll at a relaxed interval (default: 60s)
+      pollTimer = setInterval(() => {
+        fetchUnreadCount();
+      }, Math.max(intervalMs, 60000));
+    }
   };
 
   const stopPolling = () => {
     if (pollTimer) {
       clearInterval(pollTimer);
       pollTimer = null;
+    }
+    if (wsUnsubscribe) {
+      wsUnsubscribe();
+      wsUnsubscribe = null;
+    }
+    if (wsReconnectStopWatch) {
+      wsReconnectStopWatch();
+      wsReconnectStopWatch = null;
     }
   };
 

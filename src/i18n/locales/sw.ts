@@ -317,6 +317,7 @@ export const sw = {
     financialVelocity: 'Kasi ya Mauzo na Mtiririko wa Fedha',
     allStreams: 'Mielekeo Yote',
     salesRevenue: 'Mapato ya Mauzo',
+    profitStream: 'Faida',
     debtCollections: 'Makusanyo ya Madeni',
     pettyExpenses: 'Matumizi Madogo',
     paymentChannels: 'Mchanganuo wa Njia za Malipo',
@@ -440,6 +441,15 @@ export const sw = {
     clearancePlaybookDesc: 'Weka punguzo la 15–20% au unganisha na bidhaa zinazotoka kwa haraka ili kurudisha mtaji wako.',
     procurementPauseTitle: 'Msimamo wa Kusitisha Manunuzi',
     procurementPauseDesc: 'Sitisha kuagiza bidhaa za makundi yenye hisa nyingi zaidi ya siku 60 hadi zipungue.',
+    velocityCol: 'Kasi ya Mauzo',
+    tacticCol: 'Mbinu Iliyopendekezwa',
+    protectMarginTactic: 'Inayouza Zaidi • Linda Faida',
+    discountTactic: 'Punguzo la Promosheni 15%',
+    bundleTactic: 'Unganisha na Inayouza Zaidi',
+    clearanceTactic: 'Uuzaji wa Bei Nafuu / Ondoa',
+    filterAllCapital: 'Mtaji Wote Mkubwa',
+    filterOverstockedOnly: 'Zinazochelewa & Zilizolala Tu',
+    filterFastMovers: 'Zinazouza Haraka Tu',
   },
 
   // Mauzo ya Kaunta (POS Checkout)
