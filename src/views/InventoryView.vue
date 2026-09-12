@@ -1396,10 +1396,11 @@ const mapApiProduct = (p: any): Product => {
       statusType = 'Soon to expire';
     }
   }
+  const reorderLvl = p.reorderLevel !== undefined && p.reorderLevel !== null ? Number(p.reorderLevel) : 0;
   if (statusType === 'In Stock') {
     if (stockNum === 0) {
       statusType = 'Out of Stock';
-    } else if (stockNum <= (p.reorderLevel || 10)) {
+    } else if (reorderLvl > 0 && stockNum <= reorderLvl) {
       statusType = 'Low Stock';
     }
   }
@@ -1411,7 +1412,7 @@ const mapApiProduct = (p: any): Product => {
     cost: Number(p.costPrice || p.cost) || 0,
     price: Number(p.sellingPrice || p.price) || 0,
     stock: stockNum,
-    minStock: p.reorderLevel || 10,
+    minStock: reorderLvl,
     status: statusType,
     supplier: p.supplierName || p.supplier || '',
     sku: p.sku || '',
@@ -1767,8 +1768,8 @@ const handleAddProduct = async () => {
       cost: Number(createdVm.costPrice) || 0,
       price: Number(createdVm.sellingPrice) || 0,
       stock: Number(createdVm.stock) || 0,
-      minStock: createdVm.reorderLevel || 10,
-      status: createdVm.stock === 0 ? 'Out of Stock' : (createdVm.stock <= createdVm.reorderLevel ? 'Low Stock' : 'In Stock'),
+      minStock: createdVm.reorderLevel != null ? Number(createdVm.reorderLevel) : 0,
+      status: Number(createdVm.stock) === 0 ? 'Out of Stock' : ((createdVm.reorderLevel != null && Number(createdVm.reorderLevel) > 0 && Number(createdVm.stock) <= Number(createdVm.reorderLevel)) ? 'Low Stock' : 'In Stock'),
       supplier: newProdSupplier.value || '',
       wholesalePrice: createdVm.wholesalePrice ? Number(createdVm.wholesalePrice) : undefined,
       wholesaleBarcode: createdVm.wholesaleBarcode || newProdWholesaleBarcode.value || undefined,
@@ -1806,18 +1807,22 @@ const handleBulkImport = async () => {
 
   try {
     const vms = await api.postRaw('/api/products/bulk', rawCsvText.value);
-    const addedProducts: Product[] = vms.map((vm: any) => ({
-      id: vm.id,
-      name: vm.name,
-      barcode: vm.barcode || '',
-      category: vm.categoryName || 'General',
-      cost: Number(vm.costPrice) || 0,
-      price: Number(vm.sellingPrice) || 0,
-      stock: Number(vm.stock) || 0,
-      minStock: vm.reorderLevel || 10,
-      status: vm.stock === 0 ? 'Out of Stock' : (vm.stock <= vm.reorderLevel ? 'Low Stock' : 'In Stock'),
-      supplier: vm.supplierName || vm.supplier || ''
-    }));
+    const addedProducts: Product[] = vms.map((vm: any) => {
+      const impStock = Number(vm.stock) || 0;
+      const impMinStock = vm.reorderLevel != null ? Number(vm.reorderLevel) : 0;
+      return {
+        id: vm.id,
+        name: vm.name,
+        barcode: vm.barcode || '',
+        category: vm.categoryName || 'General',
+        cost: Number(vm.costPrice) || 0,
+        price: Number(vm.sellingPrice) || 0,
+        stock: impStock,
+        minStock: impMinStock,
+        status: impStock === 0 ? 'Out of Stock' : (impMinStock > 0 && impStock <= impMinStock ? 'Low Stock' : 'In Stock'),
+        supplier: vm.supplierName || vm.supplier || ''
+      };
+    });
 
     if (addedProducts.length > 0) {
       vm.products.value = [...addedProducts, ...vm.products.value];
@@ -1977,7 +1982,7 @@ const handleEditProduct = async () => {
           category: updatedVm.categoryName || 'General',
           cost: Number(updatedVm.costPrice) || 0,
           price: Number(updatedVm.sellingPrice) || 0,
-          minStock: updatedVm.reorderLevel || 10,
+          minStock: updatedVm.reorderLevel != null ? Number(updatedVm.reorderLevel) : 0,
           supplier: editProdSupplier.value || '',
           sku: updatedVm.sku || '',
           wholesalePrice: updatedVm.wholesalePrice ? Number(updatedVm.wholesalePrice) : undefined,
@@ -1991,6 +1996,8 @@ const handleEditProduct = async () => {
       const index = vm.products.value.findIndex(p => p.id === editingProduct.value?.id);
       if (index !== -1) {
         const existingProduct = vm.products.value[index]!;
+        const updatedReorder = updatedVm.reorderLevel != null ? Number(updatedVm.reorderLevel) : 0;
+        const updatedStock = Number(updatedVm.stock) || 0;
         vm.products.value[index] = {
           ...existingProduct,
           name: updatedVm.name,
@@ -1998,8 +2005,8 @@ const handleEditProduct = async () => {
           category: updatedVm.categoryName || 'General',
           cost: Number(updatedVm.costPrice) || 0,
           price: Number(updatedVm.sellingPrice) || 0,
-          minStock: updatedVm.reorderLevel || 10,
-          status: updatedVm.stock === 0 ? 'Out of Stock' : (updatedVm.stock <= updatedVm.reorderLevel ? 'Low Stock' : 'In Stock'),
+          minStock: updatedReorder,
+          status: updatedStock === 0 ? 'Out of Stock' : (updatedReorder > 0 && updatedStock <= updatedReorder ? 'Low Stock' : 'In Stock'),
           supplier: editProdSupplier.value || '',
           sku: updatedVm.sku || '',
           wholesalePrice: updatedVm.wholesalePrice ? Number(updatedVm.wholesalePrice) : undefined,

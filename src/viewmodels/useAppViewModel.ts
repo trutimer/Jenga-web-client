@@ -99,7 +99,7 @@ watch(
 
 export function useAppViewModel() {
   const lowStockCount = computed(() => {
-    return products.value.filter((p) => p.stock > 0 && p.stock <= p.minStock).length;
+    return products.value.filter((p) => p.stock > 0 && p.minStock > 0 && p.stock <= p.minStock).length;
   });
 
   const fetchSettings = async () => {
@@ -138,6 +138,7 @@ export function useAppViewModel() {
 
           let statusType: 'In Stock' | 'Low Stock' | 'Out of Stock' | 'Soon to expire' | 'Expired' = 'In Stock';
           const stockNum = Number(p.stock) || 0;
+          const reorderLvl = p.reorderLevel !== undefined && p.reorderLevel !== null ? Number(p.reorderLevel) : 0;
           const formattedExpiry = formatDateForInput(p.expiryDate);
           if (formattedExpiry) {
             const exp = new Date(formattedExpiry);
@@ -154,7 +155,7 @@ export function useAppViewModel() {
           if (statusType === 'In Stock') {
             if (stockNum === 0) {
               statusType = 'Out of Stock';
-            } else if (stockNum <= (p.reorderLevel || 10)) {
+            } else if (reorderLvl > 0 && stockNum <= reorderLvl) {
               statusType = 'Low Stock';
             }
           }
@@ -166,7 +167,7 @@ export function useAppViewModel() {
             cost: Number(p.costPrice || p.cost) || 0,
             price: Number(p.sellingPrice || p.price) || 0,
             stock: stockNum,
-            minStock: p.reorderLevel || 10,
+            minStock: reorderLvl,
             status: statusType,
             supplier: p.supplierName || p.supplier || '',
             sku: p.sku || '',

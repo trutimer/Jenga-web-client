@@ -1,6 +1,6 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'node:path'
-import { createWriteStream, existsSync, unlinkSync, renameSync, statSync } from 'node:fs'
+import { createWriteStream, existsSync, unlinkSync, renameSync, statSync, readFileSync, copyFileSync } from 'node:fs'
 import { get as httpGet } from 'node:http'
 import { get as httpsGet } from 'node:https'
 import { spawn } from 'node:child_process'
@@ -60,9 +60,19 @@ export function initUpdateManager(windowsGetter: () => BrowserWindow[], apiBaseU
   }, UPDATE_CHECK_INTERVAL_MS)
 }
 
-export async function checkForUpdates(apiBaseUrl?: string, windowsGetter?: () => BrowserWindow[]) {
-  const url = apiBaseUrl || (apiBaseUrlGetterRef ? apiBaseUrlGetterRef() : (process.env.VITE_API_URL || 'https://jenga-api.sintax.tz'))
+export async function checkForUpdates(
+  apiBaseUrl?: string, 
+  windowsGetter?: () => BrowserWindow[],
+  manifestOverride?: any
+) {
   const wins = windowsGetter ? windowsGetter() : (windowsGetterRef ? windowsGetterRef() : [])
+
+  // If a manual manifest payload was passed (e.g. from console: invoke('updater:check-for-updates', { version: '2.7.0' }))
+  if (manifestOverride && typeof manifestOverride === 'object' && manifestOverride.version) {
+    console.log('[UpdateManager] Manual manifest override received:', manifestOverride)
+    handleHealthPingResponse(manifestOverride, () => wins)
+    return currentState
+  }
 
   // Don't interrupt active downloads or already downloaded state
   if (currentState.status === 'downloading' || currentState.status === 'downloaded') {
@@ -73,20 +83,78 @@ export async function checkForUpdates(apiBaseUrl?: string, windowsGetter?: () =>
   broadcastStatus(wins)
 
   try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 6000)
+    let updateFound = false
 
-    const res = await fetch(`${url.replace(/\/$/, '')}/api/auth/health`, {
-      method: 'GET',
-      signal: controller.signal,
-    }).catch(() => null)
+    // 1. In local dev mode (!app.isPackaged), directly read public/version.json if it exists on disk
+    if (!app.isPackaged) {
+      try {
+        const localManifestPath = join(process.env.APP_ROOT || process.cwd(), 'public', 'version.json')
+        if (existsSync(localManifestPath)) {
+          const raw = readFileSync(localManifestPath, 'utf-8')
+          const localData = JSON.parse(raw)
+          if (localData && localData.version) {
+            console.log('[UpdateManager] Read local dev version.json directly from disk:', localData)
+            handleHealthPingResponse(localData, () => wins)
+            if (currentState.status === 'downloading' || currentState.status === 'downloaded') {
+              updateFound = true
+            }
+          }
+        }
+      } catch (devErr) {
+        console.warn('[UpdateManager] Dev local manifest read error:', devErr)
+      }
+    }
 
-    clearTimeout(timeout)
+    // 2. Check version.json manifest on web origin (reliable static manifest)
+    if (!updateFound) {
+      const devOrigin = process.env.VITE_DEV_SERVER_URL 
+        ? new URL(process.env.VITE_DEV_SERVER_URL).origin 
+        : 'http://127.0.0.1:5173'
+      const webOrigin = process.env.VITE_UPDATE_URL 
+        ? new URL(process.env.VITE_UPDATE_URL).origin 
+        : (process.env.NODE_ENV === 'production' ? 'https://jenga.sintax.tz' : devOrigin)
 
-    if (res && res.ok) {
-      const data = await res.json().catch(() => null)
-      if (data && typeof data === 'object') {
-        handleHealthPingResponse(data, () => wins)
+      try {
+        const manifestController = new AbortController()
+        const manifestTimeout = setTimeout(() => manifestController.abort(), 4000)
+        const manifestRes = await fetch(`${webOrigin}/version.json`, {
+          method: 'GET',
+          signal: manifestController.signal,
+        }).catch(() => null)
+        clearTimeout(manifestTimeout)
+
+        if (manifestRes && manifestRes.ok) {
+          const manifestData = await manifestRes.json().catch(() => null)
+          if (manifestData && typeof manifestData === 'object' && manifestData.version) {
+            handleHealthPingResponse(manifestData, () => wins)
+            if (currentState.status === 'downloading' || currentState.status === 'downloaded') {
+              updateFound = true
+            }
+          }
+        }
+      } catch (manifestErr) {
+        console.warn('[UpdateManager] Manifest version check error:', manifestErr)
+      }
+    }
+
+    // 3. If not triggered from manifest, query API health ping
+    if (!updateFound) {
+      const url = apiBaseUrl || (apiBaseUrlGetterRef ? apiBaseUrlGetterRef() : (process.env.VITE_API_URL || 'https://jenga-api.sintax.tz'))
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 5000)
+
+      const res = await fetch(`${url.replace(/\/$/, '')}/api/auth/health`, {
+        method: 'GET',
+        signal: controller.signal,
+      }).catch(() => null)
+
+      clearTimeout(timeout)
+
+      if (res && res.ok) {
+        const data = await res.json().catch(() => null)
+        if (data && typeof data === 'object') {
+          handleHealthPingResponse(data, () => wins)
+        }
       }
     }
   } catch (err: any) {
@@ -149,9 +217,13 @@ export function handleHealthPingResponse(payload: any, windowsGetter?: () => Bro
     ''
   ).toString().trim()
 
-  if (!remoteVersion) return
-
-  const downloadUrl = (payload.downloadUrl || payload.url || DEFAULT_DOWNLOAD_URL).toString().trim()
+  let downloadUrl = (payload.downloadUrl || payload.url || DEFAULT_DOWNLOAD_URL).toString().trim()
+  if (downloadUrl.startsWith('/')) {
+    const webOrigin = process.env.VITE_UPDATE_URL 
+      ? new URL(process.env.VITE_UPDATE_URL).origin 
+      : (process.env.NODE_ENV === 'production' ? 'https://jenga.sintax.tz' : 'http://localhost:5173')
+    downloadUrl = `${webOrigin}${downloadUrl}`
+  }
   const releaseNotes = payload.releaseNotes || payload.notes || ''
 
   if (!isNewerVersion(remoteVersion, currentState.currentVersion)) {
@@ -241,6 +313,24 @@ export function triggerDownload(downloadUrl: string, targetVersion: string, rele
       if (existsSync(partialPath)) {
         try { unlinkSync(partialPath) } catch (_) {}
       }
+
+      // If in dev mode (!app.isPackaged), fall back directly to local public/Jenga-Setup-Latest.exe
+      const localExe = join(process.env.APP_ROOT || process.cwd(), 'public', 'Jenga-Setup-Latest.exe')
+      if (!app.isPackaged && existsSync(localExe)) {
+        console.log('[UpdateManager] Falling back to local public installer binary for dev testing...')
+        try {
+          copyFileSync(localExe, finalInstallerPath)
+          currentState = {
+            ...currentState,
+            status: 'downloaded',
+            downloadProgress: 100,
+            installerPath: finalInstallerPath,
+          }
+          broadcastStatus()
+          return
+        } catch (_) {}
+      }
+
       currentState = {
         ...currentState,
         status: 'error',
@@ -252,6 +342,15 @@ export function triggerDownload(downloadUrl: string, targetVersion: string, rele
 
     // Atomic rename on completion
     try {
+      if (!existsSync(partialPath)) {
+        throw new Error('Downloaded installer file was not found on disk.')
+      }
+
+      const stats = statSync(partialPath)
+      if (stats.size < 5 * 1024 * 1024) {
+        throw new Error(`Downloaded installer file is invalid or too small (${stats.size} bytes). Expected complete Windows executable.`)
+      }
+
       if (existsSync(finalInstallerPath)) {
         unlinkSync(finalInstallerPath)
       }
@@ -269,10 +368,13 @@ export function triggerDownload(downloadUrl: string, targetVersion: string, rele
       broadcastStatus()
     } catch (renameErr: any) {
       console.error('[UpdateManager] Failed to finalize update file:', renameErr)
+      if (existsSync(partialPath)) {
+        try { unlinkSync(partialPath) } catch (_) {}
+      }
       currentState = {
         ...currentState,
         status: 'error',
-        error: 'Failed to finalize update file',
+        error: renameErr.message || 'Failed to finalize update file',
       }
       broadcastStatus()
     }
@@ -300,8 +402,9 @@ function downloadFileWithRedirects(
   }
 
   const getter = parsedUrl.protocol === 'https:' ? httpsGet : httpGet
+  const hostname = parsedUrl.hostname === 'localhost' ? '127.0.0.1' : parsedUrl.hostname
   const requestOptions = {
-    hostname: parsedUrl.hostname,
+    hostname,
     port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
     path: parsedUrl.pathname + parsedUrl.search,
     headers: {
@@ -362,11 +465,11 @@ function downloadFileWithRedirects(
     res.pipe(fileStream)
 
     fileStream.on('finish', () => {
-      fileStream.close(() => callback(null))
+      callback(null)
     })
 
     fileStream.on('error', (err) => {
-      fileStream.close()
+      try { fileStream.destroy() } catch (_) {}
       callback(err)
     })
   })

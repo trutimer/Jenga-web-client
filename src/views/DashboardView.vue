@@ -1249,9 +1249,15 @@
             </div>
 
             <button 
-              @click="rec.type === 'DISCOUNT_DORMANT' || rec.type === 'STOP_REORDER' ? (showDeadStockModal = true) : router.push('/inventory')"
+              @click="handleAdvisoryAction(rec)"
               class="mt-4 w-full py-2 rounded-lg font-mono font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
-              :class="rec.type === 'DISCOUNT_DORMANT' ? 'bg-rose-600 hover:bg-rose-700 text-white' : (rec.type === 'REPLENISH_FAST' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-surface-container-high hover:bg-surface-container-highest text-on-surface border border-outline-variant/40')"
+              :class="rec.type === 'DISCOUNT_DORMANT' 
+                ? 'bg-rose-600 hover:bg-rose-700 text-white' 
+                : (rec.type === 'REPLENISH_FAST' 
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                  : (rec.type === 'STOP_REORDER'
+                    ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                    : 'bg-primary hover:bg-primary/90 text-on-primary'))"
             >
               <span>{{ rec.actionLabel }}</span>
               <ArrowRight class="w-3 h-3" />
@@ -1911,6 +1917,299 @@
         </button>
       </template>
     </Modal>
+
+    <!-- ========================================== -->
+    <!-- MODAL E: CRITICAL STOCK REORDER WORKBENCH  -->
+    <!-- ========================================== -->
+    <div v-if="showCriticalReorderModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 font-sans">
+      <div class="bg-surface-container-lowest rounded-2xl max-w-4xl w-full border border-outline-variant shadow-2xl p-6 animate-fade-up max-h-[85vh] flex flex-col">
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-outline-variant/40 mb-4 shrink-0">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center">
+              <ShoppingCart class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="text-base font-black text-on-surface">{{ $t('dashboard2.criticalReorderModalTitle') }}</h3>
+              <p class="text-xs text-on-surface-variant">{{ $t('dashboard2.criticalReorderModalDesc') }}</p>
+            </div>
+          </div>
+          <button @click="showCriticalReorderModal = false" class="text-on-surface-variant hover:text-on-surface cursor-pointer p-1 rounded-lg">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <!-- Metric Summary Chips -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 shrink-0 font-mono">
+          <div class="bg-surface-container-low p-3 rounded-xl border border-outline-variant/30">
+            <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider block">Identified Critical Products</span>
+            <span class="text-lg font-black text-on-surface mt-0.5 block">{{ criticalReorderSummary.totalItems }}</span>
+          </div>
+          <div class="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20">
+            <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">{{ $t('dashboard2.totalRestockCapital') }}</span>
+            <span class="text-lg font-black text-emerald-700 mt-0.5 block">{{ formatCurrency(criticalReorderSummary.totalCapitalNeeded, currency) }}</span>
+          </div>
+        </div>
+
+        <!-- Table / Content Body -->
+        <div class="overflow-y-auto flex-1 pr-1 space-y-2">
+          <template v-if="criticalReorderProducts.length > 0">
+            <table class="w-full text-left text-xs font-mono border-collapse">
+              <thead>
+                <tr class="border-b border-outline-variant/40 text-on-surface-variant font-bold text-[11px] uppercase tracking-wider">
+                  <th class="pb-2">{{ $t('dashboard2.productCol') }}</th>
+                  <th class="pb-2 text-center">{{ $t('dashboard2.qtyCol') }}</th>
+                  <th class="pb-2 text-center">{{ $t('dashboard2.suggestedReorderCol') }}</th>
+                  <th class="pb-2 text-right">{{ $t('dashboard2.costCol') }}</th>
+                  <th class="pb-2 text-right">{{ $t('dashboard2.estimatedCostCol') }}</th>
+                  <th class="pb-2 text-center">{{ $t('dashboard2.actionCol') }}</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-outline-variant/20">
+                <tr v-for="item in criticalReorderProducts" :key="item.id" class="hover:bg-surface-container-low transition-colors">
+                  <td class="py-3 font-sans">
+                    <div class="font-black text-on-surface text-xs">{{ item.name }}</div>
+                    <div class="text-[11px] font-mono text-on-surface-variant">
+                      {{ item.category }} • {{ item.supplier || 'No Vendor' }}
+                    </div>
+                  </td>
+                  <td class="py-3 text-center">
+                    <span 
+                      class="px-2 py-0.5 rounded-full text-[10px] font-mono font-black inline-flex items-center gap-1"
+                      :class="item.stock === 0 ? 'bg-rose-500/15 text-rose-700' : 'bg-amber-500/15 text-amber-700'"
+                    >
+                      <AlertCircle v-if="item.stock === 0" class="w-3 h-3" />
+                      {{ item.stock }} / Min: {{ item.minStock }}
+                    </span>
+                  </td>
+                  <td class="py-3 text-center font-mono">
+                    <div class="inline-flex items-center border border-outline-variant/80 rounded-lg bg-surface overflow-hidden shadow-xs">
+                      <button 
+                        type="button" 
+                        @click="setRestockQty(item.id, getRestockQty(item.id, item.recommendedQty) - 1)"
+                        class="px-2 py-1 text-on-surface-variant hover:bg-surface-container-high font-bold cursor-pointer transition-colors"
+                      >
+                        -
+                      </button>
+                      <input 
+                        type="number"
+                        min="1"
+                        :value="getRestockQty(item.id, item.recommendedQty)"
+                        @input="(e: any) => setRestockQty(item.id, parseInt(e.target.value) || 1)"
+                        class="w-12 text-center text-xs font-bold font-mono outline-none border-x border-outline-variant/60 bg-transparent text-on-surface"
+                      />
+                      <button 
+                        type="button" 
+                        @click="setRestockQty(item.id, getRestockQty(item.id, item.recommendedQty) + 1)"
+                        class="px-2 py-1 text-on-surface-variant hover:bg-surface-container-high font-bold cursor-pointer transition-colors"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </td>
+                  <td class="py-3 text-right font-mono text-on-surface-variant">
+                    {{ formatCurrency(item.cost, currency) }}
+                  </td>
+                  <td class="py-3 text-right font-mono font-black text-emerald-700">
+                    {{ formatCurrency(getRestockQty(item.id, item.recommendedQty) * item.cost, currency) }}
+                  </td>
+                  <td class="py-3 text-center">
+                    <button 
+                      type="button"
+                      :disabled="restockingItemId === item.id"
+                      @click="executeQuickRestock(item)"
+                      class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-[11px] font-mono shadow-xs cursor-pointer inline-flex items-center gap-1.5 transition-all"
+                    >
+                      <RefreshCw v-if="restockingItemId === item.id" class="w-3 h-3 animate-spin" />
+                      <span>{{ $t('dashboard2.quickRestockBtn') }}</span>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </template>
+          <template v-else>
+            <div class="py-12 text-center text-xs text-on-surface-variant font-mono">
+              <CheckCircle2 class="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+              <span>{{ $t('dashboard2.noCriticalItems') }}</span>
+            </div>
+          </template>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-between pt-4 border-t border-outline-variant/40 mt-4 shrink-0">
+          <button 
+            @click="showCriticalReorderModal = false; router.push('/purchases')"
+            class="px-4 py-2 rounded-xl bg-surface-container-high hover:bg-surface-container text-on-surface font-bold text-xs font-mono shadow-xs cursor-pointer flex items-center gap-1.5"
+          >
+            <span>Open Procurement Orders</span>
+            <ArrowRight class="w-3.5 h-3.5" />
+          </button>
+          <button 
+            @click="showCriticalReorderModal = false"
+            class="px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-on-primary font-bold text-xs cursor-pointer"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL F: RUNWAY & WORKING CAPITAL OPTIMIZER-->
+    <!-- ========================================== -->
+    <div v-if="showRunwayAuditModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 font-sans">
+      <div class="bg-surface-container-lowest rounded-2xl max-w-4xl w-full border border-outline-variant shadow-2xl p-6 animate-fade-up max-h-[85vh] flex flex-col">
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-outline-variant/40 mb-4 shrink-0">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-600 flex items-center justify-center">
+              <TrendingUp class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="text-base font-black text-on-surface">{{ $t('dashboard2.runwayAuditModalTitle') }}</h3>
+              <p class="text-xs text-on-surface-variant">{{ $t('dashboard2.runwayAuditModalDesc') }}</p>
+            </div>
+          </div>
+          <button @click="showRunwayAuditModal = false" class="text-on-surface-variant hover:text-on-surface cursor-pointer p-1 rounded-lg">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <!-- Executive KPI Chips -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4 shrink-0 font-mono">
+          <div class="bg-surface-container-low p-3 rounded-xl border border-outline-variant/30">
+            <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider block">{{ $t('dashboard2.stockRunway') }}</span>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="text-base font-black text-on-surface">{{ stockRunwayDays > 0 ? `${stockRunwayDays} Days` : 'N/A' }}</span>
+              <span 
+                class="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase"
+                :class="stockRunwayStatus === 'OVERSTOCKED' ? 'bg-purple-500/20 text-purple-700' : (stockRunwayStatus === 'CRITICAL_LOW' ? 'bg-rose-500/20 text-rose-700' : 'bg-emerald-500/20 text-emerald-700')"
+              >
+                {{ stockRunwayStatus }}
+              </span>
+            </div>
+          </div>
+
+          <div class="bg-surface-container-low p-3 rounded-xl border border-outline-variant/30">
+            <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider block">Daily COGS Burn</span>
+            <span class="text-base font-black text-on-surface mt-0.5 block">{{ formatCurrency(stockDailyCogs, currency) }}/day</span>
+          </div>
+
+          <div class="bg-surface-container-low p-3 rounded-xl border border-outline-variant/30">
+            <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider block">{{ $t('dashboard2.targetBenchmark') }}</span>
+            <span class="text-base font-black text-emerald-700 mt-0.5 block">30–45 Days</span>
+          </div>
+
+          <div class="bg-purple-500/10 p-3 rounded-xl border border-purple-500/20">
+            <span class="text-[10px] font-bold text-purple-800 uppercase tracking-wider block">{{ $t('dashboard2.excessCapitalTied') }}</span>
+            <span class="text-base font-black text-purple-700 mt-0.5 block">{{ formatCurrency(excessRunwaySummary.excessCapital, currency) }}</span>
+          </div>
+        </div>
+
+        <!-- Strategic Playbook Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 shrink-0">
+          <div class="p-3.5 rounded-xl border border-rose-500/20 bg-rose-500/5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center gap-1.5 text-rose-700 font-bold text-xs mb-1">
+                <Sparkles class="w-3.5 h-3.5" />
+                <span>{{ $t('dashboard2.clearancePlaybookTitle') }}</span>
+              </div>
+              <p class="text-[11px] text-on-surface-variant leading-relaxed">{{ $t('dashboard2.clearancePlaybookDesc') }}</p>
+            </div>
+            <button 
+              @click="showRunwayAuditModal = false; showDeadStockModal = true"
+              class="mt-2.5 text-xs font-mono font-bold text-rose-700 hover:text-rose-800 flex items-center gap-1 cursor-pointer"
+            >
+              <span>Inspect Dormant & Dead Stock Items</span>
+              <ArrowRight class="w-3 h-3" />
+            </button>
+          </div>
+
+          <div class="p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center gap-1.5 text-amber-800 font-bold text-xs mb-1">
+                <ShieldAlert class="w-3.5 h-3.5" />
+                <span>{{ $t('dashboard2.procurementPauseTitle') }}</span>
+              </div>
+              <p class="text-[11px] text-on-surface-variant leading-relaxed">{{ $t('dashboard2.procurementPauseDesc') }}</p>
+            </div>
+            <button 
+              @click="showRunwayAuditModal = false; router.push('/purchases')"
+              class="mt-2.5 text-xs font-mono font-bold text-amber-800 hover:text-amber-900 flex items-center gap-1 cursor-pointer"
+            >
+              <span>Review Procurement & Purchases</span>
+              <ArrowRight class="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Overstocked / High Capital Products Table -->
+        <div class="overflow-y-auto flex-1 pr-1 space-y-2">
+          <h4 class="text-xs font-bold text-on-surface uppercase tracking-wider mb-2">Top Capital-Intensive Products in Inventory</h4>
+          <table class="w-full text-left text-xs font-mono border-collapse">
+            <thead>
+              <tr class="border-b border-outline-variant/40 text-on-surface-variant font-bold text-[11px] uppercase tracking-wider">
+                <th class="pb-2">{{ $t('dashboard2.productCol') }}</th>
+                <th class="pb-2 text-center">{{ $t('dashboard2.qtyCol') }}</th>
+                <th class="pb-2 text-right">{{ $t('dashboard2.costCol') }}</th>
+                <th class="pb-2 text-right">{{ $t('dashboard2.capitalTiedCol') }}</th>
+                <th class="pb-2 text-center">Gross Margin</th>
+                <th class="pb-2 text-center">Suggested Tactic</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-outline-variant/20">
+              <tr v-for="item in highCapitalOverstockedProducts" :key="item.id" class="hover:bg-surface-container-low transition-colors">
+                <td class="py-2.5 font-sans">
+                  <div class="font-black text-on-surface text-xs">{{ item.name }}</div>
+                  <div class="text-[11px] font-mono text-on-surface-variant">{{ item.category }} • SKU: {{ item.sku }}</div>
+                </td>
+                <td class="py-2.5 text-center font-mono font-bold text-on-surface">
+                  {{ item.stock }} units
+                </td>
+                <td class="py-2.5 text-right font-mono text-on-surface-variant">
+                  {{ formatCurrency(item.cost, currency) }}
+                </td>
+                <td class="py-2.5 text-right font-mono font-black text-purple-700">
+                  {{ formatCurrency(item.capital, currency) }}
+                </td>
+                <td class="py-2.5 text-center font-mono font-bold">
+                  <span class="px-2 py-0.5 rounded text-[10px]" :class="item.marginPercent >= 20 ? 'bg-emerald-500/10 text-emerald-700' : 'bg-amber-500/10 text-amber-700'">
+                    {{ item.marginPercent }}%
+                  </span>
+                </td>
+                <td class="py-2.5 text-center">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-sans font-bold bg-surface-container-high text-on-surface-variant">
+                    {{ item.marginPercent >= 25 ? '15% Promo Discount' : 'Bundle with Fast Mover' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-between pt-4 border-t border-outline-variant/40 mt-4 shrink-0">
+          <div class="text-xs font-mono text-on-surface-variant">
+            Total Inventory Capital: <strong class="text-on-surface font-black">{{ formatCurrency(inventoryTotalCapital, currency) }}</strong>
+          </div>
+          <div class="flex items-center gap-2">
+            <button 
+              @click="showRunwayAuditModal = false; router.push('/inventory')"
+              class="px-4 py-2 rounded-xl bg-surface-container-high hover:bg-surface-container text-on-surface font-bold text-xs cursor-pointer"
+            >
+              Open Inventory Catalog
+            </button>
+            <button 
+              @click="showRunwayAuditModal = false"
+              class="px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-on-primary font-bold text-xs cursor-pointer"
+            >
+              {{ $t('dashboard2.cancel') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1977,6 +2276,11 @@ const selectedSupplierIdForPay = ref<string>('');
 const supplierPaymentAmount = ref<string>('');
 const isSubmittingSupplierPay = ref(false);
 
+const showCriticalReorderModal = ref(false);
+const showRunwayAuditModal = ref(false);
+const restockingItemId = ref<string | null>(null);
+const restockInputQuantities = ref<Record<string, number>>({});
+
 const selectedPeriod = ref('today');
 const activeStream = ref<'ALL' | 'SALES' | 'COLLECTIONS' | 'EXPENSES'>('ALL');
 const isLoading = ref(false);
@@ -2028,12 +2332,14 @@ onMounted(() => {
   fetchData();
   fetchCustomersForDropdown();
   vm.fetchSuppliers();
+  vm.fetchProducts();
 });
 
 watch(() => vm.activeBranchId.value, () => {
   fetchData();
   fetchCustomersForDropdown();
   vm.fetchSuppliers();
+  vm.fetchProducts();
 });
 
 const fetchData = async () => {
@@ -2259,8 +2565,8 @@ const inventoryRecommendations = computed<FormattedRecommendation[]>(() => {
         priority: 'MEDIUM',
         title: 'Reorder Critical Stock',
         description: 'Ensure fast moving products have a safe 14-day stock buffer to avoid stockouts.',
-        count: fastMovingStock.value.count,
-        actionLabel: 'Check Fast Movers'
+        count: criticalReorderProducts.value.length || fastMovingStock.value.count,
+        actionLabel: 'Open Restock Workbench'
       },
       {
         type: 'GENERAL',
@@ -2335,15 +2641,15 @@ const inventoryRecommendations = computed<FormattedRecommendation[]>(() => {
       type = 'REPLENISH_FAST';
       priority = 'HIGH';
       title = 'Reorder Critical Stock';
-      count = inventoryAlerts.value.lowStockCount || fastMovingStock.value.count;
-      actionLabel = 'View Low Stock';
+      count = criticalReorderProducts.value.length || inventoryAlerts.value.lowStockCount || fastMovingStock.value.count;
+      actionLabel = 'Open Restock Workbench';
     }
 
     // Deduplicate titles if any duplicate occurs
     if (seenTitles.has(title)) {
       if (title === 'Reorder Critical Stock') {
         title = 'Protect Fast Movers';
-        actionLabel = 'Check Fast Movers';
+        actionLabel = 'Open Restock Workbench';
       } else if (title === 'Liquidate Dormant Stock') {
         title = 'Dormant Capital Relief';
       } else {
@@ -2352,11 +2658,19 @@ const inventoryRecommendations = computed<FormattedRecommendation[]>(() => {
     }
     seenTitles.add(title);
 
+    let description = recStr;
+    if (isReplenish) {
+      const activeMovingCount = criticalReorderProducts.value.length;
+      if (activeMovingCount > 0) {
+        description = `Replenish fast-moving inventory: ${activeMovingCount} critical product${activeMovingCount > 1 ? 's are' : ' is'} approaching or below safety threshold.`;
+      }
+    }
+
     return {
       type,
       priority,
       title,
-      description: recStr,
+      description,
       count,
       actionLabel
     };
@@ -2886,4 +3200,193 @@ const handlePaySupplier = async () => {
     isSubmittingSupplierPay.value = false;
   }
 };
+
+// ==========================================
+// Smart Inventory Advisory Handlers & Models
+// ==========================================
+interface CriticalReorderItem {
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  stock: number;
+  minStock: number;
+  cost: number;
+  price: number;
+  status: 'Low Stock' | 'Out of Stock' | 'In Stock';
+  supplier: string;
+  supplierId?: string;
+  recommendedQty: number;
+}
+
+const handleAdvisoryAction = (rec: FormattedRecommendation) => {
+  if (rec.type === 'DISCOUNT_DORMANT' || rec.type === 'STOP_REORDER') {
+    showDeadStockModal.value = true;
+  } else if (rec.type === 'REPLENISH_FAST') {
+    openCriticalReorderModal();
+  } else if (rec.type === 'GENERAL') {
+    openRunwayAuditModal();
+  } else {
+    router.push('/inventory');
+  }
+};
+
+const openCriticalReorderModal = () => {
+  showCriticalReorderModal.value = true;
+};
+
+const openRunwayAuditModal = () => {
+  showRunwayAuditModal.value = true;
+};
+
+const getRestockQty = (id: string, defaultQty: number): number => {
+  if (restockInputQuantities.value[id] !== undefined) {
+    return restockInputQuantities.value[id]!;
+  }
+  return defaultQty;
+};
+
+const setRestockQty = (id: string, qty: number) => {
+  restockInputQuantities.value[id] = Math.max(1, qty);
+};
+
+const criticalReorderProducts = computed<CriticalReorderItem[]>(() => {
+  const list = vm.products.value || [];
+  const deadStockIdSet = new Set((deadStockProducts.value || []).map((d: any) => String(d.id)));
+  return list
+    .filter((p) => {
+      const stock = Number(p.stock) || 0;
+      const min = Number(p.minStock) || 0;
+      // 1. Must be actively in stock, have a positive reorder threshold, and breached that threshold
+      const isLowStock = stock > 0 && min > 0 && stock <= min;
+      // 2. Safeguard: Exclude dormant / dead stock (zero sales in 60 days) to prevent reordering dead items
+      const isDormant = deadStockIdSet.has(String(p.id));
+      return isLowStock && !isDormant;
+    })
+    .map((p) => {
+      const stock = Number(p.stock) || 0;
+      const min = Number(p.minStock) || 0;
+      const cost = Number(p.cost) || 0;
+      const recommendedQty = Math.max(1, (min * 2) - stock);
+      const sup = vm.suppliers.value?.find((s) => s.name.toLowerCase() === (p.supplier || '').toLowerCase());
+      return {
+        id: p.id,
+        name: p.name,
+        sku: p.sku || p.barcode || 'N/A',
+        category: p.category || 'General',
+        stock,
+        minStock: min,
+        cost,
+        price: Number(p.price) || 0,
+        status: (stock === 0 ? 'Out of Stock' : 'Low Stock') as any,
+        supplier: p.supplier || 'Unassigned',
+        supplierId: sup?.id,
+        recommendedQty
+      };
+    })
+    .sort((a, b) => a.stock - b.stock);
+});
+
+const criticalReorderSummary = computed(() => {
+  const items = criticalReorderProducts.value;
+  const stockoutCount = items.filter((i) => i.stock === 0).length;
+  const totalCapitalNeeded = items.reduce((acc, i) => acc + (getRestockQty(i.id, i.recommendedQty) * i.cost), 0);
+  return {
+    totalItems: items.length,
+    stockoutCount,
+    totalCapitalNeeded
+  };
+});
+
+const executeQuickRestock = async (item: CriticalReorderItem) => {
+  const qty = getRestockQty(item.id, item.recommendedQty);
+  if (qty <= 0) {
+    showToast('Please specify a valid quantity to restock.', 'error');
+    return;
+  }
+
+  restockingItemId.value = item.id;
+  try {
+    const payload: any = {
+      type: 'PURCHASE',
+      quantity: qty,
+      paymentType: 'CASH',
+      notes: `Quick restock from Smart Advisory Workbench (${qty} units)`
+    };
+
+    if (item.supplierId) {
+      payload.supplierId = item.supplierId;
+    }
+
+    await api.post(`/api/products/${item.id}/stock-movement`, payload);
+
+    // Update vm.products locally
+    const idx = vm.products.value.findIndex((p) => p.id === item.id);
+    if (idx !== -1 && vm.products.value[idx]) {
+      const oldStock = Number(vm.products.value[idx].stock) || 0;
+      const newStock = oldStock + qty;
+      const minLevel = Number(vm.products.value[idx].minStock) || 10;
+      vm.products.value[idx] = {
+        ...vm.products.value[idx],
+        stock: newStock,
+        status: newStock <= minLevel ? 'Low Stock' : 'In Stock'
+      };
+    }
+
+    showToast(`Restocked ${qty} units of ${item.name} successfully!`, 'success');
+    await fetchData();
+  } catch (err: any) {
+    showToast('Failed to restock product: ' + (err.message || err), 'error');
+  } finally {
+    restockingItemId.value = null;
+  }
+};
+
+const excessRunwaySummary = computed(() => {
+  const days = stockRunwayDays.value;
+  const dailyCogs = stockDailyCogs.value;
+  const totalCap = inventoryTotalCapital.value;
+
+  let excessCapital = 0;
+  if (days > 45 && dailyCogs > 0) {
+    excessCapital = Math.max(0, totalCap - (dailyCogs * 45));
+  } else if (stockRunwayStatus.value === 'STAGNANT' || dailyCogs === 0) {
+    excessCapital = (slowMovingStock.value?.capital || 0) + (deadStock.value?.capital || 0);
+  }
+
+  return {
+    days,
+    dailyCogs,
+    totalCap,
+    excessCapital,
+    status: stockRunwayStatus.value
+  };
+});
+
+const highCapitalOverstockedProducts = computed(() => {
+  const list = vm.products.value || [];
+  return list
+    .filter((p) => (Number(p.stock) || 0) > 0)
+    .map((p) => {
+      const stock = Number(p.stock) || 0;
+      const cost = Number(p.cost) || 0;
+      const price = Number(p.price) || 0;
+      const capital = stock * cost;
+      const marginPercent = price > 0 ? Math.round(((price - cost) / price) * 100) : 0;
+      return {
+        id: p.id,
+        name: p.name,
+        sku: p.sku || p.barcode || 'N/A',
+        category: p.category || 'General',
+        stock,
+        cost,
+        price,
+        capital,
+        marginPercent,
+        status: p.status
+      };
+    })
+    .sort((a, b) => b.capital - a.capital)
+    .slice(0, 15);
+});
 </script>

@@ -248,8 +248,8 @@ app.whenReady().then(() => {
     return getUpdateStatus()
   })
 
-  ipcMain.handle('updater:check-for-updates', async () => {
-    return checkForUpdates(getApiBaseUrl(), () => (win ? [win] : []))
+  ipcMain.handle('updater:check-for-updates', async (_, payload?: any) => {
+    return checkForUpdates(getApiBaseUrl(), () => (win ? [win] : []), payload)
   })
 
   ipcMain.handle('updater:restart-and-install', () => {

@@ -291,8 +291,8 @@
                 </td>
 
                 <!-- Stock Level -->
-                <td class="p-4 text-center font-mono font-bold" :class="(p.stock || 0) <= (p.reorderLevel || 10) ? 'text-tertiary' : 'text-on-surface'">
-                  {{ p.stock || 0 }} <span class="text-[10px] text-outline font-normal">/ {{ p.reorderLevel || 10 }}</span>
+                <td class="p-4 text-center font-mono font-bold" :class="((p.stock || 0) === 0 || ((p.reorderLevel || 0) > 0 && (p.stock || 0) <= (p.reorderLevel || 0))) ? 'text-tertiary' : 'text-on-surface'">
+                  {{ p.stock || 0 }} <span v-if="(p.reorderLevel || 0) > 0" class="text-[10px] text-outline font-normal">/ {{ p.reorderLevel }}</span>
                 </td>
 
                 <!-- Stock Status -->
@@ -485,17 +485,17 @@ const getRankTableBadgeClass = (idx: number) => {
 
 const getStockStatusText = (p: TopSellingProduct) => {
   const stock = p.stock || 0;
-  const minStock = p.reorderLevel || 10;
+  const minStock = p.reorderLevel != null ? Number(p.reorderLevel) : 0;
   if (stock === 0) return t('topSelling.outOfStock');
-  if (stock <= minStock) return t('topSelling.lowStock');
+  if (minStock > 0 && stock <= minStock) return t('topSelling.lowStock');
   return t('topSelling.inStock');
 };
 
 const getStockBadgeClass = (p: TopSellingProduct) => {
   const stock = p.stock || 0;
-  const minStock = p.reorderLevel || 10;
+  const minStock = p.reorderLevel != null ? Number(p.reorderLevel) : 0;
   if (stock === 0) return 'bg-tertiary/10 text-tertiary border-tertiary/20';
-  if (stock <= minStock) return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+  if (minStock > 0 && stock <= minStock) return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
   return 'bg-primary-container/25 text-primary border-primary/20';
 };
 

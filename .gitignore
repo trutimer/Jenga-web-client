@@ -41,3 +41,5 @@ __screenshots__/
 # Electron
 release
 dist-electron
+*.exe
+public/*.exe

@@ -14,7 +14,9 @@
     "lint:eslint": "eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/",
     "dev:desktop": "cross-env ELECTRON=true vite",
-    "build:desktop": "cross-env ELECTRON=true vite build && electron-builder"
+    "build:desktop": "cross-env ELECTRON=true vite build && electron-builder && node scripts/sync-desktop-installer.js",
+    "build:desktop:local": "cross-env ELECTRON=true VITE_API_URL=http://localhost:9090 vite build --mode development && electron-builder && node scripts/sync-desktop-installer.js",
+    "sync:desktop": "node scripts/sync-desktop-installer.js"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

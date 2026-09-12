@@ -227,8 +227,9 @@
       <!-- Notifications (Admins & Managers only) -->
       <NotificationDropdown v-if="isStoreAdminOrManager" />
 
-      <!-- License Expiry Display Button -->
+      <!-- License Expiry Display Button (Web only - hidden on Desktop/Electron) -->
       <button 
+        v-if="!isElectron"
         @click="handleExpiryClick"
         class="hidden lg:flex items-center px-4 h-10 rounded-full border text-xs font-semibold transition-all cursor-pointer gap-2 shadow-xs"
         :class="isWithin3Months 
@@ -332,7 +333,7 @@
         </div>
 
         <a 
-          href="/Jenga-Setup-Latest.exe"
+          :href="desktopDownloadUrl"
           download="Jenga-Setup-Latest.exe"
           @click="showDownloadModal = false"
           class="w-full mt-4 bg-primary text-on-primary py-3.5 rounded-xl font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
@@ -418,6 +419,10 @@ const showDownloadModal = ref(false);
 const showLicenseModal = ref(false);
 const showExpiryAlertModal = ref(false);
 
+const desktopDownloadUrl = computed(() => {
+  return (import.meta.env.VITE_DESKTOP_DOWNLOAD_URL as string) || '/Jenga-Setup-Latest.exe';
+});
+
 const navigateToModule = (path: string) => {
   modulesMenuOpen.value = false;
   router.push(path);
@@ -497,7 +502,8 @@ const openFullLicenseFromAlert = () => {
 };
 
 const isElectron = computed(() => {
-  return typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes(' electron/');
+  return (typeof window !== 'undefined' && (window as any).ipcRenderer !== undefined) ||
+         (typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes(' electron/'));
 });
 
 const isAdmin = computed(() => {
