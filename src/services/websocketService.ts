@@ -185,7 +185,10 @@ class WebSocketService {
           this.disconnect();
         }
       },
-      onWebSocketClose: () => {
+      onWebSocketError: (event) => {
+        console.error('[WebSocket] Native WebSocket transport error occurred:', event);
+      },
+      onWebSocketClose: (closeEvent) => {
         this.isConnected.value = false;
         if (this.shouldBeConnected) {
           this.connectionState.value = 'RECONNECTING';
@@ -193,10 +196,14 @@ class WebSocketService {
           this.connectionState.value = 'DISCONNECTED';
         }
         this.stompSubscriptions.clear();
+        console.warn(`[WebSocket] Closed (Code: ${closeEvent?.code ?? 'unknown'}, Reason: "${closeEvent?.reason || 'none'}"). State: ${this.connectionState.value}`);
+        if (closeEvent?.code === 1006) {
+          console.warn('[WebSocket] Code 1006 indicates handshake rejection or abnormal connection drop. If running behind Nginx, verify that "proxy_set_header Upgrade $http_upgrade" and "proxy_set_header Connection "upgrade"" are configured.');
+        }
       },
       debug: (str) => {
-        if (import.meta.env.DEV) {
-          // Debug STOMP if needed
+        if (import.meta.env.DEV || str.toLowerCase().includes('error') || str.toLowerCase().includes('fail') || str.toLowerCase().includes('closed')) {
+          console.debug('[STOMP]', str);
         }
       }
     });
@@ -305,6 +312,7 @@ class WebSocketService {
    * Disconnect STOMP broker cleanly
    */
   public disconnect(): void {
+    const hadActiveClient = this.client != null;
     this.shouldBeConnected = false;
     this.stompSubscriptions.forEach((sub) => {
       try {
@@ -324,6 +332,7 @@ class WebSocketService {
     }
     this.isConnected.value = false;
     this.connectionState.value = 'DISCONNECTED';
+    console.log(`[WebSocket] disconnect() called. Session teardown complete. (HadActiveClient: ${hadActiveClient}). State: DISCONNECTED.`);
   }
 
   // ==========================================

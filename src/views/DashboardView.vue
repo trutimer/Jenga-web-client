@@ -17,16 +17,26 @@
               class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold transition-all border shadow-xs select-none"
               :class="isWsConnected 
                 ? (isRealtimePulsing ? 'bg-emerald-500/20 text-emerald-700 border-emerald-500/40 ring-2 ring-emerald-500/20' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20') 
-                : 'bg-amber-500/10 text-amber-600 border-amber-500/20'"
-              :title="isWsConnected ? 'Connected to live real-time events broker' : 'Connecting to live real-time events broker...'"
+                : (wsConnectionState === 'RECONNECTING' || wsConnectionState === 'CONNECTING' 
+                  ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' 
+                  : 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20')"
+              :title="isWsConnected 
+                ? 'Connected to live real-time events broker' 
+                : (wsConnectionState === 'RECONNECTING' 
+                  ? 'Reconnecting to real-time broker in 5s...' 
+                  : (wsConnectionState === 'CONNECTING' 
+                    ? 'Connecting to live real-time events broker...' 
+                    : 'Real-time broker disconnected. Periodic background sync active.'))"
             >
               <span 
                 class="w-1.5 h-1.5 rounded-full"
                 :class="isWsConnected 
                   ? (isRealtimePulsing ? 'bg-emerald-500 scale-125 animate-ping' : 'bg-emerald-500 animate-pulse') 
-                  : 'bg-amber-500 animate-pulse'"
+                  : (wsConnectionState === 'RECONNECTING' || wsConnectionState === 'CONNECTING' 
+                    ? 'bg-amber-500 animate-pulse' 
+                    : 'bg-zinc-400')"
               ></span>
-              <span>{{ isWsConnected ? (isRealtimePulsing ? 'SYNCING' : 'LIVE') : 'CONNECTING' }}</span>
+              <span>{{ isWsConnected ? (isRealtimePulsing ? 'SYNCING' : 'LIVE') : wsConnectionState }}</span>
             </div>
           </div>
         </div>
@@ -2443,10 +2453,36 @@ const selectedPeriodLabel = computed(() => {
 // REAL-TIME WEBSOCKET REACTION & SYNCHRONIZATION
 // ==========================================
 const isWsConnected = websocketService.isConnected;
+const wsConnectionState = websocketService.connectionState;
 const isRealtimePulsing = ref(false);
 let realtimePulseTimer: any = null;
 let refreshDebounceTimer: any = null;
+let fallbackPollTimer: any = null;
 let unsubscribeList: Array<() => void> = [];
+
+const startFallbackPolling = () => {
+  if (fallbackPollTimer || isElectron()) return;
+  fallbackPollTimer = setInterval(() => {
+    if (!isWsConnected.value) {
+      fetchData(true);
+    }
+  }, 30000);
+};
+
+const stopFallbackPolling = () => {
+  if (fallbackPollTimer) {
+    clearInterval(fallbackPollTimer);
+    fallbackPollTimer = null;
+  }
+};
+
+watch(isWsConnected, (connected) => {
+  if (connected) {
+    stopFallbackPolling();
+  } else {
+    startFallbackPolling();
+  }
+}, { immediate: true });
 
 const triggerRealtimeRefresh = (eventType?: string, payload?: any) => {
   // 1. Visual real-time synchronization pulse on header & graph
@@ -2576,6 +2612,7 @@ watch(() => vm.activeBranchId.value, () => {
 
 onUnmounted(() => {
   unregisterTabChangeHandler();
+  stopFallbackPolling();
   unsubscribeList.forEach((unsub) => unsub());
   unsubscribeList = [];
   if (realtimePulseTimer) clearTimeout(realtimePulseTimer);

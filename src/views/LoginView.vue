@@ -416,7 +416,7 @@ import {
 
 const vm = useAppViewModel();
 
-const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v2.6.0';
+const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v2.7.0';
 
 const phone = ref(localStorage.getItem('lastPhone') || '');
 const password = ref('');
