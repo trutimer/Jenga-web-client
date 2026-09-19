@@ -110,6 +110,16 @@ const DASHBOARD_STEPS: TourStep[] = [
     placement: 'bottom'
   },
   {
+    id: 'jenga-ai',
+    target: '[data-tour="jenga-ai-button"]',
+    titleKey: 'tour.aiTitle',
+    descKey: 'tour.aiDesc',
+    badgeKey: 'tour.aiTabBadge',
+    iconName: 'Bot',
+    page: 'dashboard',
+    placement: 'top'
+  },
+  {
     id: 'dashboard-finish',
     titleKey: 'tour.dashboardCompleteTitle',
     descKey: 'tour.dashboardCompleteDesc',

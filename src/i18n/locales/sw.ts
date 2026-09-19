@@ -400,6 +400,9 @@ export const sw = {
     unrealizedProfit: 'Faida Inayotarajiwa',
     fastMoving: 'Zinazotoka Haraka',
     fastMovingDesc: 'Zilizouzwa ndani ya siku 14',
+    newArrivals: 'Mpya Zilizowasili',
+    newArrivalsDesc: 'Zilizoongezwa ndani ya siku 14 za mwanzo',
+    newArrival: 'Mpya Iliyowasili',
     slowMoving: 'Zinazotoka Polepole',
     slowMovingDesc: 'Zilizouzwa siku 15–59 zilizopita',
     deadStock: 'Hisa Iliyolala (Dead Stock)',
@@ -444,12 +447,14 @@ export const sw = {
     velocityCol: 'Kasi ya Mauzo',
     tacticCol: 'Mbinu Iliyopendekezwa',
     protectMarginTactic: 'Inayouza Zaidi • Linda Faida',
+    newProductRampUpTactic: 'Bidhaa Mpya • Fuatilia Mapokeo',
     discountTactic: 'Punguzo la Promosheni 15%',
     bundleTactic: 'Unganisha na Inayouza Zaidi',
     clearanceTactic: 'Uuzaji wa Bei Nafuu / Ondoa',
     filterAllCapital: 'Mtaji Wote Mkubwa',
     filterOverstockedOnly: 'Zinazochelewa & Zilizolala Tu',
     filterFastMovers: 'Zinazouza Haraka Tu',
+    filterNewArrivals: 'Mpya Zilizowasili Tu',
   },
 
   // Mauzo ya Kaunta (POS Checkout)
@@ -1817,6 +1822,7 @@ export const sw = {
     summaryTabBadge: 'Muhtasari',
     collectionTabBadge: 'Madeni & Makusanyo',
     stockTabBadge: 'Udhibiti wa Stoo',
+    aiTabBadge: 'Msaidizi wa AI',
     settingsBadge: 'Mipangilio ya Duka',
 
     welcomeTitle: 'Karibu Kwenye Jenga POS!',
@@ -1839,6 +1845,9 @@ export const sw = {
 
     stockTitle: 'Thamani ya Mzigo & Uhai wa Stoo',
     stockDesc: 'Pata picha kamili ya mtaji uliopo stoo. Tazama fedha zilizolala kwenye bidhaa (Gharama ya ununuzi), makadirio ya mapato ya mauzo, faida inayotarajiwa, na siku ambazo mzigo utadumu.',
+
+    aiTitle: 'Msaidizi Mahiri wa Jenga AI',
+    aiDesc: 'Unahitaji majibu ya haraka? Bofya kitufe cha Jenga AI wakati wowote kuuliza maswali kuhusu mwenendo wa mauzo, madeni ya wateja, makadirio ya stoo, au ushauri wa kukuza biashara yako kwa Kiswahili au Kiingereza.',
 
     dashboardCompleteTitle: 'Uko Tayari Kusimamia Duka Lako!',
     dashboardCompleteDesc: 'Sasa unajua jinsi ya kufuatilia mauzo, kusimamia makusanyo ya madeni, na kuangalia afya ya stoo. Unaweza pia kufungua Mipangilio kuweka taarifa za duka na mashine za risiti.',

@@ -118,7 +118,7 @@ export function useAppViewModel() {
           email: settingsData.email || '',
           currency: (settingsData.currency || 'TZS') as 'TZS' | 'USD' | 'EUR',
           timezone: settingsData.timezone || 'Africa/Dar_es_Salaam',
-          enablePerpetualCogs: !!settingsData.enablePerpetualCogs,
+          enablePerpetualCogs: true,
         };
       }
     } catch (err) {
@@ -523,7 +523,7 @@ export function useAppViewModel() {
         email: newSettings.email,
         currency: newSettings.currency,
         timezone: newSettings.timezone,
-        enablePerpetualCogs: newSettings.enablePerpetualCogs,
+        enablePerpetualCogs: true,
       });
     } catch (err) {
       console.error('Failed to update store settings in backend:', err);
@@ -531,25 +531,13 @@ export function useAppViewModel() {
     }
   };
 
-  const toggleCogs = async (enabled?: boolean) => {
-    const storeId = localStorage.getItem('storeId');
-    if (!storeId) return;
-    try {
-      const url = enabled !== undefined 
-        ? `/api/stores/${storeId}/cogs-toggle?enabled=${enabled}` 
-        : `/api/stores/${storeId}/cogs-toggle`;
-      const res: any = await api.patch(url, {});
-      if (res && res.enablePerpetualCogs !== undefined) {
-        settings.value = {
-          ...settings.value,
-          enablePerpetualCogs: res.enablePerpetualCogs,
-        };
-      }
-      return res;
-    } catch (err) {
-      console.error('Failed to toggle COGS in backend:', err);
-      throw err;
-    }
+  const toggleCogs = async (_enabled?: boolean) => {
+    // Perpetual real-time COGS is standard and enabled by default for all stores across Jenga
+    settings.value = {
+      ...settings.value,
+      enablePerpetualCogs: true,
+    };
+    return { enablePerpetualCogs: true };
   };
 
   const handleTransactionCompleted = async (txn: Transaction) => {

@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-7xl mx-auto space-y-6 pb-24 animate-fade-up font-sans">
+  <div class="w-full space-y-6 pb-24 animate-fade-up font-sans">
     <!-- ========================================== -->
     <!-- TIER 1: EXECUTIVE HEADER & ACTION BAR      -->
     <!-- ========================================== -->
@@ -1144,7 +1144,7 @@
       </div>
 
       <!-- VELOCITY SPECTRUM: FAST MOVING, SLOW MOVING, DEAD STOCK -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4" :class="{ 'lg:grid-cols-4': newArrivalsStock.count > 0 }">
         <!-- Fast Moving -->
         <div class="bg-surface-container-lowest rounded-2xl p-5 border border-emerald-500/30 shadow-sm flex flex-col justify-between">
           <div>
@@ -1165,6 +1165,29 @@
           <div class="mt-4 pt-3 border-t border-outline-variant/30 flex justify-between items-center text-xs font-mono text-on-surface-variant">
             <span>Share of capital:</span>
             <strong class="text-emerald-700 font-bold">{{ fastMovingStock.percent }}%</strong>
+          </div>
+        </div>
+
+        <!-- New Arrivals (Ramp-Up / 14-day Grace Period) -->
+        <div v-if="newArrivalsStock.count > 0" class="bg-surface-container-lowest rounded-2xl p-5 border border-sky-500/30 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-mono font-bold uppercase tracking-wider text-sky-700 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+                {{ $t('dashboard2.newArrivals') }}
+              </span>
+              <span class="px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-700 font-mono font-black text-[10px]">
+                {{ newArrivalsStock.count }} products
+              </span>
+            </div>
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-sky-600 tracking-tight amount-kpi truncate">
+              {{ animatedNewArrivalsCapital }}
+            </div>
+            <p class="text-xs text-on-surface-variant mt-1">{{ $t('dashboard2.newArrivalsDesc') }}</p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-outline-variant/30 flex justify-between items-center text-xs font-mono text-on-surface-variant">
+            <span>Share of capital:</span>
+            <strong class="text-sky-700 font-bold">{{ newArrivalsStock.percent }}%</strong>
           </div>
         </div>
 
@@ -2203,6 +2226,14 @@
               </button>
               <button 
                 type="button"
+                @click="runwayFilter = 'NEW_ARRIVALS'"
+                class="px-2.5 py-1 rounded-md transition-all cursor-pointer"
+                :class="runwayFilter === 'NEW_ARRIVALS' ? 'bg-surface font-bold text-sky-800 shadow-xs' : 'text-on-surface-variant hover:text-on-surface'"
+              >
+                {{ $t('dashboard2.filterNewArrivals') }}
+              </button>
+              <button 
+                type="button"
                 @click="runwayFilter = 'OVERSTOCKED_ONLY'"
                 class="px-2.5 py-1 rounded-md transition-all cursor-pointer"
                 :class="runwayFilter === 'OVERSTOCKED_ONLY' ? 'bg-surface font-bold text-amber-800 shadow-xs' : 'text-on-surface-variant hover:text-on-surface'"
@@ -2246,6 +2277,12 @@
                     <span>⚡</span> {{ $t('dashboard2.fastMoving') }}
                   </span>
                   <span 
+                    v-else-if="item.velocity === 'NEW'" 
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-700 inline-flex items-center gap-1"
+                  >
+                    <span>✨</span> {{ $t('dashboard2.newArrival') }}
+                  </span>
+                  <span 
                     v-else-if="item.velocity === 'DORMANT'" 
                     class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-700 inline-flex items-center gap-1"
                   >
@@ -2278,6 +2315,12 @@
                     class="px-2.5 py-1 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 inline-block"
                   >
                     {{ $t('dashboard2.protectMarginTactic') }}
+                  </span>
+                  <span 
+                    v-else-if="item.velocity === 'NEW'" 
+                    class="px-2.5 py-1 rounded text-[10px] font-bold bg-sky-500/10 text-sky-800 border border-sky-500/20 inline-block"
+                  >
+                    {{ $t('dashboard2.newProductRampUpTactic') }}
                   </span>
                   <span 
                     v-else-if="item.velocity === 'DORMANT'" 
@@ -2325,6 +2368,34 @@
         </div>
       </div>
     </div>
+
+    <!-- Floating Jenga AI Assistant Bubble (Bottom Right) -->
+    <button
+      v-if="!showJengaAiDrawer"
+      type="button"
+      data-tour="jenga-ai-button"
+      @click="showJengaAiDrawer = true"
+      class="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-primary via-indigo-600 to-amber-500 text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer border border-white/20 group ring-4 ring-primary/10 hover:ring-primary/25"
+      title="Open Jenga AI Assistant"
+    >
+      <div class="relative flex items-center justify-center">
+        <span class="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400"></span>
+        </span>
+        <Sparkles class="w-5 h-5 text-amber-200 group-hover:rotate-12 transition-transform duration-300 animate-pulse" />
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="text-sm font-black tracking-tight drop-shadow-xs">Jenga AI</span>
+      </div>
+    </button>
+
+    <!-- Jenga AI Assistant Slide-over Drawer / Fullscreen Immersion -->
+    <JengaAiDrawer 
+      :is-open="showJengaAiDrawer" 
+      :store-branch-id="currentBranchId"
+      @close="showJengaAiDrawer = false" 
+    />
   </div>
 </template>
 
@@ -2369,6 +2440,7 @@ import { customerService } from '../services/customerService';
 import { showToast } from '../services/toastService';
 import { t, currentLocale } from '../i18n';
 import Modal from '../components/common/Modal.vue';
+import JengaAiDrawer from '../components/dashboard/JengaAiDrawer.vue';
 import { api } from '../services/api';
 import type {
   CashflowOverview,
@@ -2388,6 +2460,8 @@ const route = useRoute();
 const { isStoreAdminOrManager, startTour, checkAndAutoStart } = useAppTour();
 
 const activeMainTab = ref<'summary' | 'collection' | 'stock'>('summary');
+const showJengaAiDrawer = ref(false);
+const currentBranchId = computed(() => vm.activeBranchId.value || localStorage.getItem('branchId') || null);
 const showRiskDebtorsModal = ref(false);
 const showDeadStockModal = ref(false);
 const showTillAuditModal = ref(false);
@@ -2399,7 +2473,7 @@ const isSubmittingSupplierPay = ref(false);
 
 const showCriticalReorderModal = ref(false);
 const showRunwayAuditModal = ref(false);
-const runwayFilter = ref<'ALL' | 'OVERSTOCKED_ONLY' | 'FAST_MOVERS'>('ALL');
+const runwayFilter = ref<'ALL' | 'OVERSTOCKED_ONLY' | 'FAST_MOVERS' | 'NEW_ARRIVALS'>('ALL');
 const restockingItemId = ref<string | null>(null);
 const restockInputQuantities = ref<Record<string, number>>({});
 
@@ -2808,6 +2882,7 @@ const inventoryUnrealizedProfit = computed(() => Number(inventoryIntel.value?.un
 const fastMovingStock = computed<StockVelocityBucket>(() => inventoryIntel.value?.fastMoving || { capital: 0, count: 0, percent: 0 });
 const slowMovingStock = computed<StockVelocityBucket>(() => inventoryIntel.value?.slowMoving || { capital: 0, count: 0, percent: 0 });
 const deadStock = computed<StockVelocityBucket>(() => inventoryIntel.value?.deadStock || { capital: 0, count: 0, percent: 0 });
+const newArrivalsStock = computed<StockVelocityBucket>(() => inventoryIntel.value?.newArrivals || { capital: 0, count: 0, percent: 0 });
 const deadStockProducts = computed<DeadStockProductItem[]>(() => inventoryIntel.value?.deadStockProducts || []);
 const stockRunwayDays = computed(() => Number(inventoryIntel.value?.stockRunwayDays) || 0);
 const stockDailyCogs = computed(() => Number(inventoryIntel.value?.dailyCogs) || 0);
@@ -2815,8 +2890,10 @@ const stockRunwayStatus = computed(() => inventoryIntel.value?.runwayStatus || '
 
 const fastMovingProductIds = computed<string[]>(() => inventoryIntel.value?.fastMovingProductIds || inventoryIntel.value?.fastMoving?.productIds || []);
 const slowMovingProductIds = computed<string[]>(() => inventoryIntel.value?.slowMovingProductIds || inventoryIntel.value?.slowMoving?.productIds || []);
+const newArrivalProductIds = computed<string[]>(() => inventoryIntel.value?.newArrivalProductIds || inventoryIntel.value?.newArrivals?.productIds || []);
 const fastMovingIdSet = computed(() => new Set((fastMovingProductIds.value || []).map((id: any) => String(id))));
 const slowMovingIdSet = computed(() => new Set((slowMovingProductIds.value || []).map((id: any) => String(id))));
+const newArrivalIdSet = computed(() => new Set((newArrivalProductIds.value || []).map((id: any) => String(id))));
 const deadStockIdSet = computed(() => new Set((deadStockProducts.value || []).map((d: any) => String(d.id))));
 
 interface FormattedRecommendation {
@@ -3091,6 +3168,7 @@ const animatedInventoryProfit = useAnimatedCurrency(() => inventoryUnrealizedPro
 const animatedFastMovingCapital = useAnimatedCurrency(() => fastMovingStock.value.capital, currency);
 const animatedSlowMovingCapital = useAnimatedCurrency(() => slowMovingStock.value.capital, currency);
 const animatedDeadStockCapital = useAnimatedCurrency(() => deadStock.value.capital, currency);
+const animatedNewArrivalsCapital = useAnimatedCurrency(() => newArrivalsStock.value.capital, currency);
 
 const topSellingProducts = computed(() => cashflowData.value?.topSellingProducts || []);
 const inventoryAlerts = computed(() => {
@@ -3724,7 +3802,7 @@ interface HighCapitalAuditItem {
   capital: number;
   marginPercent: number;
   status?: string;
-  velocity: 'FAST' | 'SLOW' | 'DORMANT';
+  velocity: 'FAST' | 'SLOW' | 'DORMANT' | 'NEW';
 }
 
 const allHighCapitalProducts = computed<HighCapitalAuditItem[]>(() => {
@@ -3739,13 +3817,21 @@ const allHighCapitalProducts = computed<HighCapitalAuditItem[]>(() => {
       const marginPercent = price > 0 ? Math.round(((price - cost) / price) * 100) : 0;
       const pidStr = String(p.id);
 
-      let velocity: 'FAST' | 'SLOW' | 'DORMANT' = 'SLOW';
+      let velocity: 'FAST' | 'SLOW' | 'DORMANT' | 'NEW' = 'SLOW';
       if (fastMovingIdSet.value.has(pidStr)) {
         velocity = 'FAST';
+      } else if (newArrivalIdSet.value.has(pidStr)) {
+        velocity = 'NEW';
       } else if (deadStockIdSet.value.has(pidStr)) {
         velocity = 'DORMANT';
       } else if (slowMovingIdSet.value.has(pidStr)) {
         velocity = 'SLOW';
+      } else {
+        // Fallback: check createdAt directly if present on product model
+        const pCreated = (p as any).createdAt ? new Date((p as any).createdAt) : null;
+        if (pCreated && (Date.now() - pCreated.getTime()) < 14 * 24 * 3600 * 1000) {
+          velocity = 'NEW';
+        }
       }
 
       return {
@@ -3771,6 +3857,8 @@ const highCapitalOverstockedProducts = computed<HighCapitalAuditItem[]>(() => {
     return list.filter((item) => item.velocity === 'SLOW' || item.velocity === 'DORMANT').slice(0, 25);
   } else if (runwayFilter.value === 'FAST_MOVERS') {
     return list.filter((item) => item.velocity === 'FAST').slice(0, 25);
+  } else if (runwayFilter.value === 'NEW_ARRIVALS') {
+    return list.filter((item) => item.velocity === 'NEW').slice(0, 25);
   }
   return list.slice(0, 25);
 });

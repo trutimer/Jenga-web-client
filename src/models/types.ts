@@ -861,8 +861,10 @@ export interface InventoryValuationIntelligence {
   fastMoving: StockVelocityBucket;
   slowMoving: StockVelocityBucket;
   deadStock: StockVelocityBucket;
+  newArrivals?: StockVelocityBucket;
   fastMovingProductIds?: string[];
   slowMovingProductIds?: string[];
+  newArrivalProductIds?: string[];
   deadStockProducts: DeadStockProductItem[];
   recommendations: string[];
 }

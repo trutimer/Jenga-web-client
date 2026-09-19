@@ -84,7 +84,7 @@
         @logout="triggerLogoutConfirm"
       />
 
-      <main class="flex-1 overflow-y-auto p-6 md:p-8 pb-24 relative bg-surface">
+      <main class="flex-1 overflow-y-auto p-4 sm:p-5 md:px-5 md:py-6 pb-24 relative bg-surface">
         <router-view />
       </main>
     </div>

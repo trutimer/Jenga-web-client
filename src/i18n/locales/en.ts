@@ -400,6 +400,9 @@ export const en = {
     unrealizedProfit: 'Unrealized Margin',
     fastMoving: 'Fast Moving',
     fastMovingDesc: 'Sold within last 14 days',
+    newArrivals: 'New Arrivals',
+    newArrivalsDesc: 'Added in last 14 days ramp-up',
+    newArrival: 'New Arrival',
     slowMoving: 'Slow Moving',
     slowMovingDesc: 'Sold 15–59 days ago',
     deadStock: 'Dead Stock',
@@ -444,12 +447,14 @@ export const en = {
     velocityCol: 'Velocity',
     tacticCol: 'Suggested Tactic',
     protectMarginTactic: 'Core Driver • Protect Margin',
+    newProductRampUpTactic: 'New Product Ramp-Up • Monitor Demand',
     discountTactic: '15% Promo Discount',
     bundleTactic: 'Bundle with Fast Mover',
     clearanceTactic: 'Clearance Liquidation',
     filterAllCapital: 'All High-Capital',
     filterOverstockedOnly: 'Slow & Dormant Only',
     filterFastMovers: 'Fast Movers Only',
+    filterNewArrivals: 'New Arrivals Only',
   },
 
   // POS Checkout View
@@ -1817,6 +1822,7 @@ export const en = {
     summaryTabBadge: 'Overview',
     collectionTabBadge: 'Credit & Debtors',
     stockTabBadge: 'Inventory Intelligence',
+    aiTabBadge: 'AI Assistant',
     settingsBadge: 'Store Settings',
 
     welcomeTitle: 'Welcome to Jenga POS!',
@@ -1839,6 +1845,9 @@ export const en = {
 
     stockTitle: 'Inventory Valuation & Runway',
     stockDesc: 'Gain full visibility over your capital. See exact money tied in stock at cost, potential retail turnover, unrealized profit margins, and your days of stock runway.',
+
+    aiTitle: 'Jenga AI Business Assistant',
+    aiDesc: 'Need instant answers? Click the Jenga AI assistant anytime to analyze sales trends, investigate debtor risks, forecast stock needs, and ask any business questions in plain English or Swahili.',
 
     dashboardCompleteTitle: 'You Are Ready to Lead!',
     dashboardCompleteDesc: 'You now know how to monitor sales, control debt collections, and track inventory health. You can also explore Store Settings to configure your business defaults and receipt printing.',

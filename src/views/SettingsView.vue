@@ -278,36 +278,24 @@
                     <div class="flex items-center gap-2.5 flex-wrap">
                       <h4 class="text-base font-bold text-on-surface">{{ $t('settings.cogsAutomation') }}</h4>
                       <span 
-                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold"
-                        :class="enablePerpetualCogs 
-                          ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20' 
-                          : 'bg-surface-container-high text-on-surface-variant border border-outline-variant'"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20"
                       >
-                        <span class="w-1.5 h-1.5 rounded-full" :class="enablePerpetualCogs ? 'bg-emerald-500 animate-pulse' : 'bg-on-surface-variant/60'"></span>
-                        {{ enablePerpetualCogs ? $t('settings.perpetualInventory') : $t('settings.periodicInventory') }}
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        {{ $t('settings.perpetualInventory') }} (Active Standard)
                       </span>
                     </div>
                     <p class="text-xs text-on-surface-variant font-medium mt-0.5">
-                      Choose whether checkout sales automatically book inventory cost deductions and real-time gross margin into the General Ledger.
+                      All checkout sales across Jenga automatically record real-time inventory cost deductions and accurate gross margins into the General Ledger.
                     </p>
                   </div>
                 </div>
 
-                <!-- Interactive Switch Toggle -->
-                <div class="flex items-center gap-3 shrink-0 self-end sm:self-center">
-                  <button 
-                    type="button" 
-                    @click="enablePerpetualCogs = !enablePerpetualCogs"
-                    class="relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                    :class="enablePerpetualCogs ? 'bg-primary' : 'bg-surface-container-highest'"
-                    role="switch" 
-                    :aria-checked="enablePerpetualCogs"
-                  >
-                    <span 
-                      class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out"
-                      :class="enablePerpetualCogs ? 'translate-x-6' : 'translate-x-0'"
-                    />
-                  </button>
+                <!-- Permanent Active Status Badge -->
+                <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  <span class="text-xs font-semibold text-emerald-700 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                    <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600" />
+                    Always Enabled
+                  </span>
                 </div>
               </div>
 
@@ -1936,11 +1924,7 @@ onUnmounted(() => {
 const handleSave = async () => {
   try {
     if (activeSection.value === 'finance') {
-      await vm.toggleCogs(enablePerpetualCogs.value);
-      showToast(
-        `Cost of Goods Sold (COGS) is now ${enablePerpetualCogs.value ? 'ENABLED (Perpetual Inventory)' : 'DISABLED (Periodic Inventory)'}`, 
-        'success'
-      );
+      showToast('Perpetual inventory & COGS is permanently active for all stores across Jenga', 'info');
       return;
     }
 
@@ -1952,7 +1936,7 @@ const handleSave = async () => {
       email: storeEmail.value,
       currency: storeCurrency.value,
       timezone: storeTimezone.value,
-      enablePerpetualCogs: enablePerpetualCogs.value
+      enablePerpetualCogs: true
     });
 
     showToast('Store settings updated and applied successfully', 'success');
