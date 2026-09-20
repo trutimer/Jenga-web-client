@@ -865,6 +865,7 @@ export interface InventoryValuationIntelligence {
   fastMovingProductIds?: string[];
   slowMovingProductIds?: string[];
   newArrivalProductIds?: string[];
+  deadStockProductIds?: string[];
   deadStockProducts: DeadStockProductItem[];
   recommendations: string[];
 }

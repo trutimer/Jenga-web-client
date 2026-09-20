@@ -407,9 +407,13 @@ export const en = {
     slowMovingDesc: 'Sold 15–59 days ago',
     deadStock: 'Dead Stock',
     deadStockDesc: 'No sales in 60+ days',
+    noDeadStockDesc: '0 dormant products in 60+ days',
     deadStockSpotlightTitle: 'Dead Stock Capital Warning',
     deadStockSpotlightDesc: '{amount} tied up in {count} dormant products with zero sales in 60+ days.',
+    healthyInventorySpotlightTitle: 'Optimal Inventory Turnover',
+    healthyInventorySpotlightDesc: 'Outstanding! Zero dead stock detected over the past 60+ days. 100% of your active capital is circulating healthily.',
     viewDeadStockBtn: 'Inspect Dead Stock Products',
+    auditRunwayBtn: 'Audit Stock Runway',
     deadStockModalTitle: 'Dead Stock Products (60+ Days Dormant)',
     productCol: 'Product',
     qtyCol: 'In Stock',
@@ -1265,6 +1269,8 @@ export const en = {
     noMovementsRecorded: 'No cash movements recorded for this shift.',
     openingBalance: 'Opening Balance',
     closingBalance: 'Closing Balance',
+    expenseAccount: 'Expense Account / Category',
+    defaultOperatingExpense: '-- Default: General & Operating Expenses (5040) --',
   },
 
   // Shift Sales View

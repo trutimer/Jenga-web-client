@@ -1214,8 +1214,12 @@
           </div>
         </div>
 
-        <!-- Dead Stock -->
-        <div class="bg-surface-container-lowest rounded-2xl p-5 border border-rose-500/30 shadow-sm flex flex-col justify-between">
+        <!-- Dead Stock Card (When > 0: Warning State) -->
+        <div 
+          v-if="deadStock.count > 0"
+          @click="showDeadStockModal = true"
+          class="bg-surface-container-lowest rounded-2xl p-5 border border-rose-500/30 shadow-sm flex flex-col justify-between cursor-pointer hover:border-rose-500/50 transition-all"
+        >
           <div>
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-mono font-bold uppercase tracking-wider text-rose-700 flex items-center gap-1.5">
@@ -1236,10 +1240,38 @@
             <strong class="font-black">{{ deadStock.percent }}%</strong>
           </div>
         </div>
+
+        <!-- Dead Stock Card (When == 0: Clean / Healthy State) -->
+        <div 
+          v-else
+          @click="showDeadStockModal = true"
+          class="bg-surface-container-lowest rounded-2xl p-5 border border-emerald-500/30 shadow-sm flex flex-col justify-between cursor-pointer hover:border-emerald-500/50 transition-all"
+        >
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-mono font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                {{ $t('dashboard2.deadStock') }}
+              </span>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 font-mono font-bold text-[10px]">
+                0 products • Clean
+              </span>
+            </div>
+            <div class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black font-mono text-emerald-600 tracking-tight amount-kpi truncate">
+              {{ animatedDeadStockCapital }}
+            </div>
+            <p class="text-xs text-emerald-900/80 mt-1">{{ $t('dashboard2.noDeadStockDesc') }}</p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-emerald-500/20 flex justify-between items-center text-xs font-mono text-emerald-800">
+            <span>Trapped capital:</span>
+            <strong class="font-black text-emerald-600">0% (Healthy)</strong>
+          </div>
+        </div>
       </div>
 
-      <!-- SPOTLIGHT: DEAD STOCK PROMINENT BANNER -->
+      <!-- SPOTLIGHT: DEAD STOCK PROMINENT BANNER (WHEN DEAD STOCK > 0) -->
       <div 
+        v-if="deadStock.count > 0"
         @click="showDeadStockModal = true"
         class="bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-amber-500/10 rounded-2xl p-5 border border-rose-500/30 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer hover:border-rose-500/60 hover:shadow-md transition-all group"
       >
@@ -1270,6 +1302,44 @@
             class="px-4 py-2.5 rounded-xl bg-rose-600 group-hover:bg-rose-700 text-white text-xs font-black font-mono shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
           >
             <span>{{ $t('dashboard2.viewDeadStockBtn') }}</span>
+            <ArrowRight class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </button>
+        </div>
+      </div>
+
+      <!-- SPOTLIGHT: HEALTHY INVENTORY BANNER (WHEN ZERO DEAD STOCK) -->
+      <div 
+        v-else
+        @click="router.push('/inventory')"
+        class="bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-surface-container-low rounded-2xl p-5 border border-emerald-500/30 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer hover:border-emerald-500/60 hover:shadow-md transition-all group"
+      >
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
+            <CheckCircle2 class="w-6 h-6 text-emerald-600" />
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base font-black text-emerald-950 tracking-tight">{{ $t('dashboard2.healthyInventorySpotlightTitle') }}</h3>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-600 text-white font-mono font-black text-[10px] tracking-wider uppercase shadow-xs">
+                OPTIMAL FLOW
+              </span>
+            </div>
+            <p class="text-xs text-emerald-900/80 mt-1">
+              {{ $t('dashboard2.healthyInventorySpotlightDesc') }}
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <div class="text-left sm:text-right">
+            <span class="text-xs font-mono font-bold text-emerald-800 block uppercase">Trapped Capital</span>
+            <span class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-mono font-black text-emerald-600 amount-kpi truncate">{{ formatCurrency(0, currency) }} (0%)</span>
+          </div>
+          <button 
+            type="button"
+            class="px-4 py-2.5 rounded-xl bg-emerald-600 group-hover:bg-emerald-700 text-white text-xs font-black font-mono shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+          >
+            <span>{{ $t('dashboard2.auditRunwayBtn') }}</span>
             <ArrowRight class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </button>
         </div>
@@ -1755,7 +1825,10 @@
 
         <div class="flex items-center justify-between pt-4 border-t border-outline-variant/40 mt-4 shrink-0">
           <div class="text-xs font-mono text-on-surface-variant">
-            Total Dead Capital: <strong class="text-rose-600 font-black">{{ formatCurrency(deadStock.capital, currency) }}</strong>
+            Total Dead Capital: 
+            <strong :class="deadStock.count > 0 ? 'text-rose-600' : 'text-emerald-600'" class="font-black">
+              {{ formatCurrency(deadStock.capital, currency) }}
+            </strong>
           </div>
           <div class="flex items-center gap-2">
             <button 
@@ -2175,7 +2248,7 @@
 
         <!-- Strategic Playbook Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 shrink-0">
-          <div class="p-3.5 rounded-xl border border-rose-500/20 bg-rose-500/5 flex flex-col justify-between">
+          <div v-if="deadStock.count > 0" class="p-3.5 rounded-xl border border-rose-500/20 bg-rose-500/5 flex flex-col justify-between">
             <div>
               <div class="flex items-center gap-1.5 text-rose-700 font-bold text-xs mb-1">
                 <Sparkles class="w-3.5 h-3.5" />
@@ -2190,6 +2263,19 @@
               <span>Inspect Dormant & Dead Stock Items</span>
               <ArrowRight class="w-3 h-3" />
             </button>
+          </div>
+
+          <div v-else class="p-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center gap-1.5 text-emerald-700 font-bold text-xs mb-1">
+                <CheckCircle2 class="w-3.5 h-3.5" />
+                <span>Zero Dead Stock</span>
+              </div>
+              <p class="text-[11px] text-on-surface-variant leading-relaxed">No products have remained unsold for 60+ days. All active stock is circulating healthily.</p>
+            </div>
+            <div class="mt-2.5 text-xs font-mono font-bold text-emerald-700 flex items-center gap-1">
+              <span>Optimal Turnover Maintained</span>
+            </div>
           </div>
 
           <div class="p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 flex flex-col justify-between">
@@ -2894,7 +2980,8 @@ const newArrivalProductIds = computed<string[]>(() => inventoryIntel.value?.newA
 const fastMovingIdSet = computed(() => new Set((fastMovingProductIds.value || []).map((id: any) => String(id))));
 const slowMovingIdSet = computed(() => new Set((slowMovingProductIds.value || []).map((id: any) => String(id))));
 const newArrivalIdSet = computed(() => new Set((newArrivalProductIds.value || []).map((id: any) => String(id))));
-const deadStockIdSet = computed(() => new Set((deadStockProducts.value || []).map((d: any) => String(d.id))));
+const deadStockProductIds = computed<string[]>(() => inventoryIntel.value?.deadStockProductIds || (deadStockProducts.value || []).map((d: any) => String(d.id)));
+const deadStockIdSet = computed(() => new Set((deadStockProductIds.value || []).map((id: any) => String(id))));
 
 interface FormattedRecommendation {
   type: 'DISCOUNT_DORMANT' | 'STOP_REORDER' | 'REPLENISH_FAST' | 'GENERAL';
@@ -2908,44 +2995,85 @@ interface FormattedRecommendation {
 const inventoryRecommendations = computed<FormattedRecommendation[]>(() => {
   const list = inventoryIntel.value?.recommendations || [];
   if (list.length === 0) {
-    return [
-      {
-        type: 'DISCOUNT_DORMANT',
-        priority: 'HIGH',
-        title: 'Liquidate Dormant Stock',
-        description: 'Consider discounting dormant products by 15-20% to liquidate trapped capital.',
-        count: deadStock.value.count,
-        actionLabel: 'Inspect Dormant Items'
-      },
-      {
-        type: 'STOP_REORDER',
-        priority: 'HIGH',
-        title: 'Halt Inactive Reorders',
-        description: 'Stop reordering products that have recorded zero sales over the past 60 days.',
-        count: deadStock.value.count,
-        actionLabel: 'View Inactive Products'
-      },
-      {
-        type: 'REPLENISH_FAST',
-        priority: 'MEDIUM',
-        title: 'Reorder Critical Stock',
-        description: 'Ensure fast moving products have a safe 14-day stock buffer to avoid stockouts.',
-        count: criticalReorderProducts.value.length || fastMovingStock.value.count,
-        actionLabel: 'Open Restock Workbench'
-      },
-      {
-        type: 'GENERAL',
-        priority: stockRunwayStatus.value === 'CRITICAL_LOW' ? 'HIGH' : (stockRunwayStatus.value === 'OVERSTOCKED' ? 'MEDIUM' : 'LOW'),
-        title: stockRunwayStatus.value === 'CRITICAL_LOW' 
-          ? 'Stockout Risk Alert' 
-          : (stockRunwayStatus.value === 'OVERSTOCKED' ? 'Excess Inventory Runway' : 'Inventory Runway Health'),
-        description: stockRunwayDays.value > 0 
-          ? `Current inventory provides ~${stockRunwayDays.value} days of runway at active burn rate. Maintain optimal replenishment cycles.`
-          : 'Monitor product sales velocity to optimize replenishment cycles and prevent stockouts.',
-        count: stockRunwayDays.value > 0 ? stockRunwayDays.value : fastMovingStock.value.count,
-        actionLabel: 'Audit Stock Runway'
-      }
-    ];
+    if (deadStock.value.count > 0) {
+      return [
+        {
+          type: 'DISCOUNT_DORMANT',
+          priority: 'HIGH',
+          title: 'Liquidate Dormant Stock',
+          description: 'Consider discounting dormant products by 15-20% to liquidate trapped capital.',
+          count: deadStock.value.count,
+          actionLabel: 'Inspect Dormant Items'
+        },
+        {
+          type: 'STOP_REORDER',
+          priority: 'HIGH',
+          title: 'Halt Inactive Reorders',
+          description: 'Stop reordering products that have recorded zero sales over the past 60 days.',
+          count: deadStock.value.count,
+          actionLabel: 'View Inactive Products'
+        },
+        {
+          type: 'REPLENISH_FAST',
+          priority: 'MEDIUM',
+          title: 'Reorder Critical Stock',
+          description: 'Ensure fast moving products have a safe 14-day stock buffer to avoid stockouts.',
+          count: criticalReorderProducts.value.length || fastMovingStock.value.count,
+          actionLabel: 'Open Restock Workbench'
+        },
+        {
+          type: 'GENERAL',
+          priority: stockRunwayStatus.value === 'CRITICAL_LOW' ? 'HIGH' : (stockRunwayStatus.value === 'OVERSTOCKED' ? 'MEDIUM' : 'LOW'),
+          title: stockRunwayStatus.value === 'CRITICAL_LOW' 
+            ? 'Stockout Risk Alert' 
+            : (stockRunwayStatus.value === 'OVERSTOCKED' ? 'Excess Inventory Runway' : 'Inventory Runway Health'),
+          description: stockRunwayDays.value > 0 
+            ? `Current inventory provides ~${stockRunwayDays.value} days of runway at active burn rate. Maintain optimal replenishment cycles.`
+            : 'Monitor product sales velocity to optimize replenishment cycles and prevent stockouts.',
+          count: stockRunwayDays.value > 0 ? stockRunwayDays.value : fastMovingStock.value.count,
+          actionLabel: 'Audit Stock Runway'
+        }
+      ];
+    } else {
+      return [
+        {
+          type: 'GENERAL',
+          priority: 'LOW',
+          title: 'Zero Dead Stock Maintained',
+          description: 'Outstanding! Zero dead stock detected over the past 60+ days. 100% of your active capital is circulating healthily.',
+          count: fastMovingStock.value.count,
+          actionLabel: 'Audit Stock Runway'
+        },
+        {
+          type: 'REPLENISH_FAST',
+          priority: 'MEDIUM',
+          title: 'Reorder Critical Stock',
+          description: 'Ensure fast moving products have a safe 14-day stock buffer to avoid stockouts.',
+          count: criticalReorderProducts.value.length || fastMovingStock.value.count,
+          actionLabel: 'Open Restock Workbench'
+        },
+        {
+          type: 'GENERAL',
+          priority: stockRunwayStatus.value === 'CRITICAL_LOW' ? 'HIGH' : (stockRunwayStatus.value === 'OVERSTOCKED' ? 'MEDIUM' : 'LOW'),
+          title: stockRunwayStatus.value === 'CRITICAL_LOW' 
+            ? 'Stockout Risk Alert' 
+            : (stockRunwayStatus.value === 'OVERSTOCKED' ? 'Excess Inventory Runway' : 'Inventory Runway Health'),
+          description: stockRunwayDays.value > 0 
+            ? `Current inventory provides ~${stockRunwayDays.value} days of runway at active burn rate. Maintain optimal replenishment cycles.`
+            : 'Monitor product sales velocity to optimize replenishment cycles and prevent stockouts.',
+          count: stockRunwayDays.value > 0 ? stockRunwayDays.value : fastMovingStock.value.count,
+          actionLabel: 'Audit Stock Runway'
+        },
+        {
+          type: 'GENERAL',
+          priority: 'LOW',
+          title: 'Optimize Slow Movers',
+          description: 'Review sluggish products and consider bundling them with fast-moving items before they reach dormancy.',
+          count: slowMovingStock.value.count,
+          actionLabel: 'Inspect Slow Movers'
+        }
+      ];
+    }
   }
 
   const seenTitles = new Set<string>();
@@ -3069,7 +3197,7 @@ const inventoryRecommendations = computed<FormattedRecommendation[]>(() => {
         count: fastMovingStock.value.count,
         actionLabel: 'Check Fast Movers'
       });
-    } else if (!hasDormant) {
+    } else if (!hasDormant && deadStock.value.count > 0) {
       mapped.push({
         type: 'DISCOUNT_DORMANT',
         priority: 'HIGH',
@@ -3077,6 +3205,15 @@ const inventoryRecommendations = computed<FormattedRecommendation[]>(() => {
         description: 'Consider discounting dormant stock to free up cash liquidity.',
         count: deadStock.value.count,
         actionLabel: 'Inspect Dormant Items'
+      });
+    } else if (!hasDormant && deadStock.value.count === 0) {
+      mapped.push({
+        type: 'GENERAL',
+        priority: 'LOW',
+        title: 'Zero Dead Stock Maintained',
+        description: 'No products have remained dormant for 60+ days. Continue monitoring velocity to sustain healthy turnover.',
+        count: fastMovingStock.value.count,
+        actionLabel: 'Audit Stock Runway'
       });
     }
   }

@@ -45,11 +45,34 @@
           <label class="text-xs font-mono font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('cashMovements.movementType') }}</label>
           <select 
             v-model="newMovement.type"
-            class="w-full bg-surface-container border border-outline-variant rounded-xl p-3.5 text-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+            class="w-full bg-surface-container border border-outline-variant rounded-xl p-3.5 text-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none cursor-pointer"
           >
             <option value="PAY_IN">{{ $t('cashMovements.payIn') }}</option>
             <option value="PAY_OUT">{{ $t('cashMovements.payOut') }}</option>
             <option value="CASH_DROP">{{ $t('cashMovements.cashDrop') }}</option>
+          </select>
+        </div>
+
+        <!-- Optional Custom Expense Account Dropdown (Only for PAY_OUT) -->
+        <div v-if="newMovement.type === 'PAY_OUT'" class="space-y-2 animate-fade-in">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-mono font-bold text-on-surface-variant uppercase tracking-wider">
+              {{ $t('cashMovements.expenseAccount') }}
+            </label>
+            <span class="text-[10px] font-mono text-on-surface-variant/70 italic">({{ $t('common.optional') }})</span>
+          </div>
+          <select 
+            v-model="newMovement.chartOfAccountId"
+            class="w-full bg-surface-container border border-outline-variant rounded-xl p-3.5 text-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none cursor-pointer"
+          >
+            <option value="">{{ $t('cashMovements.defaultOperatingExpense') }}</option>
+            <option 
+              v-for="acc in expenseAccounts" 
+              :key="acc.id" 
+              :value="acc.id"
+            >
+              {{ acc.code }} - {{ acc.name }}
+            </option>
           </select>
         </div>
 
@@ -178,6 +201,8 @@ import { useRouter } from 'vue-router';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { formatCurrency } from '../models/mockData';
 import { showToast } from '../services/toastService';
+import { financeService } from '../services/financeService';
+import type { ChartOfAccount } from '../models/types';
 import { t } from '../i18n';
 import Modal from '../components/common/Modal.vue';
 import { Plus, X, AlertCircle, Edit2, Trash2 } from 'lucide-vue-next';
@@ -197,6 +222,23 @@ const canModifyMovement = (m: any): boolean => {
   return authId === currentUserId.value;
 };
 
+const chartOfAccounts = ref<ChartOfAccount[]>([]);
+
+const expenseAccounts = computed(() => {
+  return chartOfAccounts.value.filter(
+    a => a.accountType === 'EXPENSE' && (a.system === false || (a as any).is_system === false)
+  );
+});
+
+const loadExpenseAccounts = async () => {
+  try {
+    const list = await financeService.getChartOfAccounts(true);
+    chartOfAccounts.value = list || [];
+  } catch (e) {
+    console.error('Failed to fetch chart of accounts for cash movements', e);
+  }
+};
+
 const isAdding = ref(false);
 const isEditing = ref(false);
 const editingId = ref<string | null>(null);
@@ -205,11 +247,13 @@ const validationError = ref<string | null>(null);
 const newMovement = ref({
   type: 'PAY_IN',
   amount: '',
-  reason: ''
+  reason: '',
+  chartOfAccountId: ''
 });
 
 onMounted(() => {
   vm.fetchCashMovementAnalytics();
+  loadExpenseAccounts();
 });
 
 const periods = computed(() => {
@@ -244,7 +288,7 @@ const formatTime = (isoString: string) => {
 };
 
 const openAddModal = () => {
-  newMovement.value = { type: 'PAY_IN', amount: '', reason: '' };
+  newMovement.value = { type: 'PAY_IN', amount: '', reason: '', chartOfAccountId: '' };
   editingId.value = null;
   validationError.value = null;
   isEditing.value = false;
@@ -259,7 +303,8 @@ const editMovement = (movement: any) => {
   newMovement.value = {
     type: movement.type,
     amount: movement.amount,
-    reason: movement.reason
+    reason: movement.reason,
+    chartOfAccountId: movement.chartOfAccountId || ''
   };
   editingId.value = movement.id;
   validationError.value = null;
@@ -281,19 +326,25 @@ const submitMovement = async () => {
   validationError.value = null;
   isSubmitting.value = true;
   
+  const chartOfAccountId = newMovement.value.type === 'PAY_OUT' && newMovement.value.chartOfAccountId
+    ? newMovement.value.chartOfAccountId
+    : undefined;
+  
   let result;
   if (isEditing.value && editingId.value) {
     result = await vm.updateCashMovement(
       editingId.value,
       newMovement.value.type, 
       parseFloat(newMovement.value.amount), 
-      newMovement.value.reason
+      newMovement.value.reason,
+      chartOfAccountId
     );
   } else {
     result = await vm.createCashMovement(
       newMovement.value.type, 
       parseFloat(newMovement.value.amount), 
-      newMovement.value.reason
+      newMovement.value.reason,
+      chartOfAccountId
     );
   }
   
@@ -303,7 +354,7 @@ const submitMovement = async () => {
     isAdding.value = false;
     isEditing.value = false;
     editingId.value = null;
-    newMovement.value = { type: 'PAY_IN', amount: '', reason: '' };
+    newMovement.value = { type: 'PAY_IN', amount: '', reason: '', chartOfAccountId: '' };
   } else {
     validationError.value = result.error || 'An unexpected error occurred.';
   }

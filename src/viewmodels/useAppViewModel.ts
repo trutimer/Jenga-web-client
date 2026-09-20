@@ -376,9 +376,14 @@ export function useAppViewModel() {
     }
   };
 
-  const createCashMovement = async (type: string, amount: number, reason: string) => {
+  const createCashMovement = async (type: string, amount: number, reason: string, chartOfAccountId?: string) => {
     try {
-      await api.post('/api/cash-movements', { type, amount, reason });
+      await api.post('/api/cash-movements', { 
+        type, 
+        amount, 
+        reason,
+        chartOfAccountId: chartOfAccountId && chartOfAccountId.trim() !== '' ? chartOfAccountId : undefined
+      });
       showToast('Cash movement recorded successfully', 'success');
       await fetchCashMovementAnalytics(); // Refresh analytics
       return { success: true };
@@ -388,9 +393,14 @@ export function useAppViewModel() {
     }
   };
 
-  const updateCashMovement = async (id: string, type: string, amount: number, reason: string) => {
+  const updateCashMovement = async (id: string, type: string, amount: number, reason: string, chartOfAccountId?: string) => {
     try {
-      await api.put(`/api/cash-movements/${id}`, { type, amount, reason });
+      await api.put(`/api/cash-movements/${id}`, { 
+        type, 
+        amount, 
+        reason,
+        chartOfAccountId: chartOfAccountId && chartOfAccountId.trim() !== '' ? chartOfAccountId : undefined
+      });
       showToast('Cash movement updated successfully', 'success');
       await fetchCashMovementAnalytics(); // Refresh analytics
       return { success: true };

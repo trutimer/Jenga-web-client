@@ -407,9 +407,13 @@ export const sw = {
     slowMovingDesc: 'Zilizouzwa siku 15–59 zilizopita',
     deadStock: 'Hisa Iliyolala (Dead Stock)',
     deadStockDesc: 'Hazijauzwa kwa siku 60+',
+    noDeadStockDesc: 'Hakuna bidhaa zilizolala siku 60+',
     deadStockSpotlightTitle: 'Onyo la Mtaji Uliolala Kwenye Bidhaa',
     deadStockSpotlightDesc: '{amount} zimekwama kwenye bidhaa {count} ambazo hazijauzwa kwa siku 60+.',
+    healthyInventorySpotlightTitle: 'Mzunguko Bora wa Hisa na Bidhaa',
+    healthyInventorySpotlightDesc: 'Hongera sana! Hakuna bidhaa zilizolala kwa siku 60+. Asilimia 100 ya mtaji wako unazunguka vizuri kwenye biashara.',
     viewDeadStockBtn: 'Tazama Bidhaa Zilizolala',
+    auditRunwayBtn: 'Kagua Muda wa Hisa',
     deadStockModalTitle: 'Orodha ya Bidhaa Zilizolala (Siku 60+ Bila Mauzo)',
     productCol: 'Bidhaa',
     qtyCol: 'Zilizopo',
@@ -1265,6 +1269,8 @@ export const sw = {
     noMovementsRecorded: 'Hakuna miamala ya pesa iliyorekodiwa kwa zamu hii.',
     openingBalance: 'Salio la Kuanzia',
     closingBalance: 'Salio la Mwisho',
+    expenseAccount: 'Akaunti ya Matumizi / Kitengo',
+    defaultOperatingExpense: '-- Chaguo-msingi: Gharama za Uendeshaji (5040) --',
   },
 
   // Mauzo ya Zamu (Shift Sales)
