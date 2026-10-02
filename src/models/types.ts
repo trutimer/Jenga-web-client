@@ -320,6 +320,8 @@ export interface CashierShift {
   storeId: string;
   branchId: string;
   cashierId: string;
+  cashierName?: string;
+  terminalId?: string;
   status: 'OPEN' | 'CLOSED';
   openedAt: string;
   closedAt?: string;
@@ -627,6 +629,9 @@ export type NotificationType =
   | 'FRAUD_ALERT'
   | 'CASHIER_ACTIVITY'
   | 'GENERAL_ANNOUNCEMENT'
+  | 'MAKER_CHECKER'
+  | 'APPROVAL'
+  | 'APPROVAL_REQUEST'
   | string;
 
 export type NotificationPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL';
@@ -870,4 +875,162 @@ export interface InventoryValuationIntelligence {
   recommendations: string[];
 }
 
+// ==========================================
+// PURCHASE ORDERS & PROCUREMENT MODULE TYPES
+// ==========================================
 
+export type PurchaseOrderStatus = 
+  | 'DRAFT'
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'PARTIALLY_RECEIVED'
+  | 'RECEIVED'
+  | 'CANCELLED';
+
+export interface PurchaseOrderItem {
+  id?: string;
+  productId: string;
+  productName: string;
+  sku?: string;
+  barcode?: string;
+  quantityOrdered: number;
+  quantityReceived: number;
+  remainingQuantity: number;
+  unitCost: number;
+  totalCost: number;
+  isWholesale?: boolean;
+  notes?: string;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  poNumber: string;
+  storeId?: string;
+  storeName?: string;
+  branchId: string;
+  branchName?: string;
+  supplierId?: string;
+  supplierName?: string;
+  status: PurchaseOrderStatus;
+  paymentType: PurchasePaymentType;
+  totalEstimatedCost: number;
+  totalActualCost?: number;
+  expectedDeliveryDate?: string;
+  notes?: string;
+  createdById?: string;
+  createdByName?: string;
+  approvedById?: string;
+  approvedByName?: string;
+  cashierShiftId?: string;
+  createdAt: string;
+  updatedAt?: string;
+  items: PurchaseOrderItem[];
+}
+
+export interface PurchaseOrderItemInputRequest {
+  productId: string;
+  quantity: number;
+  unitCost: number;
+  isWholesale?: boolean;
+  notes?: string;
+}
+
+export interface PurchaseOrderCreateRequest {
+  storeBranchId: string;
+  supplierId?: string;
+  paymentType?: PurchasePaymentType;
+  expectedDeliveryDate?: string;
+  notes?: string;
+  cashierShiftId?: string;
+  items: PurchaseOrderItemInputRequest[];
+}
+
+export interface PurchaseOrderUpdateRequest {
+  supplierId?: string;
+  paymentType?: PurchasePaymentType;
+  expectedDeliveryDate?: string;
+  notes?: string;
+  items: PurchaseOrderItemInputRequest[];
+}
+
+export interface PurchaseOrderReceiveItem {
+  productId: string;
+  receivedQuantity: number;
+}
+
+export interface PurchaseOrderReceiveRequest {
+  items: PurchaseOrderReceiveItem[];
+}
+
+export interface PurchaseOrderCartItem {
+  product: Product;
+  quantity: number;
+  unitCost: number;
+  isWholesale: boolean;
+  notes?: string;
+}
+
+// ==========================================
+// MAKER-CHECKER (DUAL-AUTHORIZATION) TYPES
+// ==========================================
+
+export type MakerCheckerAction =
+  | 'PURCHASE_ORDER'
+  | 'PURCHASE_RETURN'
+  | 'SALE_REVERSAL'
+  | 'CREDIT_SALE'
+  | 'EXPENSE_PAYOUT'
+  | 'STOCK_ADJUSTMENT';
+
+export type MakerCheckerStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+
+export interface StoreApprovalPolicy {
+  id?: string;
+  storeId?: string;
+  actionType: MakerCheckerAction;
+  isEnabled: boolean;
+  minAmountThreshold: number;
+  allowedCheckerRole: UserRole;
+  enforceDistinctChecker: boolean;
+  allowOwnerSelfApproval: boolean;
+  updatedAt?: string;
+}
+
+export interface StoreApprovalPolicyUpdateRequest {
+  isEnabled: boolean;
+  minAmountThreshold: number;
+  allowedCheckerRole: UserRole;
+  enforceDistinctChecker: boolean;
+  allowOwnerSelfApproval: boolean;
+}
+
+export interface MakerCheckerRequest {
+  id: string;
+  requestNumber: string;
+  storeId?: string;
+  storeName?: string;
+  branchId?: string;
+  branchName?: string;
+  actionType: MakerCheckerAction;
+  entityName?: string;
+  entityId?: string;
+  title: string;
+  description?: string;
+  amount?: number;
+  payloadSnapshot?: string;
+  status: MakerCheckerStatus;
+  makerId?: string;
+  makerName?: string;
+  checkerId?: string;
+  checkerName?: string;
+  actionedAt?: string;
+  rejectionReason?: string;
+  approvalNotes?: string;
+  createdAt: string;
+}
+
+export interface MakerCheckerDecisionRequest {
+  reason?: string;
+  notes?: string;
+}

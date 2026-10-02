@@ -2,6 +2,7 @@ import { ref, type Ref } from 'vue';
 import { Client, type IMessage, type StompSubscription } from '@stomp/stompjs';
 import { BASE_URL } from './api';
 import { isElectron } from './offlineSalesService';
+import { isJwtExpired } from './authSession';
 
 export type WebSocketConnectionState = 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING';
 
@@ -111,8 +112,8 @@ class WebSocketService {
     }
 
     const token = localStorage.getItem('accessToken');
-    if (!token || token === 'null' || token === 'undefined' || token.trim() === '') {
-      return; // No token available; do not attempt connection
+    if (!token || token === 'null' || token === 'undefined' || token.trim() === '' || isJwtExpired(token)) {
+      return; // No token available or token expired; do not attempt connection
     }
 
     const cleanToken = token.startsWith('Bearer ') || token.startsWith('bearer ')
@@ -141,8 +142,8 @@ class WebSocketService {
       reconnectDelay: 5000,
       beforeConnect: () => {
         const freshToken = localStorage.getItem('accessToken');
-        if (!freshToken || freshToken === 'null' || freshToken === 'undefined' || freshToken.trim() === '') {
-          console.warn('[WebSocket] Aborting connection: No valid access token found in storage.');
+        if (!freshToken || freshToken === 'null' || freshToken === 'undefined' || freshToken.trim() === '' || isJwtExpired(freshToken)) {
+          console.warn('[WebSocket] Aborting connection: No valid or unexpired access token found in storage.');
           this.disconnect();
           return Promise.reject(new Error('No valid access token'));
         }

@@ -203,12 +203,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from 'vue';
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import Toast from './components/common/Toast.vue';
 import AppTourOverlay from './components/common/AppTourOverlay.vue';
 import { toastMessage, toastType, clearToast, showToast } from './services/toastService';
 import { useAppViewModel } from './viewmodels/useAppViewModel';
 import { websocketService } from './services/websocketService';
+import { isJwtExpired, handleSessionExpired } from './services/authSession';
 import { useRouter, useRoute } from 'vue-router';
 import Sidebar from './components/layout/Sidebar.vue';
 import TopNav from './components/layout/TopNav.vue';
@@ -277,7 +278,32 @@ watch(user, (val) => {
   }
 });
 
+const checkSessionStatus = () => {
+  const token = localStorage.getItem('accessToken');
+  if (token && isJwtExpired(token)) {
+    handleSessionExpired();
+  }
+};
+
 onMounted(() => {
+  checkSessionStatus();
+
+  window.addEventListener('focus', checkSessionStatus);
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      checkSessionStatus();
+    }
+  };
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  const heartbeatTimer = setInterval(checkSessionStatus, 30000);
+
+  onUnmounted(() => {
+    window.removeEventListener('focus', checkSessionStatus);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    clearInterval(heartbeatTimer);
+  });
+
   if (userRole.value === 'CASHIER') {
     fetchCurrentShift();
   }
@@ -297,7 +323,7 @@ const triggerLogoutConfirm = async () => {
       return;
     }
     await fetchCurrentShift();
-    if (currentShift.value !== null) {
+    if (currentShift.value !== null && currentShift.value.status === 'OPEN') {
       showCloseShiftModal.value = true;
     } else {
       showLogoutModal.value = true;

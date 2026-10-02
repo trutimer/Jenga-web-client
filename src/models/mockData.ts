@@ -5,7 +5,7 @@ export const INITIAL_SUPPLIERS: Supplier[] = [];
 export const INITIAL_PRODUCTS: Product[] = [];
 
 export const INITIAL_STORE_SETTINGS: StoreSettings = {
-  name: 'Loading Branch...',
+  name: 'Jenga Store',
   tin: '',
   physicalAddress: '',
   phone: '',

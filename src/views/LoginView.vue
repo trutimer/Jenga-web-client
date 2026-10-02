@@ -56,7 +56,7 @@
         </header>
 
         <!-- 2FA Step Form -->
-        <form v-if="showTwoFactorStep" @submit.prevent="handleTwoFactorSubmit" class="flex flex-col gap-5">
+        <form v-if="showTwoFactorStep" @submit.prevent="() => handleTwoFactorSubmit(false)" class="flex flex-col gap-5">
           <div v-if="error" class="p-3 bg-error-container text-on-error-container rounded-lg text-sm font-medium border border-error/10 flex items-center gap-2">
             <span class="font-bold flex-shrink-0">!</span>
             <span>{{ error }}</span>
@@ -111,7 +111,7 @@
         </form>
 
         <!-- Standard Login Form -->
-        <form v-else @submit.prevent="handleSubmit" class="flex flex-col gap-5">
+        <form v-else @submit.prevent="() => handleSubmit(false)" class="flex flex-col gap-5">
           
           <div v-if="error" class="p-3 bg-error-container text-on-error-container rounded-lg text-sm font-medium border border-error/10 flex items-center gap-2">
             <span class="font-bold flex-shrink-0">!</span>
@@ -388,6 +388,96 @@
       </div>
     </div>
 
+    <!-- Device Conflict Resolution Modal -->
+    <div v-if="showConflictModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#122131]/75 backdrop-blur-md">
+      <div class="bg-surface-container-lowest rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-outline-variant flex flex-col gap-6 animate-fade-up relative overflow-hidden">
+        <!-- Accent top gradient -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500"></div>
+
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+              <AlertTriangle class="w-6 h-6 stroke-[2.2px]" />
+            </div>
+            <div>
+              <span class="text-xs font-mono font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full inline-block mb-1">
+                Single Session Policy
+              </span>
+              <h3 class="text-xl font-black text-on-surface tracking-tight">Account Active Elsewhere</h3>
+            </div>
+          </div>
+          <button @click="closeConflictModal" class="text-outline hover:text-on-surface transition-colors cursor-pointer bg-surface-container p-2 rounded-full">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <p class="text-sm text-on-surface-variant leading-relaxed">
+          {{ conflictMessage || 'Your account is already signed in on another device or terminal. DukaPro enforces a single-device session policy to ensure cash accountability, order accuracy, and data security.' }}
+        </p>
+
+        <!-- Conflicting Device Details Card -->
+        <div v-if="conflictDevice" class="bg-surface-container-low border border-outline-variant/60 rounded-2xl p-4 flex flex-col gap-3">
+          <div class="text-xs font-mono font-bold uppercase tracking-wider text-outline flex items-center justify-between">
+            <span>Currently Active Device</span>
+            <span class="px-2 py-0.5 rounded bg-amber-500/15 text-amber-800 text-[10px] font-bold">
+              {{ conflictDevice.status || 'ACTIVE' }}
+            </span>
+          </div>
+
+          <div class="flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-surface-container-highest flex items-center justify-center text-primary shrink-0">
+              <Smartphone v-if="conflictDevice.deviceType === 'MOBILE'" class="w-6 h-6" />
+              <Monitor v-else-if="conflictDevice.deviceType === 'DESKTOP'" class="w-6 h-6" />
+              <Globe v-else class="w-6 h-6" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-sm text-on-surface truncate">
+                {{ conflictDevice.deviceModel || conflictDevice.deviceManufacturer || 'Registered Device' }}
+              </div>
+              <div class="text-xs text-on-surface-variant truncate">
+                {{ conflictDevice.osName }} {{ conflictDevice.osVersion }} • {{ conflictDevice.deviceType || 'Terminal' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2 border-t border-outline-variant/40 text-xs text-outline font-medium">
+            <Clock class="w-4 h-4 text-outline-variant shrink-0" />
+            <span>Last activity: <strong class="text-on-surface-variant">{{ formatLastActive(conflictDevice.lastActiveAt) }}</strong></span>
+          </div>
+        </div>
+
+        <!-- Transfer Notice -->
+        <div class="bg-primary/5 border border-primary/20 rounded-2xl p-3.5 text-xs text-on-surface-variant flex items-start gap-2.5">
+          <ArrowRightLeft class="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <div class="leading-relaxed">
+            Transferring will <strong class="text-on-surface">disconnect the active session</strong> on the other device and transfer authorization directly to this terminal.
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col-reverse sm:flex-row gap-3 mt-1">
+          <button 
+            type="button" 
+            @click="closeConflictModal"
+            class="flex-1 h-12 bg-transparent border border-outline-variant text-on-surface-variant rounded-xl font-bold hover:bg-surface-container transition-all cursor-pointer text-sm"
+          >
+            Cancel
+          </button>
+
+          <button 
+            type="button" 
+            @click="handleConfirmTransfer"
+            :disabled="isTransferring"
+            class="flex-1 h-12 bg-primary text-on-primary rounded-xl font-bold hover:bg-opacity-95 active:scale-[0.98] transition-all cursor-pointer text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/25 disabled:opacity-50"
+          >
+            <RotateCw v-if="isTransferring" class="w-4 h-4 animate-spin text-white" />
+            <ArrowRightLeft v-if="!isTransferring" class="w-4 h-4" />
+            <span>{{ isTransferring ? 'Transferring Session...' : 'Transfer to This Device' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -411,12 +501,19 @@ import {
   ExternalLink, 
   X, 
   RotateCw,
-  KeyRound
+  KeyRound,
+  AlertTriangle,
+  Smartphone,
+  Monitor,
+  Globe,
+  Clock,
+  ArrowRightLeft
 } from 'lucide-vue-next';
+import { getDesktopDeviceMetadata, clearAuthStorage } from '../services/deviceService';
 
 const vm = useAppViewModel();
 
-const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v2.7.1';
+const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v2.8.0';
 
 const phone = ref(localStorage.getItem('lastPhone') || '');
 const password = ref('');
@@ -424,6 +521,29 @@ const showPassword = ref(false);
 const remember = ref(true);
 const error = ref('');
 const isLoggingIn = ref(false);
+
+// Single Device Conflict State
+const isTransferring = ref(false);
+const showConflictModal = ref(false);
+const conflictDevice = ref<any>(null);
+const conflictMessage = ref('');
+
+const formatLastActive = (dateStr?: string) => {
+  if (!dateStr) return 'Recently active';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  } catch {
+    return dateStr;
+  }
+};
 
 const showTwoFactorStep = ref(false);
 const totpCode = ref('');
@@ -481,14 +601,14 @@ const getDeviceFingerprint = async () => {
 const processSuccessfulLogin = async (res: any) => {
   if (isElectron() && (res.user?.role === 'SUPER_ADMIN' || res.user?.role === 'ADMIN')) {
     isLoggingIn.value = false;
-    localStorage.clear();
+    clearAuthStorage();
     error.value = t('auth.desktopSuperAdminError');
     return;
   }
 
   if (res.user && res.user.role === 'SUPER_ADMIN') {
     isLoggingIn.value = false;
-    localStorage.clear();
+    clearAuthStorage();
     error.value = t('auth.superAdminTerminalError');
     return;
   }
@@ -596,7 +716,7 @@ const processSuccessfulLogin = async (res: any) => {
   vm.handleLogin(res.user.fullName, branchId || '');
 };
 
-const handleSubmit = async () => {
+const handleSubmit = async (confirmTransfer: boolean = false) => {
   if (!phone.value.trim()) {
     error.value = t('auth.enterPhoneError');
     return;
@@ -606,20 +726,53 @@ const handleSubmit = async () => {
     return;
   }
 
-  isLoggingIn.value = true;
+  if (confirmTransfer) {
+    isTransferring.value = true;
+  } else {
+    isLoggingIn.value = true;
+  }
   error.value = '';
 
   try {
+    const isDesktop = isElectron();
     const deviceFingerprint = await getDeviceFingerprint();
-    const res = await api.post('/api/auth/login', { 
+    const desktopMetadata = getDesktopDeviceMetadata(confirmTransfer, deviceFingerprint);
+
+    // If web and Turnstile token is empty, try getting response from widget
+    if (!isDesktop && !turnstileToken.value && turnstileRef.value) {
+      const resp = turnstileRef.value.getResponse();
+      if (resp) turnstileToken.value = resp;
+    }
+
+    const payload: any = { 
       phone: phone.value, 
       password: password.value, 
-      deviceFingerprint,
       turnstileToken: turnstileToken.value 
-    });
+    };
+
+    if (isDesktop && desktopMetadata) {
+      // Desktop version: explicitly mark as DESKTOP with hardware fingerprint and device metadata
+      Object.assign(payload, {
+        ...desktopMetadata,
+        deviceFingerprint: deviceFingerprint || desktopMetadata.deviceId,
+        deviceMetadata: desktopMetadata,
+        confirmDeviceTransfer: confirmTransfer,
+        forceTransfer: confirmTransfer
+      });
+    } else {
+      // WEB version: explicitly mark as WEB so backend exempts from device enforcing
+      // and strictly omit deviceId
+      payload.deviceType = 'WEB';
+    }
+
+    const res = await api.post('/api/auth/login', payload, { suppressToast: true });
+
+    showConflictModal.value = false;
+    conflictDevice.value = null;
 
     if (res.twoFactorRequired) {
       isLoggingIn.value = false;
+      isTransferring.value = false;
       showTwoFactorStep.value = true;
       pendingTwoFactorToken.value = res.twoFactorToken || '';
       totpCode.value = '';
@@ -630,41 +783,125 @@ const handleSubmit = async () => {
     await processSuccessfulLogin(res);
   } catch (err: any) {
     isLoggingIn.value = false;
+    isTransferring.value = false;
     turnstileRef.value?.reset();
     turnstileToken.value = '';
 
-    const msg = err.message || t('auth.invalidCredentials');
+    if (err.status === 409 || err.data?.error === 'DEVICE_CONFLICT') {
+      conflictDevice.value = err.data?.currentDevice || null;
+      conflictMessage.value = err.data?.message || 'This account is currently active on another device.';
+      showConflictModal.value = true;
+      return;
+    }
+
+    const msg = err.data?.message || err.message || t('auth.invalidCredentials');
     if (typeof msg === 'string' && msg.toLowerCase().includes('license')) {
       showLicenseModal.value = true;
     } else {
       error.value = msg;
     }
+  } finally {
+    isLoggingIn.value = false;
+    isTransferring.value = false;
   }
 };
 
-const handleTwoFactorSubmit = async () => {
+const handleTwoFactorSubmit = async (confirmTransfer: boolean = false) => {
   if (!totpCode.value || totpCode.value.trim().length < 6) {
     error.value = 'Please enter your 6-digit verification code';
     return;
   }
 
-  isLoggingIn.value = true;
+  if (confirmTransfer) {
+    isTransferring.value = true;
+  } else {
+    isLoggingIn.value = true;
+  }
   error.value = '';
 
   try {
+    const isDesktop = isElectron();
     const deviceFingerprint = await getDeviceFingerprint();
-    const res = await api.post('/api/auth/2fa/verify-login', { 
+    const desktopMetadata = getDesktopDeviceMetadata(confirmTransfer, deviceFingerprint);
+
+    const payload: any = { 
       twoFactorToken: pendingTwoFactorToken.value,
-      totpCode: totpCode.value.trim(),
-      deviceFingerprint
-    });
+      totpCode: totpCode.value.trim()
+    };
+
+    if (isDesktop && desktopMetadata) {
+      // Desktop version: explicitly mark as DESKTOP with hardware fingerprint and device metadata
+      Object.assign(payload, {
+        ...desktopMetadata,
+        deviceFingerprint: deviceFingerprint || desktopMetadata.deviceId,
+        deviceMetadata: desktopMetadata,
+        confirmDeviceTransfer: confirmTransfer,
+        forceTransfer: confirmTransfer
+      });
+    } else {
+      // WEB version: explicitly mark as WEB so backend exempts from device enforcing
+      // and strictly omit deviceId
+      payload.deviceType = 'WEB';
+    }
+
+    const res = await api.post('/api/auth/2fa/verify-login', payload, { suppressToast: true });
+
+    showConflictModal.value = false;
+    conflictDevice.value = null;
 
     await processSuccessfulLogin(res);
   } catch (err: any) {
     isLoggingIn.value = false;
-    const msg = err.message || 'Invalid verification code. Please check your Google Authenticator app.';
+    isTransferring.value = false;
+
+    if (err.status === 409 || err.data?.error === 'DEVICE_CONFLICT') {
+      conflictDevice.value = err.data?.currentDevice || null;
+      conflictMessage.value = err.data?.message || 'This account is currently active on another device.';
+      showConflictModal.value = true;
+      return;
+    }
+
+    const msg = err.data?.message || err.message || 'Invalid verification code. Please check your Google Authenticator app.';
     error.value = msg;
+  } finally {
+    isLoggingIn.value = false;
+    isTransferring.value = false;
   }
+};
+
+const handleConfirmTransfer = async () => {
+  if (!isElectron() && !showTwoFactorStep.value && !turnstileToken.value) {
+    if (turnstileRef.value) {
+      const resp = turnstileRef.value.getResponse();
+      if (resp) turnstileToken.value = resp;
+    }
+    if (!turnstileToken.value) {
+      isTransferring.value = true;
+      let waited = 0;
+      while (!turnstileToken.value && waited < 2000) {
+        await new Promise(r => setTimeout(r, 200));
+        waited += 200;
+        if (turnstileRef.value) {
+          const resp = turnstileRef.value.getResponse();
+          if (resp) {
+            turnstileToken.value = resp;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (showTwoFactorStep.value) {
+    await handleTwoFactorSubmit(true);
+  } else {
+    await handleSubmit(true);
+  }
+};
+
+const closeConflictModal = () => {
+  showConflictModal.value = false;
+  isTransferring.value = false;
 };
 
 const cancelTwoFactorStep = () => {

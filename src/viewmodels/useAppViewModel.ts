@@ -5,8 +5,9 @@ import { api } from '../services/api';
 import { showToast } from '../services/toastService';
 import { isElectron } from '../services/offlineSalesService';
 import { websocketService } from '../services/websocketService';
+import { clearAuthStorage, deregisterCurrentDevice } from '../services/deviceService';
+import { isJwtExpired, registerSessionExpireCallback } from '../services/authSession';
 import router from '../router';
-
 
 const formatDateForInput = (dateStr?: string | null): string => {
   if (!dateStr) return '';
@@ -21,14 +22,25 @@ const formatDateForInput = (dateStr?: string | null): string => {
   return `${year}-${month}-${day}`;
 };
 
+// Check for expired token on initial evaluation
+const initialToken = localStorage.getItem('accessToken');
+if (initialToken && isJwtExpired(initialToken)) {
+  clearAuthStorage();
+}
+
+const isInitialAuthValid = () => {
+  const token = localStorage.getItem('accessToken');
+  return !!token && !isJwtExpired(token) && !!localStorage.getItem('storeId');
+};
+
 // Global shared reactive states
 const user = ref<string | null>(
-  localStorage.getItem('accessToken') && localStorage.getItem('storeId')
+  isInitialAuthValid()
     ? (localStorage.getItem('cashierName') || 'User')
     : null
 );
 const userRole = ref<string | null>(
-  localStorage.getItem('accessToken') && localStorage.getItem('storeId')
+  isInitialAuthValid()
     ? (localStorage.getItem('cashierRole') || 'CASHIER')
     : null
 );
@@ -52,6 +64,17 @@ const userPermissions = ref<string[]>(
   JSON.parse(localStorage.getItem('userPermissions') || '[]')
 );
 
+// Register session expire callback to reset user state when token expires
+registerSessionExpireCallback(() => {
+  user.value = null;
+  userRole.value = null;
+  userId.value = null;
+  activeBranchId.value = null;
+  userPermissions.value = [];
+  mobileMenuOpen.value = false;
+  currentShift.value = null;
+});
+
 // Inactivity lockout timer
 let timeoutId: any = null;
 const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
@@ -66,8 +89,7 @@ const resetInactivityTimeout = () => {
     userPermissions.value = [];
     mobileMenuOpen.value = false;
     websocketService.disconnect();
-    localStorage.clear();
-    sessionStorage.clear();
+    clearAuthStorage();
     router.push('/login');
   }, 5 * 60 * 1000); // 5 minutes
 };
@@ -302,11 +324,14 @@ export function useAppViewModel() {
   };
 
   const fetchCurrentShift = async () => {
-    if (userRole.value !== 'CASHIER') return;
+    if (userRole.value !== 'CASHIER') {
+      currentShift.value = null;
+      return;
+    }
     const branchId = localStorage.getItem('branchId') || '';
     const cashierId = localStorage.getItem('cashierId') || localStorage.getItem('userId') || '';
     try {
-      const shift = await api.get<CashierShift>('/api/shifts/open');
+      const shift = await api.get<CashierShift>('/api/shifts/open', { suppressToast: true });
       if (shift && shift.status === 'OPEN') {
         currentShift.value = shift;
         if (isElectron() && branchId) {
@@ -320,8 +345,9 @@ export function useAppViewModel() {
       }
     } catch (err: any) {
       console.log('No open shift found or error fetching shift:', err);
-      if (!currentShift.value) {
-        currentShift.value = null;
+      currentShift.value = null;
+      if (isElectron() && branchId && cashierId) {
+        try { await (window as any).ipcRenderer.invoke('db:clear-active-shifts', { branchId, cashierId }); } catch (e) {}
       }
     }
   };
@@ -508,14 +534,28 @@ export function useAppViewModel() {
   };
 
   const handleLogout = () => {
+    const branchId = localStorage.getItem('branchId') || '';
+    const cashierId = localStorage.getItem('cashierId') || localStorage.getItem('userId') || '';
+    if (isElectron() && branchId && cashierId) {
+      try {
+        (window as any).ipcRenderer?.invoke('db:clear-active-shifts', { branchId, cashierId });
+      } catch (_) {}
+    }
+    deregisterCurrentDevice().catch(() => {});
     websocketService.disconnect();
+    if (isElectron()) {
+      try {
+        (window as any).ipcRenderer?.invoke('sync:set-config', { token: '' });
+      } catch (_) {}
+    }
     user.value = null;
+    userRole.value = null;
+    userId.value = null;
     activeBranchId.value = null;
     mobileMenuOpen.value = false;
     currentShift.value = null;
     userPermissions.value = [];
-    localStorage.clear();
-    sessionStorage.clear();
+    clearAuthStorage();
     router.push('/login');
   };
 
@@ -560,8 +600,8 @@ export function useAppViewModel() {
       return;
     }
 
-    if (userRole.value === 'CASHIER' && !currentShift.value) {
-      showToast('Error: You must have an active open shift to process sales.', 'error');
+    if (userRole.value === 'CASHIER' && (!currentShift.value || currentShift.value.status !== 'OPEN')) {
+      showToast('Error: You must have an active open register shift to process sales. Please open your shift first.', 'error');
       return;
     }
 

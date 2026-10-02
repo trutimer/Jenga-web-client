@@ -10,23 +10,20 @@
       
       <!-- ACTION BUTTONS -->
       <div class="flex items-center gap-3">
+        <!-- PO Cart Button -->
         <button 
-          @click="handleRefresh"
-          :disabled="vm.isFetchingProducts.value || isFetchingInactive"
-          class="h-10 px-3.5 rounded-lg border border-outline hover:bg-surface-container-low text-on-surface-variant font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm text-center bg-surface-container-lowest disabled:opacity-60"
-          :title="$t('inventory.refreshCatalog')"
+          @click="handleOpenCart"
+          class="h-10 px-3.5 rounded-lg border border-outline hover:bg-surface-container-low text-on-surface-variant font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm text-center bg-surface-container-lowest relative"
+          :title="$t('poCart.cartTooltip', { count: cartCount })"
         >
-          <RotateCw :class="['w-4 h-4 text-on-surface-variant', (vm.isFetchingProducts.value || isFetchingInactive) ? 'animate-spin text-primary' : '']" />
-          <span>{{ $t('common.refresh') }}</span>
-        </button>
-
-        <button 
-          v-if="vm.hasPermission('inventory:create')"
-          @click="showImportModal = true"
-          class="h-10 px-4 rounded-lg border border-outline hover:bg-surface-container-low text-on-surface-variant font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm text-center bg-surface-container-lowest"
-        >
-          <Upload class="w-4 h-4 text-on-surface-variant" />
-          <span>{{ $t('inventory.bulkImport') }}</span>
+          <ShoppingCart class="w-4 h-4 text-primary" />
+          <span class="hidden sm:inline font-bold">{{ $t('poCart.emptyModalTitle') }}</span>
+          <span 
+            v-if="cartCount > 0" 
+            class="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-primary text-on-primary ml-0.5 animate-pulse"
+          >
+            {{ cartCount }}
+          </span>
         </button>
         
         <button 
@@ -224,11 +221,12 @@
               <tr 
                 v-for="p in paginatedProducts" 
                 :key="p.id" 
-                class="hover:bg-surface-container-low transition-all font-sans"
+                class="hover:bg-surface-container-low transition-all font-sans cursor-pointer group"
                 :class="p.stock === 0 || showInactive ? 'opacity-85 bg-surface-container/40 text-outline' : ''"
+                @click="openProductDetails(p)"
               >
                 <!-- Checkbox -->
-                <td class="px-3 py-3 text-center select-none">
+                <td class="px-3 py-3 text-center select-none" @click.stop>
                   <div class="w-[18px] h-[18px] rounded border border-outline flex items-center justify-center cursor-pointer bg-surface-container-lowest" />
                 </td>
 
@@ -236,7 +234,7 @@
                 <td class="px-3.5 py-3">
                   <div class="flex items-center gap-1.5 flex-wrap">
                     <span 
-                      class="font-semibold text-on-surface block leading-snug"
+                      class="font-semibold text-on-surface block leading-snug group-hover:text-primary transition-colors underline-offset-2 group-hover:underline"
                       :class="p.stock === 0 || showInactive ? 'text-outline/90' : ''"
                     >
                       {{ p.name }}
@@ -310,15 +308,25 @@
                 </td>
 
                 <!-- Actions -->
-                <td class="px-3.5 py-3 text-center select-none whitespace-nowrap">
+                <td class="px-3.5 py-3 text-center select-none whitespace-nowrap" @click.stop>
                   <div class="flex items-center justify-center gap-2">
                     <button 
-                      v-if="vm.hasPermission('inventory:edit')"
-                      @click.stop="openEditModal(p)"
-                      class="p-1.5 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-on-primary-container transition-colors cursor-pointer border-0 bg-transparent"
-                      :title="$t('inventory.editProductTooltip')"
+                      @click.stop="openProductDetails(p)"
+                      class="p-1.5 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer border-0 bg-transparent"
+                      :title="$t('inventory.viewProductDetails')"
                     >
-                      <Pencil class="w-4.5 h-4.5" />
+                      <Eye class="w-4.5 h-4.5" />
+                    </button>
+                    <!-- Add to PO Cart (replaces edit as requested) -->
+                    <button 
+                      @click.stop="handleAddToCart(p)"
+                      class="p-1.5 rounded-lg transition-all cursor-pointer border-0"
+                      :class="isInCart(p.id) 
+                        ? 'bg-primary/20 text-primary hover:bg-primary/30 ring-1 ring-primary/40' 
+                        : 'hover:bg-surface-container text-on-surface-variant hover:text-primary bg-transparent'"
+                      :title="isInCart(p.id) ? $t('poCart.inCartTooltip', { count: getItemQuantity(p.id) }) : $t('poCart.addToCartTooltip')"
+                    >
+                      <ShoppingCart class="w-4.5 h-4.5" />
                     </button>
                     <button 
                       v-if="!showInactive && vm.hasPermission('inventory:edit')"
@@ -1333,11 +1341,17 @@
       </div>
     </div>
   </Modal>
+
+  <!-- Empty PO Cart Guidance Modal -->
+  <EmptyPoCartModal 
+    :isOpen="showEmptyCartModal" 
+    :onClose="() => showEmptyCartModal = false" 
+  />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { showToast } from '../services/toastService';
 import { useBarcodeScanner } from '../composables/useBarcodeScanner';
@@ -1346,6 +1360,8 @@ import { formatCurrency, formatCurrencyWithoutSymbol } from '../models/mockData'
 import { api } from '../services/api';
 import Modal from '../components/common/Modal.vue';
 import JengaLoader from '../components/common/JengaLoader.vue';
+import EmptyPoCartModal from '../components/common/EmptyPoCartModal.vue';
+import { usePurchaseOrderCart } from '../composables/usePurchaseOrderCart';
 import { t } from '../i18n';
 import { 
   Plus, 
@@ -1366,11 +1382,33 @@ import {
   RotateCw,
   Eye,
   EyeOff,
-  SlidersHorizontal
+  SlidersHorizontal,
+  ShoppingCart
 } from 'lucide-vue-next';
 
 const route = useRoute();
+const router = useRouter();
 const vm = useAppViewModel();
+
+// PO Procurement Cart Integration
+const poCart = usePurchaseOrderCart();
+const { addToCart, isInCart, getItemQuantity, cartCount, showEmptyCartModal } = poCart;
+
+const handleOpenCart = () => {
+  if (cartCount.value === 0) {
+    showEmptyCartModal.value = true;
+  } else {
+    router.push('/purchases/cart');
+  }
+};
+
+const handleAddToCart = (p: Product) => {
+  addToCart(p);
+};
+
+const openProductDetails = (p: Product) => {
+  router.push({ name: 'product-details', params: { id: p.id } });
+};
 
 const categories = ref<any[]>([]);
 

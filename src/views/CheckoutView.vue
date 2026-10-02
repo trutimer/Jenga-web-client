@@ -302,7 +302,7 @@
           <button 
             type="button"
             @click="handleCompleteSale"
-            :disabled="cart.length === 0"
+            :disabled="cart.length === 0 || (vm.userRole.value === 'CASHIER' && (!vm.currentShift.value || vm.currentShift.value.status !== 'OPEN'))"
             class="flex-1 h-12 bg-primary text-on-primary rounded-xl text-sm font-bold hover:bg-primary/95 active:scale-[0.99] transition-all flex items-center justify-center gap-2.5 shadow-md shadow-primary/15 cursor-pointer disabled:opacity-50"
           >
             <CheckCircle class="w-5 h-5 stroke-[2.5px]" />
@@ -346,7 +346,7 @@
 
   <!-- Open Shift Modal for Cashiers -->
   <Modal 
-    :isOpen="vm.userRole.value === 'CASHIER' && vm.currentShift.value === null" 
+    :isOpen="vm.userRole.value === 'CASHIER' && (!vm.currentShift.value || vm.currentShift.value.status !== 'OPEN')" 
     :title="$t('checkout.openShiftTitle')" 
     :onClose="() => {}"
     maxWidth="max-w-sm"
@@ -595,6 +595,9 @@ const handleShiftLogout = () => {
 
 onMounted(() => {
   vm.fetchProducts();
+  if (vm.userRole.value === 'CASHIER') {
+    vm.fetchCurrentShift();
+  }
 });
 
 const handleBarcodeScan = (scannedCode: string) => {
@@ -742,6 +745,11 @@ const selectPaymentMethod = (method: 'Cash' | 'On Credit' | 'M-Pesa') => {
 };
 
 const handleCompleteSale = () => {
+  if (vm.userRole.value === 'CASHIER' && (!vm.currentShift.value || vm.currentShift.value.status !== 'OPEN')) {
+    showToast(t('checkout.shiftRequiredError') || 'An active open register shift is required to complete sales. Please open a shift.', 'error');
+    return;
+  }
+
   if (cart.value.length === 0) {
     showToast(t('checkout.cartEmptyError'), 'error');
     return;

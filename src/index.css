@@ -171,3 +171,37 @@ textarea {
   animation: jengaGlowPulse 2.4s ease-in-out infinite;
 }
 
+/* ==========================================================================
+   Global Print Stylesheet
+   Prevents web UI (sidebars, navbars, buttons, action bars) from printing
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 14mm 12mm 14mm;
+  }
+
+  aside,
+  header,
+  nav,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  body, html {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  main {
+    overflow: visible !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+  }
+}
+

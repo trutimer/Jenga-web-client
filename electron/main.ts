@@ -238,7 +238,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('sync:set-config', (_, { apiBaseUrl, token }) => {
     if (apiBaseUrl) setApiBaseUrl(apiBaseUrl)
-    if (token) setSyncAuthToken(token)
+    if (token !== undefined) setSyncAuthToken(token)
     return { success: true }
   })
 

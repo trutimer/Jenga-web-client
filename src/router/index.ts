@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { websocketService } from '../services/websocketService';
+import { clearAuthStorage } from '../services/deviceService';
+import { isJwtExpired, handleSessionExpired } from '../services/authSession';
 
 const routes = [
   {
@@ -31,9 +33,27 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/inventory/:id',
+    name: 'product-details',
+    component: () => import('../views/ProductDetailsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/purchases',
     name: 'purchases',
     component: () => import('../views/PurchasesView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/purchases/cart',
+    name: 'purchase-order-cart',
+    component: () => import('../views/PurchaseOrderCartView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/purchases/orders/:id',
+    name: 'purchase-order-details',
+    component: () => import('../views/PurchaseOrderDetailsView.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -71,6 +91,14 @@ const routes = [
     name: 'settings',
     component: () => import('../views/SettingsView.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/pending-approvals',
+    redirect: { path: '/settings', query: { section: 'maker-checker', tab: 'pending' } }
+  },
+  {
+    path: '/approvals',
+    redirect: { path: '/settings', query: { section: 'maker-checker', tab: 'pending' } }
   },
   {
     path: '/receipt',
@@ -127,6 +155,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/help',
+    name: 'help',
+    component: () => import('../views/HelpView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/',
     redirect: () => {
       const role = localStorage.getItem('cashierRole');
@@ -162,14 +196,20 @@ router.beforeEach((to, from, next) => {
   const storeId = localStorage.getItem('storeId');
   const role = localStorage.getItem('cashierRole');
   
-  const isAuthenticated = !!token && 
+  const tokenExpired = token ? isJwtExpired(token) : false;
+
+  if (to.meta.requiresAuth && token && tokenExpired) {
+    handleSessionExpired();
+    return next({ name: 'login' });
+  }
+
+  const isAuthenticated = !tokenExpired && !!token && 
                           !!storeId && storeId !== 'null' && storeId !== 'undefined';
 
   if (to.meta.requiresAuth && !isAuthenticated) {
     websocketService.disconnect();
     if (token) {
-      localStorage.clear();
-      sessionStorage.clear();
+      clearAuthStorage();
     }
     next({ name: 'login' });
   } else if (to.meta.adminOnly && role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
@@ -188,13 +228,16 @@ router.beforeEach((to, from, next) => {
     next({ name: 'select-branch' });
   } else if (isAuthenticated && role === 'CASHIER') {
     const routeName = String(to.name || '');
-    const cashierAlwaysAllowed = ['checkout', 'receipt', 'cash-movements', 'shift-sales', 'shift-details', 'cashier-shifts', 'profile'];
+    const cashierAlwaysAllowed = ['checkout', 'receipt', 'cash-movements', 'shift-sales', 'shift-details', 'cashier-shifts', 'profile', 'help'];
     if (cashierAlwaysAllowed.includes(routeName)) {
       next();
     } else {
       const routePermissions: Record<string, string> = {
         'inventory': 'inventory:view',
+        'product-details': 'inventory:view',
         'purchases': 'inventory:view',
+        'purchase-order-cart': 'inventory:view',
+        'purchase-order-details': 'inventory:view',
         'top-selling-products': 'inventory:view',
         'customers': 'customers:view',
         'suppliers': 'suppliers:view',

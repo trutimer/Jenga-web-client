@@ -66,7 +66,7 @@
           >
             <button
               v-for="sub in item.children"
-              :key="sub.path || sub.tab"
+              :key="sub.path || sub.tab || sub.section"
               @click="navigateToSubmenu(item, sub)"
               class="py-2 px-2.5 flex items-center justify-between gap-2 rounded-lg text-xs font-semibold transition-all text-left cursor-pointer"
               :class="isSubmenuActive(item, sub)
@@ -109,16 +109,20 @@
 
     <!-- Footer Nav Links -->
     <div class="mt-auto border-t border-outline-variant p-3.5 flex flex-col gap-2">
-      <a 
-        href="#help"
-        @click.prevent="alertHelp"
-        class="py-3 flex items-center hover:bg-surface-variant/50 rounded-xl transition-all duration-200"
-        :class="sidebarCollapsed ? 'justify-center mx-1.5 px-0' : 'gap-3.5 px-4.5 mx-1.5 text-on-surface-variant'"
+      <button 
+        @click="router.push('/help')"
+        class="py-3 flex items-center rounded-xl transition-all duration-200 text-left font-sans cursor-pointer"
+        :class="[
+          sidebarCollapsed ? 'justify-center mx-1.5 px-0' : 'gap-3.5 px-4.5 mx-1.5',
+          isActive('help')
+            ? 'bg-primary-container text-on-primary-container font-bold shadow-xs'
+            : 'text-on-surface-variant hover:bg-surface-variant/50'
+        ]"
         :title="sidebarCollapsed ? $t('sidebar.help') : ''"
       >
-        <HelpCircle class="w-5 h-5 text-on-surface-variant" />
+        <HelpCircle class="w-5 h-5 shrink-0" :class="isActive('help') ? 'text-on-primary-container stroke-[2.5px]' : 'text-on-surface-variant'" />
         <span v-if="!sidebarCollapsed" class="text-sm font-semibold">{{ $t('sidebar.help') }}</span>
-      </a>
+      </button>
       <button 
         @click="onLogout"
         class="py-3 flex items-center text-error hover:bg-error-container/50 rounded-xl transition-all duration-200 cursor-pointer text-left"
@@ -156,7 +160,11 @@ import {
   ChevronLeft, 
   ChevronRight, 
   ChevronDown, 
-  ShoppingBag
+  ShoppingBag,
+  ShieldCheck,
+  QrCode,
+  User,
+  RefreshCw
 } from 'lucide-vue-next';
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
 import { t } from '../../i18n';
@@ -169,11 +177,14 @@ defineProps<{
 const vm = useAppViewModel();
 const { sidebarCollapsed, userRole } = vm;
 
+const isElectronApp = ref(typeof window !== 'undefined' && (window as any).ipcRenderer !== undefined);
+
 const router = useRouter();
 const route = useRoute();
 
 interface SubMenuItem {
   tab?: string;
+  section?: string;
   path?: string;
   label: string;
   icon: any;
@@ -191,7 +202,8 @@ interface MenuItem {
 
 const expandedMenus = ref<Record<string, boolean>>({
   inventory_group: false,
-  finance: false
+  finance: false,
+  settings: false
 });
 
 watch(() => route.path, (newPath) => {
@@ -204,6 +216,11 @@ watch(() => route.path, (newPath) => {
     expandedMenus.value.inventory_group = true;
   } else {
     expandedMenus.value.inventory_group = false;
+  }
+  if (newPath.startsWith('/settings')) {
+    expandedMenus.value.settings = true;
+  } else {
+    expandedMenus.value.settings = false;
   }
 }, { immediate: true });
 
@@ -236,7 +253,18 @@ const menuItems = computed<MenuItem[]>(() => {
         { tab: 'periods', label: t('sidebar.fiscalPeriods'), icon: CalendarCheck },
       ]
     },
-    { id: 'settings', label: t('sidebar.settings'), icon: Settings },
+    { 
+      id: 'settings', 
+      label: t('sidebar.settings'), 
+      icon: Settings,
+      children: [
+        { section: 'profile', label: t('settings.storeProfile'), icon: Store },
+        { section: 'maker-checker', label: t('settings.makerCheckerConfig'), icon: ShieldCheck },
+        { section: 'hardware', label: t('settings.hardwareBarcode'), icon: QrCode },
+        { section: 'account', label: t('settings.accountProfile'), icon: User },
+        ...(isElectronApp.value ? [{ section: 'updates', label: t('settings.appUpdates'), icon: RefreshCw }] : [])
+      ]
+    },
   ];
 
   return raw.filter(item => {
@@ -272,6 +300,10 @@ const isSubmenuActive = (item: MenuItem, sub: SubMenuItem) => {
   }
   const currentView = route.path.substring(1) || 'dashboard';
   if (!currentView.startsWith(item.id)) return false;
+  if (item.id === 'settings') {
+    const currentSection = (route.query.section as string) || 'profile';
+    return currentSection === (sub.section || 'profile');
+  }
   const currentTab = (route.query.tab as string) || 'statements';
   return currentTab === sub.tab;
 };
@@ -282,6 +314,10 @@ const handleParentClick = (item: MenuItem) => {
     expandedMenus.value[item.id] = true;
     if (item.children && item.children[0]?.path) {
       router.push(item.children[0].path);
+    } else if (item.children && item.children[0]?.section) {
+      router.push({ path: '/' + item.id, query: { section: item.children[0].section } });
+    } else if (item.children && item.children[0]?.tab) {
+      router.push({ path: '/' + item.id, query: { tab: item.children[0].tab } });
     } else {
       router.push('/' + item.id);
     }
@@ -291,6 +327,10 @@ const handleParentClick = (item: MenuItem) => {
   if (!isParentActive(item)) {
     if (item.children && item.children[0]?.path) {
       router.push(item.children[0].path);
+    } else if (item.children && item.children[0]?.section) {
+      router.push({ path: '/' + item.id, query: { section: item.children[0].section } });
+    } else if (item.children && item.children[0]?.tab) {
+      router.push({ path: '/' + item.id, query: { tab: item.children[0].tab } });
     } else {
       router.push('/' + item.id);
     }
@@ -300,6 +340,8 @@ const handleParentClick = (item: MenuItem) => {
 const navigateToSubmenu = (item: MenuItem, sub: SubMenuItem) => {
   if (sub.path) {
     router.push(sub.path);
+  } else if (sub.section) {
+    router.push({ path: '/' + item.id, query: { section: sub.section } });
   } else {
     router.push({ path: '/' + item.id, query: { tab: sub.tab } });
   }

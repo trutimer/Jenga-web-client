@@ -129,7 +129,8 @@
         <div
           v-for="item in filteredNotifications"
           :key="item.recipientId"
-          class="p-3.5 hover:bg-surface-container-low/70 transition-colors flex flex-col gap-2 relative group"
+          @click="handleCardClick(item, $event)"
+          class="p-3.5 hover:bg-surface-container-low/70 transition-colors flex flex-col gap-2 relative group cursor-pointer"
           :class="isItemUnread(item) ? 'bg-primary/5' : 'bg-surface'"
         >
           <!-- Top Row: Icon, Priority Chip, Branch, Time, Unread Dot -->
@@ -192,12 +193,12 @@
 
           <!-- Bottom Row Actions -->
           <div class="pl-9 pr-1 pt-1 flex items-center justify-between text-[11px]">
-            <!-- Action URL (if present) -->
+            <!-- Action URL (if present) OR Maker-Checker Notification -->
             <div>
               <button
-                v-if="item.actionUrl"
-                @click="handleActionNavigate(item)"
-                class="text-primary font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                v-if="item.actionUrl || isMakerCheckerNotification(item)"
+                @click.stop="handleActionNavigate(item)"
+                class="view-details-btn text-primary font-bold hover:underline flex items-center gap-1 cursor-pointer"
               >
                 <span>{{ $t('common.viewDetails') }}</span>
                 <ArrowRight class="w-3 h-3" />
@@ -208,7 +209,7 @@
             <div class="flex items-center gap-3 ml-auto opacity-80 group-hover:opacity-100 transition-opacity">
               <button
                 v-if="isItemUnread(item)"
-                @click="handleMarkRead(item.recipientId)"
+                @click.stop="handleMarkRead(item.recipientId)"
                 class="text-on-surface-variant hover:text-primary flex items-center gap-1 cursor-pointer font-medium"
                 :title="$t('notifications.markReadTooltip')"
               >
@@ -217,7 +218,7 @@
               </button>
 
               <button
-                @click="handleArchive(item.recipientId)"
+                @click.stop="handleArchive(item.recipientId)"
                 class="text-on-surface-variant hover:text-error flex items-center gap-1 cursor-pointer font-medium"
                 :title="$t('common.delete')"
               >
@@ -262,6 +263,7 @@ import {
   Loader2,
   ArrowRight,
   ShieldAlert,
+  ShieldCheck,
   Clock,
   UserCheck,
   Sparkles,
@@ -296,6 +298,56 @@ const isItemUnread = (item: NotificationInboxItem): boolean => {
   if (item.isRead !== undefined) return !item.isRead;
   if ((item as any).read !== undefined) return !(item as any).read;
   return !item.readAt;
+};
+
+const isMakerCheckerNotification = (item?: NotificationInboxItem | null): boolean => {
+  if (!item) return false;
+
+  const typeStr = String(item.type || '').toUpperCase();
+  if (
+    typeStr.includes('MAKER') ||
+    typeStr.includes('CHECKER') ||
+    typeStr.includes('APPROVAL')
+  ) {
+    return true;
+  }
+
+  if (item.metadata && typeof item.metadata === 'object') {
+    const metaStr = JSON.stringify(item.metadata).toUpperCase();
+    if (
+      metaStr.includes('MAKER') ||
+      metaStr.includes('CHECKER') ||
+      metaStr.includes('APPROVAL')
+    ) {
+      return true;
+    }
+  }
+
+  const text = `${item.title || ''} ${item.message || ''}`.toLowerCase();
+  if (
+    text.includes('approval') ||
+    text.includes('maker-checker') ||
+    text.includes('maker checker') ||
+    text.includes('dual-authorization') ||
+    text.includes('dual authorization') ||
+    text.includes('checker decision') ||
+    text.includes('pending authorization')
+  ) {
+    return true;
+  }
+
+  if (item.actionUrl) {
+    const urlLower = item.actionUrl.toLowerCase();
+    if (
+      urlLower.includes('maker-checker') ||
+      urlLower.includes('pending-approvals') ||
+      urlLower.includes('approvals')
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 const filteredNotifications = computed(() => {
@@ -338,6 +390,26 @@ const handleActionNavigate = async (item: NotificationInboxItem) => {
     await markAsRead(item.recipientId);
   }
   isOpen.value = false;
+
+  // If notification is of type maker-checker (approval), redirect user to "Pending Approvals Queue"
+  if (isMakerCheckerNotification(item)) {
+    const currentRoute = router.currentRoute.value;
+    const isAlreadyOnPendingQueue =
+      currentRoute.path === '/settings' &&
+      currentRoute.query.section === 'maker-checker' &&
+      currentRoute.query.tab === 'pending';
+
+    if (isAlreadyOnPendingQueue) {
+      window.dispatchEvent(new CustomEvent('refresh-pending-approvals'));
+    } else {
+      router.push({
+        path: '/settings',
+        query: { section: 'maker-checker', tab: 'pending' }
+      });
+    }
+    return;
+  }
+
   if (item.actionUrl) {
     if (item.actionUrl.startsWith('http://') || item.actionUrl.startsWith('https://')) {
       window.open(item.actionUrl, '_blank');
@@ -347,7 +419,19 @@ const handleActionNavigate = async (item: NotificationInboxItem) => {
   }
 };
 
+const handleCardClick = async (item: NotificationInboxItem, event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  if (target.closest('button:not(.view-details-btn)')) {
+    return;
+  }
+  await handleActionNavigate(item);
+};
+
 const getTypeIcon = (type: NotificationType) => {
+  const typeStr = String(type || '').toUpperCase();
+  if (typeStr.includes('MAKER') || typeStr.includes('CHECKER') || typeStr.includes('APPROVAL')) {
+    return ShieldCheck;
+  }
   switch (type) {
     case 'FRAUD_ALERT':
       return ShieldAlert;
@@ -365,6 +449,10 @@ const getTypeIcon = (type: NotificationType) => {
 };
 
 const getTypeIconClass = (type: NotificationType, priority: NotificationPriority) => {
+  const typeStr = String(type || '').toUpperCase();
+  if (typeStr.includes('MAKER') || typeStr.includes('CHECKER') || typeStr.includes('APPROVAL')) {
+    return 'bg-amber-100 text-amber-800 border border-amber-200/50';
+  }
   if (priority === 'CRITICAL' || type === 'FRAUD_ALERT') {
     return 'bg-error-container/40 text-error';
   }

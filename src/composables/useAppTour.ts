@@ -133,53 +133,13 @@ const DASHBOARD_STEPS: TourStep[] = [
 const SETTINGS_STEPS: TourStep[] = [
   {
     id: 'settings-welcome',
-    target: '[data-tour="settings-nav"]',
+    target: '[data-tour="settings-panel"]',
     titleKey: 'tour.settingsWelcomeTitle',
     descKey: 'tour.settingsWelcomeDesc',
     badgeKey: 'tour.settingsBadge',
-    iconName: 'Sliders',
+    iconName: 'Settings',
     page: 'settings',
-    placement: 'right'
-  },
-  {
-    id: 'settings-profile',
-    target: '[data-tour="settings-profile"]',
-    titleKey: 'tour.settingsProfileTitle',
-    descKey: 'tour.settingsProfileDesc',
-    badgeKey: 'tour.settingsBadge',
-    iconName: 'Store',
-    page: 'settings',
-    placement: 'right'
-  },
-  {
-    id: 'settings-defaults',
-    target: '[data-tour="settings-defaults"]',
-    titleKey: 'tour.settingsDefaultsTitle',
-    descKey: 'tour.settingsDefaultsDesc',
-    badgeKey: 'tour.settingsBadge',
-    iconName: 'Globe',
-    page: 'settings',
-    placement: 'right'
-  },
-  {
-    id: 'settings-finance',
-    target: '[data-tour="settings-finance"]',
-    titleKey: 'tour.settingsFinanceTitle',
-    descKey: 'tour.settingsFinanceDesc',
-    badgeKey: 'tour.settingsBadge',
-    iconName: 'Landmark',
-    page: 'settings',
-    placement: 'right'
-  },
-  {
-    id: 'settings-hardware',
-    target: '[data-tour="settings-hardware"]',
-    titleKey: 'tour.settingsHardwareTitle',
-    descKey: 'tour.settingsHardwareDesc',
-    badgeKey: 'tour.settingsBadge',
-    iconName: 'Printer',
-    page: 'settings',
-    placement: 'right'
+    placement: 'top'
   },
   {
     id: 'settings-finish',

@@ -1,4 +1,5 @@
 import { showToast } from './toastService';
+import { isJwtExpired, handleSessionExpired } from './authSession';
 import {
   isElectron,
   cacheBranchProducts,
@@ -24,7 +25,8 @@ export interface ApiOptions extends RequestInit {
 // Sync Base URL configuration to Electron Main Process background sync worker
 if (isElectron()) {
   try {
-    const token = localStorage.getItem('accessToken') || '';
+    const rawToken = localStorage.getItem('accessToken') || '';
+    const token = !isJwtExpired(rawToken) ? rawToken : '';
     (window as any).ipcRenderer.invoke('sync:set-config', { apiBaseUrl: BASE_URL, token });
   } catch (err) {
     console.error('Failed to configure sync worker:', err);
@@ -40,6 +42,15 @@ export async function apiRequest<T = any>(
 
   if (isElectron()) {
     headers.set('X-Client-Platform', 'desktop-electron');
+  }
+
+  // Pre-flight check: If token exists but is expired, intercept before network request
+  const isAuthEndpoint = endpoint.includes('/api/auth/login') || endpoint.includes('/api/auth/2fa/verify-login');
+  if (token && !isAuthEndpoint && isJwtExpired(token)) {
+    handleSessionExpired();
+    const expErr: any = new Error('Session expired');
+    expErr.status = 401;
+    throw expErr;
   }
 
   if (token) {
@@ -80,31 +91,7 @@ export async function apiRequest<T = any>(
     }
 
 
-    // B. ALWAYS check Local SQLite for Active Shift FIRST when retrieving current shift
-    if (method === 'GET' && (endpoint.includes('/shifts') || endpoint.includes('/cashier-shifts'))) {
-      const cashierId = localStorage.getItem('userId') || localStorage.getItem('cashierId') || '';
-      try {
-        const cachedShift = await (window as any).ipcRenderer.invoke('db:get-active-shift', { branchId, cashierId });
-        if (cachedShift && cachedShift.status === 'OPEN') {
-          // Trigger silent background refresh of shift balances if online
-          if (typeof navigator !== 'undefined' && navigator.onLine) {
-            fetch(`${BASE_URL}${finalEndpoint}`, { headers }).then(r => r.json()).then(async data => {
-              if (data && data.status === 'OPEN') {
-                try {
-                  await (window as any).ipcRenderer.invoke('db:save-shift', { shift: data });
-                } catch (e) {}
-              }
-            }).catch(() => {});
-
-          }
-          return cachedShift as T;
-        }
-      } catch (e) {
-        console.warn('Failed to query local active shift:', e);
-      }
-    }
-
-    // C. Instant 0ms Offline Shortcut for any other endpoint if network is disconnected
+    // B. Instant 0ms Offline Shortcut for any endpoint if network is disconnected
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       return handleOfflineFallback<T>(endpoint, options, branchId, token);
     }
@@ -129,8 +116,9 @@ export async function apiRequest<T = any>(
     if (!response.ok) {
       const errorText = await response.text();
       let errorMessage = errorText;
+      let parsed: any = null;
       try {
-        const parsed = JSON.parse(errorText);
+        parsed = JSON.parse(errorText);
         if (parsed) {
           if (typeof parsed.error === 'string' && parsed.error.trim() !== '' && parsed.error !== 'Bad Request' && parsed.error !== 'Internal Server Error') {
             errorMessage = parsed.error;
@@ -148,10 +136,36 @@ export async function apiRequest<T = any>(
           errorMessage = `Request failed with status ${response.status}`;
         }
       }
+      // Intercept 401 Unauthorized (Expired or invalid token)
+      if (response.status === 401 && !isAuthEndpoint) {
+        handleSessionExpired();
+        const apiErr: any = new Error('Session expired');
+        apiErr.status = 401;
+        apiErr.data = parsed;
+        apiErr.response = parsed;
+        throw apiErr;
+      }
+
+      // Clear local SQLite active shift if server returns 404 on shift check
+      if (response.status === 404 && (endpoint.includes('/shifts') || endpoint.includes('/cashier-shifts'))) {
+        if (isElectron() && branchId) {
+          const cashierId = localStorage.getItem('userId') || localStorage.getItem('cashierId') || '';
+          if (cashierId) {
+            try {
+              (window as any).ipcRenderer?.invoke('db:clear-active-shifts', { branchId, cashierId });
+            } catch (_) {}
+          }
+        }
+      }
+
       if (!options.suppressToast) {
         showToast(errorMessage, 'error');
       }
-      throw new Error(errorMessage);
+      const apiErr: any = new Error(errorMessage);
+      apiErr.status = response.status;
+      apiErr.data = parsed;
+      apiErr.response = parsed;
+      throw apiErr;
     }
 
     if (response.status === 204) {
@@ -162,6 +176,7 @@ export async function apiRequest<T = any>(
 
     // Cache products / customers / active shift in SQLite when online in Electron
     if (isElectron() && branchId) {
+      const cashierId = localStorage.getItem('userId') || localStorage.getItem('cashierId') || '';
       if (method === 'GET') {
         if (endpoint.includes('/products')) {
           const prods = Array.isArray(data) ? data : data?.content || [];
@@ -169,14 +184,18 @@ export async function apiRequest<T = any>(
         } else if (endpoint.includes('/customers')) {
           const custs = Array.isArray(data) ? data : data?.content || [];
           if (custs.length > 0) cacheBranchCustomers(branchId, custs);
-        } else if (endpoint.includes('/shifts/') || endpoint.includes('/cashier-shifts')) {
+        } else if (endpoint.includes('/shifts') || endpoint.includes('/cashier-shifts')) {
           if (data && data.status === 'OPEN') {
             (window as any).ipcRenderer.invoke('db:save-shift', { shift: data });
+          } else if (cashierId) {
+            (window as any).ipcRenderer.invoke('db:clear-active-shifts', { branchId, cashierId });
           }
         }
       } else if (method === 'POST') {
-        if ((endpoint.includes('/shifts/') || endpoint.includes('/cashier-shifts')) && endpoint.includes('open') && data) {
+        if ((endpoint.includes('/shifts') || endpoint.includes('/cashier-shifts')) && endpoint.includes('open') && data && data.status === 'OPEN') {
           (window as any).ipcRenderer.invoke('db:save-shift', { shift: data });
+        } else if ((endpoint.includes('/shifts') || endpoint.includes('/cashier-shifts')) && endpoint.includes('close') && cashierId) {
+          (window as any).ipcRenderer.invoke('db:clear-active-shifts', { branchId, cashierId });
         }
       }
     }

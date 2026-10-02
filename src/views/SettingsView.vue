@@ -20,117 +20,26 @@
       </button>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
-      
-      <!-- Left column sidebar (Category Switcher) -->
-      <div data-tour="settings-nav" class="bg-surface-container-lowest border border-outline-variant shadow-sm rounded-xl p-4 flex flex-col gap-1.5 select-none shrink-0 md:col-span-1">
-        <span class="block text-[11px] font-mono font-bold text-on-surface-variant uppercase tracking-wider mb-2 px-2">{{ $t('settings.storeConfig') }}</span>
+    <div data-tour="settings-panel" class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden flex flex-col w-full">
+      <div class="flex flex-col gap-6 p-6">
         
-        <button 
-          data-tour="settings-profile"
-          type="button"
-          @click="activeSection = 'profile'"
-          class="text-left text-xs px-4 py-3 h-11 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-semibold border-0"
-          :class="activeSection === 'profile' 
-            ? 'bg-primary-container text-on-primary-container font-extrabold translate-x-1' 
-            : 'text-on-surface-variant hover:bg-surface-container bg-transparent'"
-        >
-          <Store class="w-4.5 h-4.5" />
-          <span>{{ $t('settings.storeProfile') }}</span>
-        </button>
-
-        <button 
-          data-tour="settings-defaults"
-          type="button"
-          @click="activeSection = 'defaults'"
-          class="text-left text-xs px-4 py-3 h-11 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-semibold border-0"
-          :class="activeSection === 'defaults' 
-            ? 'bg-primary-container text-on-primary-container font-extrabold translate-x-1' 
-            : 'text-on-surface-variant hover:bg-surface-container bg-transparent'"
-        >
-          <Sliders class="w-4.5 h-4.5" />
-          <span>{{ $t('settings.regionalDefaults') }}</span>
-        </button>
-
-        <button 
-          data-tour="settings-finance"
-          type="button"
-          @click="activeSection = 'finance'"
-          class="text-left text-xs px-4 py-3 h-11 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-semibold border-0"
-          :class="activeSection === 'finance' 
-            ? 'bg-primary-container text-on-primary-container font-extrabold translate-x-1' 
-            : 'text-on-surface-variant hover:bg-surface-container bg-transparent'"
-        >
-          <Landmark class="w-4.5 h-4.5" />
-          <span>{{ $t('settings.financeAccounts') }}</span>
-        </button>
-
-        <button 
-          data-tour="settings-hardware"
-          type="button"
-          @click="activeSection = 'hardware'"
-          class="text-left text-xs px-4 py-3 h-11 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-semibold border-0"
-          :class="activeSection === 'hardware' 
-            ? 'bg-primary-container text-on-primary-container font-extrabold translate-x-1' 
-            : 'text-on-surface-variant hover:bg-surface-container bg-transparent'"
-        >
-          <QrCode class="w-4.5 h-4.5" />
-          <span>{{ $t('settings.hardwareBarcode') }}</span>
-        </button>
-
-        <div class="border-t border-outline-variant/50 my-1"></div>
-
-        <button 
-          type="button"
-          @click="activeSection = 'account'"
-          class="text-left text-xs px-4 py-3 h-11 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-semibold border-0"
-          :class="activeSection === 'account' 
-            ? 'bg-primary-container text-on-primary-container font-extrabold translate-x-1' 
-            : 'text-on-surface-variant hover:bg-surface-container bg-transparent'"
-        >
-          <User class="w-4.5 h-4.5" />
-          <span>{{ $t('settings.accountProfile') }}</span>
-        </button>
-
-        <div v-if="isElectronApp" class="border-t border-outline-variant/50 my-1"></div>
-
-        <button 
-          v-if="isElectronApp"
-          type="button"
-          @click="activeSection = 'updates'"
-          class="text-left text-xs px-4 py-3 h-11 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-semibold border-0"
-          :class="activeSection === 'updates' 
-            ? 'bg-primary-container text-on-primary-container font-extrabold translate-x-1' 
-            : 'text-on-surface-variant hover:bg-surface-container bg-transparent'"
-        >
-          <RefreshCw class="w-4.5 h-4.5" />
-          <span>{{ $t('settings.appUpdates') }}</span>
-        </button>
-      </div>
-
-      <!-- Right column Form Panel (3 columns) -->
-      <div class="md:col-span-3 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden flex flex-col">
-        <div class="flex flex-col gap-6 p-6">
-          
-          <!-- Header titles of section -->
-          <div class="pb-4 border-b border-outline-variant/60">
-            <h3 class="text-lg font-bold text-on-surface uppercase tracking-tight">
-              <span v-if="activeSection === 'profile'">{{ $t('settings.storeProfile') }}</span>
-              <span v-else-if="activeSection === 'defaults'">{{ $t('settings.regionalDefaults') }}</span>
-              <span v-else-if="activeSection === 'finance'">{{ $t('settings.financeAccounts') }}</span>
-              <span v-else-if="activeSection === 'hardware'">{{ $t('settings.hardwareBarcode') }}</span>
-              <span v-else-if="activeSection === 'account'">{{ $t('settings.accountProfile') }}</span>
-              <span v-else-if="activeSection === 'updates'">{{ $t('settings.appUpdates') }}</span>
-            </h3>
-            <p class="text-xs text-on-surface-variant font-semibold mt-1">
-              <span v-if="activeSection === 'profile'">{{ $t('settings.storeProfileDesc') }}</span>
-              <span v-else-if="activeSection === 'defaults'">{{ $t('settings.regionalDefaultsDesc') }}</span>
-              <span v-else-if="activeSection === 'finance'">{{ $t('settings.financeGlDesc') }}</span>
-              <span v-else-if="activeSection === 'hardware'">{{ $t('settings.hardwareDesc') }}</span>
-              <span v-else-if="activeSection === 'account'">{{ $t('settings.accountProfileDesc') }}</span>
-              <span v-else-if="activeSection === 'updates'">{{ $t('settings.appUpdatesDesc') }}</span>
-            </p>
-          </div>
+        <!-- Header titles of section -->
+        <div class="pb-4 border-b border-outline-variant/60">
+          <h3 class="text-lg font-bold text-on-surface uppercase tracking-tight">
+            <span v-if="activeSection === 'profile'">{{ $t('settings.storeProfile') }}</span>
+            <span v-else-if="activeSection === 'maker-checker'">{{ $t('settings.makerCheckerConfig') }}</span>
+            <span v-else-if="activeSection === 'hardware'">{{ $t('settings.hardwareBarcode') }}</span>
+            <span v-else-if="activeSection === 'account'">{{ $t('settings.accountProfile') }}</span>
+            <span v-else-if="activeSection === 'updates'">{{ $t('settings.appUpdates') }}</span>
+          </h3>
+          <p class="text-xs text-on-surface-variant font-semibold mt-1">
+            <span v-if="activeSection === 'profile'">{{ $t('settings.storeProfileDesc') }}</span>
+            <span v-else-if="activeSection === 'maker-checker'">{{ $t('settings.makerCheckerDesc') }}</span>
+            <span v-else-if="activeSection === 'hardware'">{{ $t('settings.hardwareDesc') }}</span>
+            <span v-else-if="activeSection === 'account'">{{ $t('settings.accountProfileDesc') }}</span>
+            <span v-else-if="activeSection === 'updates'">{{ $t('settings.appUpdatesDesc') }}</span>
+          </p>
+        </div>
 
           <!-- SECTION 1: PROFILE SETUP -->
           <div v-if="activeSection === 'profile'" class="space-y-4">
@@ -212,199 +121,390 @@
             </div>
           </div>
 
-          <!-- SECTION 2: GLOBAL DEFAULT VARIABLES -->
-          <div v-else-if="activeSection === 'defaults'" class="space-y-6">
-            <!-- Language Selector Card -->
-            <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1">
-                <Globe class="w-3.5 h-3.5 text-primary" />
-                <span>{{ $t('settings.languageLabel') }}</span>
-              </label>
-              <div class="p-4 bg-surface-container border border-outline-variant rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h5 class="text-xs font-bold text-on-surface">{{ $t('settings.selectLanguage') }}</h5>
-                  <p class="text-[11px] text-on-surface-variant font-medium mt-0.5">{{ $t('settings.languageDesc') }}</p>
-                </div>
-                <LanguageSelector variant="buttons" />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- Select Base Currency -->
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1">
-                  <Coins class="w-3.5 h-3.5 text-primary" />
-                  <span>{{ $t('settings.baseCurrency') }}</span>
-                </label>
-                <select 
-                  v-model="storeCurrency"
-                  class="w-full bg-surface-container border border-outline-variant text-sm font-semibold rounded-lg px-3.5 py-3 cursor-pointer outline-none focus:ring-1 focus:ring-primary text-on-surface"
-                >
-                  <option value="TZS">{{ $t('settings.tzsOption') }}</option>
-                  <option value="USD">{{ $t('settings.usdOption') }}</option>
-                  <option value="EUR">{{ $t('settings.eurOption') }}</option>
-                </select>
-              </div>
-
-              <!-- Store timezone dropdown -->
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1">
-                  <Globe class="w-3.5 h-3.5 text-primary" />
-                  <span>{{ $t('settings.timezone') }}</span>
-                </label>
-                <select 
-                  v-model="storeTimezone"
-                  class="w-full bg-surface-container border border-outline-variant text-sm font-semibold rounded-lg px-3.5 py-3 cursor-pointer outline-none focus:ring-1 focus:ring-primary text-on-surface"
-                >
-                  <option value="Africa/Nairobi">Africa / Nairobi (UTC+3 - East African Time)</option>
-                  <option value="UTC">UTC / Coordinated Universal Time</option>
-                  <option value="Europe/London">Europe / London</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- SECTION 3: FINANCE & ACCOUNTS CONFIGURATION -->
-          <div v-else-if="activeSection === 'finance'" class="space-y-6">
+          <!-- SECTION 2: MAKER-CHECKER (DUAL-AUTHORIZATION) CONFIGURATION -->
+          <div v-else-if="activeSection === 'maker-checker'" class="space-y-6">
             
-            <!-- COGS Perpetual Accounting Toggle Card -->
-            <div class="p-6 bg-surface-container-low border border-outline-variant rounded-2xl space-y-5">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-outline-variant/60">
-                <div class="flex items-start sm:items-center gap-3.5">
-                  <div class="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-                    <Calculator class="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-2.5 flex-wrap">
-                      <h4 class="text-base font-bold text-on-surface">{{ $t('settings.cogsAutomation') }}</h4>
-                      <span 
-                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20"
-                      >
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        {{ $t('settings.perpetualInventory') }} (Active Standard)
-                      </span>
+            <!-- Sub-tab switcher: Policies vs Pending Approvals -->
+            <div class="flex items-center gap-3 border-b border-outline-variant/60 pb-3">
+              <button
+                type="button"
+                @click="makerCheckerTab = 'policies'"
+                class="px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border-0 flex items-center gap-2"
+                :class="makerCheckerTab === 'policies'
+                  ? 'bg-primary text-on-primary shadow-xs'
+                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'"
+              >
+                <ShieldCheck class="w-4 h-4" />
+                <span>{{ $t('settings.activePoliciesTab') }}</span>
+                <span
+                  class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold"
+                  :class="makerCheckerTab === 'policies' ? 'bg-white/20 text-white' : 'bg-surface-container-highest text-on-surface-variant'"
+                >
+                  {{ makerCheckerPolicies.filter(p => p.isEnabled).length }} active
+                </span>
+              </button>
+
+              <button
+                type="button"
+                @click="makerCheckerTab = 'pending'"
+                class="px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border-0 flex items-center gap-2"
+                :class="makerCheckerTab === 'pending'
+                  ? 'bg-primary text-on-primary shadow-xs'
+                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'"
+              >
+                <Clock class="w-4 h-4" />
+                <span>{{ $t('settings.pendingApprovalsTab') }}</span>
+                <span
+                  v-if="pendingApprovals.length > 0"
+                  class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500 text-white animate-pulse"
+                >
+                  {{ pendingApprovals.length }}
+                </span>
+              </button>
+            </div>
+
+            <!-- TAB 1: POLICIES CONFIGURATION -->
+            <div v-if="makerCheckerTab === 'policies'" class="space-y-5">
+              <!-- Banner Card -->
+              <div class="p-4 bg-surface-container-low border border-outline-variant/70 rounded-2xl flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 mt-0.5">
+                  <ShieldCheck class="w-5 h-5" />
+                </div>
+                <div class="text-xs text-on-surface-variant leading-relaxed">
+                  <h4 class="text-sm font-bold text-on-surface">{{ $t('settings.makerCheckerPoliciesTitle') }}</h4>
+                  <p class="mt-0.5">
+                    Configure dual-authorization policies across sensitive business operations. When enabled, transactions exceeding the minimum threshold require secondary review and authorization by an authorized checker before taking effect.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Loading spinner -->
+              <div v-if="isLoadingPolicies" class="py-12 flex flex-col items-center justify-center gap-2">
+                <Loader2 class="w-8 h-8 animate-spin text-primary" />
+                <span class="text-xs text-on-surface-variant font-medium">Loading approval policies...</span>
+              </div>
+
+              <!-- Policies Grid -->
+              <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div
+                  v-for="policy in makerCheckerPolicies"
+                  :key="policy.actionType"
+                  class="p-5 rounded-2xl border transition-all flex flex-col justify-between space-y-4"
+                  :class="policy.isEnabled 
+                    ? 'bg-surface-container-lowest border-primary/30 ring-1 ring-primary/20 shadow-xs' 
+                    : 'bg-surface-container-low border-outline-variant/60 opacity-80'"
+                >
+                  <!-- Card Top Header -->
+                  <div class="space-y-2">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="flex items-center gap-3">
+                        <div 
+                          class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
+                          :class="policy.isEnabled ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-container-highest border-outline-variant text-on-surface-variant'"
+                        >
+                          <ShoppingCart v-if="policy.actionType === 'PURCHASE_ORDER'" class="w-5 h-5" />
+                          <RotateCcw v-else-if="policy.actionType === 'PURCHASE_RETURN'" class="w-5 h-5" />
+                          <RefreshCw v-else-if="policy.actionType === 'SALE_REVERSAL'" class="w-5 h-5" />
+                          <Coins v-else-if="policy.actionType === 'CREDIT_SALE'" class="w-5 h-5" />
+                          <Landmark v-else-if="policy.actionType === 'EXPENSE_PAYOUT'" class="w-5 h-5" />
+                          <Sliders v-else class="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 class="text-sm font-bold text-on-surface leading-tight">{{ getActionLabel(policy.actionType) }}</h4>
+                          <span class="text-[10px] font-mono uppercase tracking-wider text-on-surface-variant font-semibold">
+                            {{ policy.actionType }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Enforce Toggle Switch -->
+                      <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          v-model="policy.isEnabled"
+                          class="sr-only peer"
+                        />
+                        <div class="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
                     </div>
-                    <p class="text-xs text-on-surface-variant font-medium mt-0.5">
-                      All checkout sales across Jenga automatically record real-time inventory cost deductions and accurate gross margins into the General Ledger.
+
+                    <p class="text-xs text-on-surface-variant font-medium leading-relaxed">
+                      {{ getActionDesc(policy.actionType) }}
                     </p>
                   </div>
-                </div>
 
-                <!-- Permanent Active Status Badge -->
-                <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                  <span class="text-xs font-semibold text-emerald-700 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
-                    <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600" />
-                    Always Enabled
-                  </span>
-                </div>
-              </div>
-
-              <!-- Accounting Method Comparison & Implications -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                <!-- Option 1: When ON (Perpetual Inventory) -->
-                <div 
-                  class="p-4 rounded-xl border transition-all space-y-3"
-                  :class="enablePerpetualCogs 
-                    ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/20' 
-                    : 'bg-surface-container-lowest border-outline-variant/60 opacity-70'"
-                >
-                  <div class="flex items-center justify-between">
-                    <span class="font-bold text-xs flex items-center gap-1.5" :class="enablePerpetualCogs ? 'text-primary' : 'text-on-surface'">
-                      <CheckCircle2 v-if="enablePerpetualCogs" class="w-4 h-4 text-primary" />
-                      <span>{{ $t('settings.cogsOptionOn') }}</span>
-                    </span>
-                    <span class="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-primary/10 text-primary">
-                      {{ $t('settings.perpetualMethod') }}
-                    </span>
-                  </div>
-
-                  <p class="text-xs text-on-surface-variant font-medium leading-relaxed">
-                    {{ $t('settings.cogsOnDesc') }}
-                  </p>
-
-                  <div class="space-y-1.5 font-mono text-[11px] bg-surface-container-lowest/80 p-3 rounded-lg border border-outline-variant/40">
-                    <div class="text-emerald-700 flex justify-between">
-                      <span>{{ $t('settings.drCashBank') }}</span>
-                      <span>{{ $t('settings.sellingPriceLabel') }}</span>
+                  <!-- Policy Config Fields -->
+                  <div class="space-y-3 pt-3 border-t border-outline-variant/40 text-xs">
+                    <!-- Min Amount Threshold -->
+                    <div class="space-y-1">
+                      <div class="flex items-center justify-between">
+                        <label class="font-bold text-on-surface">{{ $t('settings.minAmountThreshold', { currency: storeCurrency }) }}</label>
+                        <span class="text-[10px] font-mono text-on-surface-variant">0 = All amounts</span>
+                      </div>
+                      <div class="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          step="1000"
+                          v-model.number="policy.minAmountThreshold"
+                          placeholder="0"
+                          class="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary outline-none font-mono font-bold text-on-surface"
+                        />
+                      </div>
                     </div>
-                    <div class="text-emerald-700 flex justify-between pl-4">
-                      <span>{{ $t('settings.crSalesRevenue') }}</span>
-                      <span>{{ $t('settings.sellingPriceLabel') }}</span>
-                    </div>
-                    <div class="border-t border-outline-variant/30 my-1"></div>
-                    <div class="text-indigo-700 flex justify-between">
-                      <span>{{ $t('settings.drCogs') }}</span>
-                      <span>{{ $t('settings.costPriceQtyLabel') }}</span>
-                    </div>
-                    <div class="text-indigo-700 flex justify-between pl-4">
-                      <span>{{ $t('settings.crStockOnHand') }}</span>
-                      <span>{{ $t('settings.costPriceQtyLabel') }}</span>
-                    </div>
-                  </div>
 
-                  <ul class="text-[11px] text-on-surface-variant space-y-1 list-disc list-inside font-medium">
-                    <li>{{ $t('settings.cogsRealtimeProfit') }}</li>
-                    <li>{{ $t('settings.cogsContinuousAsset') }}</li>
-                    <li>{{ $t('settings.cogsRequirement') }}</li>
-                  </ul>
-                </div>
-
-                <!-- Option 2: When OFF (Periodic Inventory) -->
-                <div 
-                  class="p-4 rounded-xl border transition-all space-y-3"
-                  :class="!enablePerpetualCogs 
-                    ? 'bg-amber-500/5 border-amber-500/30 ring-1 ring-amber-500/20' 
-                    : 'bg-surface-container-lowest border-outline-variant/60 opacity-70'"
-                >
-                  <div class="flex items-center justify-between">
-                    <span class="font-bold text-xs flex items-center gap-1.5" :class="!enablePerpetualCogs ? 'text-amber-800' : 'text-on-surface'">
-                      <CheckCircle2 v-if="!enablePerpetualCogs" class="w-4 h-4 text-amber-600" />
-                      <span>{{ $t('settings.cogsOptionOff') }}</span>
-                    </span>
-                    <span class="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-amber-500/10 text-amber-700">
-                      {{ $t('settings.periodicMethod') }}
-                    </span>
-                  </div>
-
-                  <p class="text-xs text-on-surface-variant font-medium leading-relaxed">
-                    {{ $t('settings.cogsOffDesc') }}
-                  </p>
-
-                  <div class="space-y-1.5 font-mono text-[11px] bg-surface-container-lowest/80 p-3 rounded-lg border border-outline-variant/40">
-                    <div class="text-emerald-700 flex justify-between">
-                      <span>{{ $t('settings.drCashBank') }}</span>
-                      <span>{{ $t('settings.sellingPriceLabel') }}</span>
+                    <!-- Allowed Checker Role -->
+                    <div class="space-y-1">
+                      <label class="font-bold text-on-surface block">{{ $t('settings.allowedCheckerRole') }}</label>
+                      <select
+                        v-model="policy.allowedCheckerRole"
+                        class="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary outline-none font-semibold text-on-surface"
+                      >
+                        <option value="ADMIN">Store Administrator (or higher)</option>
+                        <option value="MANAGER">Store Manager (or higher)</option>
+                        <option value="SUPER_ADMIN">Store Owner / Super Admin only</option>
+                      </select>
                     </div>
-                    <div class="text-emerald-700 flex justify-between pl-4">
-                      <span>{{ $t('settings.crSalesRevenue') }}</span>
-                      <span>{{ $t('settings.sellingPriceLabel') }}</span>
-                    </div>
-                    <div class="border-t border-outline-variant/30 my-1"></div>
-                    <div class="text-on-surface-variant italic flex justify-between">
-                      <span>{{ $t('settings.noCogsEntry') }}</span>
-                      <span>(-)</span>
+
+                    <!-- Distinct Checker & Owner Bypass Checkboxes -->
+                    <div class="space-y-2 pt-1">
+                      <label class="flex items-start gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          v-model="policy.enforceDistinctChecker"
+                          class="rounded border-outline-variant text-primary focus:ring-primary/30 mt-0.5"
+                        />
+                        <div>
+                          <span class="font-bold text-on-surface block text-[11px]">{{ $t('settings.distinctChecker') }}</span>
+                          <span class="text-[10px] text-on-surface-variant font-medium leading-tight block">{{ $t('settings.distinctCheckerDesc') }}</span>
+                        </div>
+                      </label>
+
+                      <label class="flex items-start gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          v-model="policy.allowOwnerSelfApproval"
+                          class="rounded border-outline-variant text-primary focus:ring-primary/30 mt-0.5"
+                        />
+                        <div>
+                          <span class="font-bold text-on-surface block text-[11px]">{{ $t('settings.ownerSelfApproval') }}</span>
+                          <span class="text-[10px] text-on-surface-variant font-medium leading-tight block">{{ $t('settings.ownerSelfApprovalDesc') }}</span>
+                        </div>
+                      </label>
                     </div>
                   </div>
 
-                  <ul class="text-[11px] text-on-surface-variant space-y-1 list-disc list-inside font-medium">
-                    <li>{{ $t('settings.cogsSimplerCheckout') }}</li>
-                    <li>{{ $t('settings.cogsPeriodicAdjustment') }}</li>
-                    <li>{{ $t('settings.cogsRecommendedFor') }}</li>
-                  </ul>
-                </div>
-
-              </div>
-
-              <!-- Important Note Banner -->
-              <div class="p-3.5 bg-surface-container rounded-xl border border-outline-variant/70 flex items-start gap-3">
-                <Info class="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <div class="text-xs text-on-surface-variant leading-relaxed">
-                  <span class="font-bold text-on-surface">{{ $t('settings.storePolicyNote') }}</span>
-                  {{ $t('settings.storePolicyDesc') }}
+                  <!-- Save Policy Action -->
+                  <div class="pt-2 flex justify-end">
+                    <button
+                      type="button"
+                      @click="handleSavePolicy(policy)"
+                      :disabled="savingPolicyAction === policy.actionType"
+                      class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border-0 shadow-xs"
+                      :class="policy.isEnabled 
+                        ? 'bg-primary text-on-primary hover:bg-primary/90' 
+                        : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'"
+                    >
+                      <Loader2 v-if="savingPolicyAction === policy.actionType" class="w-3.5 h-3.5 animate-spin" />
+                      <Save v-else class="w-3.5 h-3.5" />
+                      <span>Save Policy</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
+
+            <!-- TAB 2: PENDING APPROVALS QUEUE -->
+            <div v-else class="space-y-4">
+              <!-- Refresh & Status Header -->
+              <div class="flex items-center justify-between">
+                <div class="text-xs text-on-surface-variant font-medium">
+                  Review and action pending authorization requests across your store.
+                </div>
+                <button
+                  type="button"
+                  @click="fetchPendingApprovals"
+                  :disabled="isLoadingPending"
+                  class="px-3 py-1.5 rounded-lg text-xs font-bold bg-surface-container hover:bg-surface-container-high text-on-surface transition-all flex items-center gap-1.5 cursor-pointer border-0"
+                >
+                  <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isLoadingPending }" />
+                  <span>Refresh</span>
+                </button>
+              </div>
+
+              <!-- Loading state -->
+              <div v-if="isLoadingPending" class="py-12 flex flex-col items-center justify-center gap-2">
+                <Loader2 class="w-8 h-8 animate-spin text-primary" />
+                <span class="text-xs text-on-surface-variant font-medium">Loading pending requests...</span>
+              </div>
+
+              <!-- Empty state -->
+              <div
+                v-else-if="pendingApprovals.length === 0"
+                class="py-16 px-4 bg-surface-container-low rounded-2xl border border-dashed border-outline-variant/70 text-center flex flex-col items-center justify-center gap-3"
+              >
+                <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center">
+                  <ShieldCheck class="w-7 h-7" />
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-on-surface">{{ $t('settings.noPendingRequests') }}</h4>
+                  <p class="text-xs text-on-surface-variant max-w-sm mt-1">
+                    All maker-checker requests have been processed or none are currently pending authorization.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Pending Requests Cards -->
+              <div v-else class="space-y-3">
+                <div
+                  v-for="req in pendingApprovals"
+                  :key="req.id"
+                  class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/70 hover:border-outline-variant transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                >
+                  <div class="space-y-1.5 min-w-0 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20">
+                        {{ req.actionType }}
+                      </span>
+                      <span class="font-mono text-xs font-bold text-primary">
+                        {{ req.requestNumber }}
+                      </span>
+                      <span v-if="req.branchName" class="text-[11px] text-on-surface-variant font-medium">
+                        • {{ req.branchName }}
+                      </span>
+                      <span class="text-[11px] text-on-surface-variant font-medium">
+                        • {{ formatDateTime(req.createdAt) }}
+                      </span>
+                    </div>
+
+                    <h5 class="text-sm font-bold text-on-surface truncate">{{ req.title }}</h5>
+                    
+                    <p v-if="req.description" class="text-xs text-on-surface-variant font-medium line-clamp-2">
+                      {{ req.description }}
+                    </p>
+
+                    <div class="flex items-center gap-4 text-xs pt-1 text-on-surface-variant">
+                      <span v-if="req.amount != null" class="font-bold text-primary font-mono">
+                        Amount: {{ formatCurrency(req.amount) }}
+                      </span>
+                      <span v-if="req.makerName">
+                        Requested by: <strong class="text-on-surface">{{ req.makerName }}</strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Action Buttons -->
+                  <div class="flex items-center gap-2 shrink-0 self-end md:self-center">
+                    <!-- View details link if PO -->
+                    <router-link
+                      v-if="req.actionType === 'PURCHASE_ORDER' && req.entityId"
+                      :to="`/purchases/orders/${req.entityId}`"
+                      class="px-3 py-2 rounded-lg text-xs font-bold bg-surface-container-high hover:bg-surface-container-highest text-on-surface transition-colors flex items-center gap-1.5 no-underline border border-outline-variant/40"
+                    >
+                      <ExternalLink class="w-3.5 h-3.5" />
+                      <span>View PO</span>
+                    </router-link>
+
+                    <button
+                      type="button"
+                      @click="openDecisionModal(req, 'reject')"
+                      class="px-3.5 py-2 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 border border-rose-500/20 transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <X class="w-3.5 h-3.5" />
+                      <span>Reject</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      @click="openDecisionModal(req, 'approve')"
+                      class="px-3.5 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors flex items-center gap-1.5 cursor-pointer border-0 shadow-xs"
+                    >
+                      <CheckCircle2 class="w-3.5 h-3.5" />
+                      <span>Approve</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Decision Modal (Approve / Reject) -->
+            <Modal
+              :is-open="showDecisionModal"
+              :on-close="() => { showDecisionModal = false; }"
+              :title="decisionType === 'approve' ? 'Approve Authorization Request' : 'Reject Authorization Request'"
+              :subtitle="activeRequest ? `${activeRequest.requestNumber} • ${activeRequest.title}` : ''"
+              max-width="max-w-md"
+            >
+              <div class="space-y-4">
+                <div v-if="activeRequest" class="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/60 text-xs space-y-1.5">
+                  <div class="flex justify-between">
+                    <span class="text-on-surface-variant font-medium">Action:</span>
+                    <span class="font-bold text-on-surface">{{ getActionLabel(activeRequest.actionType) }}</span>
+                  </div>
+                  <div v-if="activeRequest.amount != null" class="flex justify-between">
+                    <span class="text-on-surface-variant font-medium">Amount:</span>
+                    <span class="font-bold text-primary">{{ formatCurrency(activeRequest.amount) }}</span>
+                  </div>
+                  <div v-if="activeRequest.makerName" class="flex justify-between">
+                    <span class="text-on-surface-variant font-medium">Requested By:</span>
+                    <span class="font-bold text-on-surface">{{ activeRequest.makerName }}</span>
+                  </div>
+                  <div v-if="activeRequest.description" class="pt-1 text-[11px] text-on-surface-variant border-t border-outline-variant/40">
+                    {{ activeRequest.description }}
+                  </div>
+                </div>
+
+                <!-- Rejection Reason (Required) -->
+                <div v-if="decisionType === 'reject'" class="space-y-1.5">
+                  <label class="text-xs font-bold text-error block">
+                    Rejection Reason <span class="text-error">*</span>
+                  </label>
+                  <textarea
+                    v-model="decisionNotes"
+                    rows="3"
+                    class="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-outline-variant focus:border-error focus:ring-1 focus:ring-error outline-none text-on-surface resize-none"
+                    placeholder="Explain why this request is being rejected..."
+                  ></textarea>
+                </div>
+
+                <!-- Approval Notes (Optional) -->
+                <div v-else class="space-y-1.5">
+                  <label class="text-xs font-bold text-on-surface block">
+                    Approval Notes <span class="text-on-surface-variant font-normal">(Optional)</span>
+                  </label>
+                  <textarea
+                    v-model="decisionNotes"
+                    rows="3"
+                    class="w-full px-3 py-2 text-xs rounded-xl bg-surface border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary outline-none text-on-surface resize-none"
+                    placeholder="Add authorization comments, verification references..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <template #footer>
+                <button
+                  type="button"
+                  @click="showDecisionModal = false"
+                  class="px-4 py-2 text-xs font-bold text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors cursor-pointer border-0"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  @click="submitDecision"
+                  :disabled="isSubmittingDecision"
+                  class="px-5 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer border-0 disabled:opacity-50"
+                  :class="decisionType === 'approve'
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    : 'bg-rose-600 hover:bg-rose-700 text-white'"
+                >
+                  <Loader2 v-if="isSubmittingDecision" class="w-3.5 h-3.5 animate-spin" />
+                  <CheckCircle2 v-else-if="decisionType === 'approve'" class="w-3.5 h-3.5" />
+                  <ShieldAlert v-else class="w-3.5 h-3.5" />
+                  <span>{{ decisionType === 'approve' ? 'Confirm Approval' : 'Confirm Rejection' }}</span>
+                </button>
+              </template>
+            </Modal>
 
           </div>
 
@@ -1380,7 +1480,7 @@
           </div>
 
           <!-- Form actions footer -->
-          <div v-if="activeSection !== 'hardware' && activeSection !== 'account' && activeSection !== 'updates'" class="flex justify-end gap-3.5 pt-6 border-t border-outline-variant mt-2">
+          <div v-if="activeSection !== 'hardware' && activeSection !== 'account' && activeSection !== 'updates' && activeSection !== 'maker-checker'" class="flex justify-end gap-3.5 pt-6 border-t border-outline-variant mt-2">
             <button 
               type="button"
               @click="handleSave"
@@ -1394,12 +1494,11 @@
         </div>
       </div>
 
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAppTour } from '../composables/useAppTour';
 import { api } from '../services/api';
@@ -1447,8 +1546,14 @@ import {
   RefreshCw,
   Sparkles,
   ArrowDownCircle,
-  Laptop
+  Laptop,
+  ShoppingCart,
+  RotateCcw,
+  ExternalLink,
+  X
 } from 'lucide-vue-next';
+import { makerCheckerService } from '../services/makerCheckerService';
+import type { StoreApprovalPolicy, MakerCheckerRequest, MakerCheckerAction, UserRole } from '../models/types';
 
 const router = useRouter();
 const route = useRoute();
@@ -1457,8 +1562,24 @@ const vm = useAppViewModel();
 const { userRole, userId, activeBranchId } = vm;
 
 const isElectronApp = ref(typeof window !== 'undefined' && (window as any).ipcRenderer !== undefined);
-const activeSection = ref<'profile' | 'defaults' | 'finance' | 'hardware' | 'account' | 'updates'>('profile');
+const activeSection = ref<'profile' | 'maker-checker' | 'hardware' | 'account' | 'updates'>('profile');
+const makerCheckerTab = ref<'policies' | 'pending'>('policies');
 const appVersion = ref(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '2.6.0');
+
+const syncSectionFromRoute = () => {
+  const sec = route.query.section as string;
+  if (sec && ['profile', 'maker-checker', 'hardware', 'account', 'updates'].includes(sec)) {
+    activeSection.value = sec as any;
+  }
+  const tab = route.query.tab as string;
+  if (tab === 'pending' || tab === 'policies') {
+    makerCheckerTab.value = tab;
+  }
+};
+
+watch(() => [route.query.section, route.query.tab], () => {
+  syncSectionFromRoute();
+}, { immediate: true });
 
 // Desktop Updates state
 const updateInfo = ref<{
@@ -1913,18 +2034,215 @@ onMounted(async () => {
       }
     } catch (_) {}
   }
+
+  syncSectionFromRoute();
+  fetchMakerCheckerPolicies();
+  fetchPendingApprovals();
+  window.addEventListener('refresh-pending-approvals', fetchPendingApprovals);
 });
 
 onUnmounted(() => {
+  window.removeEventListener('refresh-pending-approvals', fetchPendingApprovals);
   if (isElectronApp.value && (window as any).ipcRenderer?.off) {
     (window as any).ipcRenderer.off('updater:status-changed', onUpdateStatusChanged);
   }
 });
 
+// ==========================================
+// MAKER-CHECKER (DUAL-AUTHORIZATION) STATE
+// ==========================================
+const ALL_MAKER_CHECKER_ACTIONS: MakerCheckerAction[] = [
+  'PURCHASE_ORDER',
+  'PURCHASE_RETURN',
+  'SALE_REVERSAL',
+  'CREDIT_SALE',
+  'EXPENSE_PAYOUT',
+  'STOCK_ADJUSTMENT'
+];
+
+const makerCheckerPolicies = ref<StoreApprovalPolicy[]>([]);
+const pendingApprovals = ref<MakerCheckerRequest[]>([]);
+const isLoadingPolicies = ref(false);
+const isLoadingPending = ref(false);
+const savingPolicyAction = ref<string | null>(null);
+
+// Decision modal state
+const showDecisionModal = ref(false);
+const decisionType = ref<'approve' | 'reject'>('approve');
+const activeRequest = ref<MakerCheckerRequest | null>(null);
+const decisionNotes = ref('');
+const isSubmittingDecision = ref(false);
+
+const getActionLabel = (action: MakerCheckerAction): string => {
+  switch (action) {
+    case 'PURCHASE_ORDER': return t('settings.actionPurchaseOrder');
+    case 'PURCHASE_RETURN': return t('settings.actionPurchaseReturn');
+    case 'SALE_REVERSAL': return t('settings.actionSaleReversal');
+    case 'CREDIT_SALE': return t('settings.actionCreditSale');
+    case 'EXPENSE_PAYOUT': return t('settings.actionExpensePayout');
+    case 'STOCK_ADJUSTMENT': return t('settings.actionStockAdjustment');
+    default: return action;
+  }
+};
+
+const getActionDesc = (action: MakerCheckerAction): string => {
+  switch (action) {
+    case 'PURCHASE_ORDER': return t('settings.actionPurchaseOrderDesc');
+    case 'PURCHASE_RETURN': return t('settings.actionPurchaseReturnDesc');
+    case 'SALE_REVERSAL': return t('settings.actionSaleReversalDesc');
+    case 'CREDIT_SALE': return t('settings.actionCreditSaleDesc');
+    case 'EXPENSE_PAYOUT': return t('settings.actionExpensePayoutDesc');
+    case 'STOCK_ADJUSTMENT': return t('settings.actionStockAdjustmentDesc');
+    default: return '';
+  }
+};
+
+const formatCurrency = (amount?: number): string => {
+  if (amount == null) return `${storeCurrency.value || 'TZS'} 0`;
+  return `${storeCurrency.value || 'TZS'} ${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+};
+
+const formatDateTime = (dateStr?: string): string => {
+  if (!dateStr) return '—';
+  try {
+    return new Date(dateStr).toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return dateStr;
+  }
+};
+
+const fetchMakerCheckerPolicies = async () => {
+  isLoadingPolicies.value = true;
+  try {
+    const list = await makerCheckerService.getPolicies();
+    console.log('[MakerChecker] Successfully fetched policies from DB:', list);
+    const policyMap = new Map<MakerCheckerAction, StoreApprovalPolicy>();
+    (list || []).forEach(p => {
+      const isEnabled = (p as any).enabled ?? p.isEnabled ?? false;
+      const enforceDistinct = (p as any).enforceDistinctChecker ?? (p as any).distinctChecker ?? true;
+      const allowOwner = (p as any).allowOwnerSelfApproval ?? (p as any).ownerSelfApproval ?? false;
+      policyMap.set(p.actionType, {
+        ...p,
+        isEnabled,
+        enforceDistinctChecker: enforceDistinct,
+        allowOwnerSelfApproval: allowOwner
+      });
+    });
+
+    makerCheckerPolicies.value = ALL_MAKER_CHECKER_ACTIONS.map(action => {
+      const existing = policyMap.get(action);
+      if (existing) {
+        return { ...existing };
+      }
+      return {
+        actionType: action,
+        isEnabled: false,
+        minAmountThreshold: 0,
+        allowedCheckerRole: 'ADMIN' as UserRole,
+        enforceDistinctChecker: true,
+        allowOwnerSelfApproval: false
+      };
+    });
+  } catch (err: any) {
+    console.error('Failed to load maker-checker policies from DB:', err);
+    showToast(err.message || 'Failed to load approval policies', 'error');
+  } finally {
+    isLoadingPolicies.value = false;
+  }
+};
+
+const fetchPendingApprovals = async () => {
+  isLoadingPending.value = true;
+  try {
+    const reqs = await makerCheckerService.getPendingRequests(activeBranchId?.value || undefined);
+    pendingApprovals.value = reqs || [];
+  } catch (err: any) {
+    console.error('Failed to load pending requests from DB:', err);
+  } finally {
+    isLoadingPending.value = false;
+  }
+};
+
+const handleSavePolicy = async (policy: StoreApprovalPolicy) => {
+  savingPolicyAction.value = policy.actionType;
+  try {
+    const payload = {
+      isEnabled: policy.isEnabled,
+      enabled: policy.isEnabled,
+      minAmountThreshold: Number(policy.minAmountThreshold) || 0,
+      allowedCheckerRole: policy.allowedCheckerRole,
+      enforceDistinctChecker: policy.enforceDistinctChecker,
+      allowOwnerSelfApproval: policy.allowOwnerSelfApproval
+    };
+    await makerCheckerService.updatePolicy(policy.actionType, payload as any);
+    await fetchMakerCheckerPolicies();
+    showToast(t('settings.policyUpdateSuccess', { action: getActionLabel(policy.actionType) }), 'success');
+  } catch (err: any) {
+    showToast(err.message || t('settings.policyUpdateFailed'), 'error');
+  } finally {
+    savingPolicyAction.value = null;
+  }
+};
+
+const openDecisionModal = (req: MakerCheckerRequest, type: 'approve' | 'reject') => {
+  activeRequest.value = req;
+  decisionType.value = type;
+  decisionNotes.value = '';
+  showDecisionModal.value = true;
+};
+
+const submitDecision = async () => {
+  if (!activeRequest.value) return;
+  if (decisionType.value === 'reject' && !decisionNotes.value.trim()) {
+    showToast('Rejection reason is required', 'error');
+    return;
+  }
+  isSubmittingDecision.value = true;
+  try {
+    if (decisionType.value === 'approve') {
+      await makerCheckerService.approveRequest(activeRequest.value.id, decisionNotes.value.trim() || undefined);
+      showToast(`Request ${activeRequest.value.requestNumber} approved successfully`, 'success');
+    } else {
+      await makerCheckerService.rejectRequest(activeRequest.value.id, decisionNotes.value.trim());
+      showToast(`Request ${activeRequest.value.requestNumber} rejected`, 'info');
+    }
+    showDecisionModal.value = false;
+    await fetchPendingApprovals();
+  } catch (err: any) {
+    showToast(err.message || 'Failed to process decision', 'error');
+  } finally {
+    isSubmittingDecision.value = false;
+  }
+};
+
+watch(activeSection, (newSec) => {
+  if (route.query.section !== newSec) {
+    router.replace({ query: { ...route.query, section: newSec } });
+  }
+  if (newSec === 'maker-checker') {
+    fetchMakerCheckerPolicies();
+    fetchPendingApprovals();
+  }
+});
+
+watch(makerCheckerTab, (newTab) => {
+  if (activeSection.value === 'maker-checker' && route.query.tab !== newTab) {
+    router.replace({ query: { ...route.query, tab: newTab } });
+  }
+  if (newTab === 'pending') {
+    fetchPendingApprovals();
+  }
+});
+
 const handleSave = async () => {
   try {
-    if (activeSection.value === 'finance') {
-      showToast('Perpetual inventory & COGS is permanently active for all stores across Jenga', 'info');
+    if (activeSection.value === 'maker-checker') {
       return;
     }
 

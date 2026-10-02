@@ -18,25 +18,70 @@
       <!-- ACTION BUTTONS -->
       <div class="flex items-center gap-3">
         <button 
-          @click="fetchPurchases"
-          :disabled="isLoading"
-          class="h-10 px-3.5 rounded-lg border border-outline hover:bg-surface-container-low text-on-surface-variant font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm bg-surface-container-lowest disabled:opacity-60"
-          :title="$t('purchases.refreshTooltip')"
-        >
-          <RotateCw :class="['w-4 h-4 text-on-surface-variant', isLoading ? 'animate-spin text-primary' : '']" />
-          <span>{{ $t('purchases.refresh') }}</span>
-        </button>
-
-        <button 
           @click="router.push('/inventory')"
           class="h-10 px-4 rounded-lg border border-outline hover:bg-surface-container-low text-on-surface-variant font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm bg-surface-container-lowest"
         >
           <Package class="w-4 h-4 text-on-surface-variant" />
           <span>{{ $t('purchases.productCatalog') }}</span>
         </button>
+
+        <!-- PO Cart button with counter badge -->
+        <button 
+          @click="handleOpenCart"
+          class="h-10 px-4 rounded-lg border border-outline hover:bg-surface-container-low text-on-surface font-semibold text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm bg-surface-container-lowest relative"
+          :title="$t('poCart.cartTooltip', { count: cartCount })"
+        >
+          <ShoppingCart class="w-4 h-4 text-primary" />
+          <span class="hidden sm:inline font-bold">{{ $t('poCart.emptyModalTitle') }}</span>
+          <span 
+            v-if="cartCount > 0" 
+            class="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-primary text-on-primary ml-0.5 animate-pulse"
+          >
+            {{ cartCount }}
+          </span>
+        </button>
       </div>
     </div>
 
+    <!-- NAVIGATION TABS: Invoices & Receipts vs Purchase Orders -->
+    <div class="flex items-center gap-2 mb-5 border-b border-outline-variant/60 pb-3">
+      <button
+        type="button"
+        @click="activeTab = 'invoices'"
+        class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border-0"
+        :class="activeTab === 'invoices' 
+          ? 'bg-primary text-on-primary shadow-xs' 
+          : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface'"
+      >
+        <Receipt class="w-4 h-4" />
+        <span>{{ $t('purchaseOrders.tabInvoices') }}</span>
+        <span class="px-2 py-0.2 rounded-full text-[10px] font-mono font-bold" :class="activeTab === 'invoices' ? 'bg-white/20 text-white' : 'bg-surface-container text-outline'">
+          {{ totalPurchasesCount }}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        @click="activeTab = 'orders'"
+        class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border-0"
+        :class="activeTab === 'orders' 
+          ? 'bg-primary text-on-primary shadow-xs' 
+          : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface'"
+      >
+        <ClipboardList class="w-4 h-4" />
+        <span>{{ $t('purchaseOrders.tabOrders') }}</span>
+        <span 
+          v-if="purchaseOrders.length > 0"
+          class="px-2 py-0.2 rounded-full text-[10px] font-mono font-bold" 
+          :class="activeTab === 'orders' ? 'bg-white/20 text-white' : 'bg-surface-container text-outline'"
+        >
+          {{ purchaseOrders.length }}
+        </span>
+      </button>
+    </div>
+
+    <!-- TAB 1: INVOICES & RECEIPTS -->
+    <div v-if="activeTab === 'invoices'">
     <!-- KPI SUMMARY CARDS -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <!-- Total Purchases -->
@@ -427,6 +472,341 @@
         </div>
       </div>
     </div>
+    </div> <!-- END TAB 1 -->
+
+    <!-- TAB 2: PURCHASE ORDERS WORKBENCH -->
+    <div v-else-if="activeTab === 'orders'" class="space-y-6">
+      
+      <!-- PO KPI SUMMARY CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Total POs -->
+        <div class="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant/60 shadow-xs flex items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-primary-container/25 text-primary flex items-center justify-center shrink-0">
+            <ClipboardList class="w-5 h-5" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-outline block">Total Orders</span>
+            <p class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black text-on-surface tracking-tight truncate mt-0.5 font-mono">
+              {{ formatCurrency(poSummaryTotalCost, currency) }}
+            </p>
+            <span class="text-[11px] text-on-surface-variant/75 block mt-0.5">{{ purchaseOrders.length }} orders logged</span>
+          </div>
+        </div>
+
+        <!-- Pending Approval -->
+        <div class="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant/60 shadow-xs flex items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center shrink-0">
+            <Clock class="w-5 h-5" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-outline block">Pending Approval</span>
+            <p class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black text-amber-800 tracking-tight truncate mt-0.5 font-mono">
+              {{ formatCurrency(poSummaryPendingCost, currency) }}
+            </p>
+            <span class="text-[11px] text-on-surface-variant/75 block mt-0.5">{{ poPendingCount }} orders awaiting checker</span>
+          </div>
+        </div>
+
+        <!-- Approved / In Delivery -->
+        <div class="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant/60 shadow-xs flex items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-blue-500/15 text-blue-700 flex items-center justify-center shrink-0">
+            <Truck class="w-5 h-5" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-outline block">Approved & Active</span>
+            <p class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black text-blue-800 tracking-tight truncate mt-0.5 font-mono">
+              {{ formatCurrency(poSummaryApprovedCost, currency) }}
+            </p>
+            <span class="text-[11px] text-on-surface-variant/75 block mt-0.5">{{ poApprovedCount }} ready to receive</span>
+          </div>
+        </div>
+
+        <!-- Fully Received -->
+        <div class="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant/60 shadow-xs flex items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-700 flex items-center justify-center shrink-0">
+            <PackageCheck class="w-5 h-5" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-outline block">Completed Orders</span>
+            <p class="text-base sm:text-lg lg:text-base xl:text-lg 2xl:text-xl font-black text-emerald-700 tracking-tight truncate mt-0.5 font-mono">
+              {{ formatCurrency(poSummaryReceivedCost, currency) }}
+            </p>
+            <span class="text-[11px] text-on-surface-variant/75 block mt-0.5">{{ poReceivedCount }} orders fulfilled</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PO FILTERS TOOLBAR -->
+      <div class="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant/60 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <!-- Search Input -->
+        <div class="relative flex-1 max-w-md">
+          <Search class="w-4 h-4 text-outline absolute left-3 top-1/2 -translate-y-1/2" />
+          <input 
+            type="text"
+            v-model="poSearchQuery"
+            @input="poCurrentPage = 1"
+            placeholder="Search by PO number, supplier, or items..."
+            class="w-full bg-surface-container-low pl-9 pr-8 py-2 border border-outline-variant rounded-lg text-xs outline-none focus:border-primary transition-all font-semibold placeholder:text-outline text-on-surface"
+          />
+          <button 
+            v-if="poSearchQuery"
+            type="button"
+            @click="poSearchQuery = ''; poCurrentPage = 1"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface cursor-pointer bg-transparent border-0"
+          >
+            <X class="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          <!-- Status Filter -->
+          <div class="flex items-center gap-1.5 bg-surface-container-low px-3 py-1 rounded-lg border border-outline-variant">
+            <span class="text-[11px] font-bold uppercase text-outline">Status:</span>
+            <select 
+              v-model="poStatusFilter" 
+              @change="poCurrentPage = 1"
+              class="bg-transparent text-xs font-bold text-on-surface outline-none cursor-pointer border-0"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="DRAFT">Draft</option>
+              <option value="PENDING_APPROVAL">Pending Approval</option>
+              <option value="APPROVED">Approved</option>
+              <option value="PARTIALLY_RECEIVED">Partially Received</option>
+              <option value="RECEIVED">Received</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+
+          <!-- Supplier Filter -->
+          <div class="flex items-center gap-1.5 bg-surface-container-low px-3 py-1 rounded-lg border border-outline-variant">
+            <span class="text-[11px] font-bold uppercase text-outline">Supplier:</span>
+            <select 
+              v-model="poSupplierFilter" 
+              @change="poCurrentPage = 1"
+              class="bg-transparent text-xs font-bold text-on-surface outline-none cursor-pointer border-0 max-w-[140px] truncate"
+            >
+              <option value="">All Suppliers</option>
+              <option v-for="sup in suppliers" :key="sup.id" :value="sup.id">
+                {{ sup.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Reset Button -->
+          <button 
+            v-if="poSearchQuery || poStatusFilter !== 'ALL' || poSupplierFilter"
+            @click="resetPoFilters"
+            class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors cursor-pointer border-0 bg-transparent flex items-center gap-1"
+          >
+            <RotateCcw class="w-3.5 h-3.5" />
+            <span>{{ $t('common.reset') }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- PURCHASE ORDERS TABLE CARD -->
+      <div class="border border-outline-variant rounded-xl overflow-hidden shadow-sm bg-surface-container-lowest relative min-h-[380px]">
+        <JengaLoader 
+          v-if="isLoadingOrders" 
+          overlay 
+          size="lg" 
+          label="Loading Purchase Orders" 
+          sublabel="Syncing procurement records with store server..." 
+        />
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-[13px]">
+            <thead class="bg-surface-container-lowest border-b border-outline-variant text-on-surface-variant font-mono text-[11px] uppercase select-none">
+              <tr>
+                <th class="px-4 py-3.5 font-bold">PO Number</th>
+                <th class="px-3.5 py-3.5 font-bold">Created Date</th>
+                <th class="px-3.5 py-3.5 font-bold">Supplier</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">Items Count</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">Payment</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">Estimated Cost</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">Status</th>
+                <th class="px-3.5 py-3.5 text-center font-bold">Approver / Maker</th>
+                <th class="px-3.5 py-3.5 text-center font-bold min-w-[120px]">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr 
+                v-for="po in paginatedPurchaseOrders" 
+                :key="po.id"
+                class="hover:bg-surface-container-low transition-all font-sans cursor-pointer group"
+                @click="router.push('/purchases/orders/' + po.id)"
+              >
+                <!-- PO Number -->
+                <td class="px-4 py-3 font-mono">
+                  <span class="font-bold text-primary group-hover:underline block">
+                    {{ po.poNumber || ('#' + po.id.slice(0, 8)) }}
+                  </span>
+                  <span class="text-[10px] text-outline block truncate max-w-[110px]" :title="po.id">
+                    {{ po.branchName || 'Branch' }}
+                  </span>
+                </td>
+
+                <!-- Created Date -->
+                <td class="px-3.5 py-3 text-on-surface-variant text-xs font-medium whitespace-nowrap">
+                  {{ formatDateTime(po.createdAt) }}
+                  <span v-if="po.expectedDeliveryDate" class="text-[10px] text-outline block font-mono">
+                    Exp: {{ po.expectedDeliveryDate }}
+                  </span>
+                </td>
+
+                <!-- Supplier -->
+                <td class="px-3.5 py-3 text-on-surface-variant text-xs font-semibold">
+                  {{ po.supplierName || 'Direct Purchase' }}
+                </td>
+
+                <!-- Items Count -->
+                <td class="px-3.5 py-3 text-center font-mono">
+                  <span class="px-2 py-0.5 rounded text-xs font-bold bg-surface-container text-on-surface">
+                    {{ po.items?.length || 0 }} items
+                  </span>
+                </td>
+
+                <!-- Payment Method -->
+                <td class="px-3.5 py-3 text-center">
+                  <span 
+                    class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1"
+                    :class="getPaymentBadgeClass(po.paymentType)"
+                  >
+                    <span>{{ formatPaymentTypeLabel(po.paymentType) }}</span>
+                  </span>
+                </td>
+
+                <!-- Total Cost -->
+                <td class="px-3.5 py-3 text-center font-mono select-all">
+                  <span class="text-[14px] font-bold text-on-surface block">
+                    {{ formatCurrencyWithoutSymbol(po.totalEstimatedCost, currency) }}
+                  </span>
+                </td>
+
+                <!-- Status -->
+                <td class="px-3.5 py-3 text-center">
+                  <span 
+                    class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase inline-block font-sans"
+                    :class="getPoStatusBadgeClass(po.status)"
+                  >
+                    {{ formatPoStatusLabel(po.status) }}
+                  </span>
+                </td>
+
+                <!-- Approver / Maker -->
+                <td class="px-3.5 py-3 text-center text-xs text-on-surface-variant font-medium">
+                  <span v-if="po.approvedByName" class="text-emerald-700 font-semibold block">
+                    ✓ {{ po.approvedByName }}
+                  </span>
+                  <span v-else-if="po.status === 'PENDING_APPROVAL'" class="text-amber-700 font-semibold block">
+                    Awaiting Checker
+                  </span>
+                  <span v-else class="text-outline block">
+                    By {{ po.createdByName || 'Staff' }}
+                  </span>
+                </td>
+
+                <!-- Actions -->
+                <td class="px-3.5 py-3 text-center select-none whitespace-nowrap" @click.stop>
+                  <div class="flex items-center justify-center gap-1.5">
+                    <!-- View Details -->
+                    <button 
+                      @click="router.push('/purchases/orders/' + po.id)"
+                      class="p-1.5 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer border-0 bg-transparent"
+                      title="View Order Details"
+                    >
+                      <Eye class="w-4 h-4" />
+                    </button>
+
+                    <!-- Receive Goods (If Approved or Partial) -->
+                    <button 
+                      v-if="po.status === 'APPROVED' || po.status === 'PARTIALLY_RECEIVED'"
+                      @click="router.push('/purchases/orders/' + po.id)"
+                      class="px-2 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 transition-all border-0 flex items-center gap-1 cursor-pointer"
+                      title="Receive Goods into Inventory"
+                    >
+                      <PackageCheck class="w-3.5 h-3.5" />
+                      <span>Receive</span>
+                    </button>
+
+                    <!-- Submit Draft (If Draft) -->
+                    <button 
+                      v-if="po.status === 'DRAFT'"
+                      @click="handleQuickSubmitPo(po)"
+                      class="px-2 py-1 rounded-lg text-xs font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-all border-0 flex items-center gap-1 cursor-pointer"
+                      title="Submit for Approval"
+                    >
+                      <Send class="w-3.5 h-3.5" />
+                      <span>Submit</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Empty State -->
+              <tr v-if="filteredPurchaseOrders.length === 0 && !isLoadingOrders">
+                <td colspan="9" class="py-16 text-center select-none text-outline">
+                  <ClipboardList class="w-10 h-10 mx-auto text-outline-variant mb-2 stroke-[1.5px]" />
+                  <p class="font-bold text-sm text-on-surface">No Purchase Orders Found</p>
+                  <p class="text-xs text-on-surface-variant mt-0.5">Add items to your PO cart from the catalog to generate purchase orders.</p>
+                  <button 
+                    @click="router.push('/inventory')"
+                    class="text-xs font-bold text-primary underline mt-2.5 cursor-pointer bg-transparent border-0"
+                  >
+                    Browse Product Catalog
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- PO PAGINATION CONTROLLER -->
+        <div class="p-4 bg-surface-container-lowest border-t border-outline-variant/50 flex flex-col sm:flex-row justify-between items-center gap-4 select-none">
+          <div class="text-xs text-on-surface-variant font-medium">
+            Showing {{ filteredPurchaseOrders.length === 0 ? 0 : (poCurrentPage - 1) * poItemsPerPage + 1 }} to {{ Math.min(poCurrentPage * poItemsPerPage, filteredPurchaseOrders.length) }} of {{ filteredPurchaseOrders.length }} orders
+          </div>
+
+          <div class="flex items-center gap-1.5 font-sans">
+            <button 
+              :disabled="poCurrentPage === 1"
+              @click="poCurrentPage = 1"
+              class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 cursor-pointer bg-surface-container-lowest"
+            >
+              <ChevronsLeft class="w-4 h-4 text-on-surface-variant" />
+            </button>
+            <button 
+              :disabled="poCurrentPage === 1"
+              @click="poCurrentPage = Math.max(1, poCurrentPage - 1)"
+              class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 cursor-pointer bg-surface-container-lowest"
+            >
+              <ChevronLeft class="w-4 h-4 text-on-surface-variant" />
+            </button>
+            <span class="text-xs font-bold px-3 text-on-surface font-mono">
+              Page {{ poCurrentPage }} of {{ poTotalPages || 1 }}
+            </span>
+            <button 
+              :disabled="poCurrentPage === poTotalPages || poTotalPages === 0"
+              @click="poCurrentPage = Math.min(poTotalPages, poCurrentPage + 1)"
+              class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 cursor-pointer bg-surface-container-lowest"
+            >
+              <ChevronRight class="w-4 h-4 text-on-surface-variant" />
+            </button>
+            <button 
+              :disabled="poCurrentPage === poTotalPages || poTotalPages === 0"
+              @click="poCurrentPage = poTotalPages"
+              class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors disabled:opacity-40 cursor-pointer bg-surface-container-lowest"
+            >
+              <ChevronsRight class="w-4 h-4 text-on-surface-variant" />
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div> <!-- END TAB 2 -->
 
     <!-- 1. PURCHASE DETAILS / VIEW MODAL -->
     <Modal 
@@ -765,19 +1145,28 @@
       </template>
     </Modal>
 
+    <!-- 3. EMPTY PO CART GUIDANCE MODAL -->
+    <EmptyPoCartModal 
+      :isOpen="showEmptyCartModal" 
+      :onClose="() => showEmptyCartModal = false" 
+    />
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
+import { usePurchaseOrderCart } from '../composables/usePurchaseOrderCart';
+import { purchaseOrderService } from '../services/purchaseOrderService';
 import { showToast } from '../services/toastService';
 import { api } from '../services/api';
 import { t } from '../i18n';
 import Modal from '../components/common/Modal.vue';
 import JengaLoader from '../components/common/JengaLoader.vue';
-import type { Purchase, PurchaseItem, Supplier } from '../models/types';
+import EmptyPoCartModal from '../components/common/EmptyPoCartModal.vue';
+import type { Purchase, PurchaseItem, Supplier, PurchaseOrder, PurchaseOrderStatus } from '../models/types';
 import { formatCurrency, formatCurrencyWithoutSymbol } from '../models/mockData';
 import {
   ShoppingBag,
@@ -798,18 +1187,55 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Calendar,
-  RotateCcw
+  RotateCcw,
+  ShoppingCart,
+  Receipt,
+  ClipboardList,
+  Send,
+  PackageCheck,
+  Clock,
+  Boxes,
+  Truck
 } from 'lucide-vue-next';
 
+const route = useRoute();
 const router = useRouter();
 const vm = useAppViewModel();
 
 const currency = computed(() => vm.settings.value?.currency || 'TZS');
 
-// State
+// PO Procurement Cart Integration
+const poCart = usePurchaseOrderCart();
+const { cartCount, showEmptyCartModal } = poCart;
+
+const handleOpenCart = () => {
+  if (cartCount.value === 0) {
+    showEmptyCartModal.value = true;
+  } else {
+    router.push('/purchases/cart');
+  }
+};
+
+// Tabs: Invoices & Receipts vs Purchase Orders
+const activeTab = ref<'invoices' | 'orders'>((route.query.tab as string) === 'orders' ? 'orders' : 'invoices');
+
+watch(() => route.query.tab, (tab) => {
+  if (tab === 'orders') activeTab.value = 'orders';
+});
+
+// State (Invoices)
 const purchases = ref<Purchase[]>([]);
 const suppliers = ref<Supplier[]>([]);
 const isLoading = ref(false);
+
+// State (Purchase Orders)
+const purchaseOrders = ref<PurchaseOrder[]>([]);
+const isLoadingOrders = ref(false);
+const poSearchQuery = ref('');
+const poStatusFilter = ref('ALL');
+const poSupplierFilter = ref('');
+const poCurrentPage = ref(1);
+const poItemsPerPage = 15;
 
 // Filters
 const searchQuery = ref('');
@@ -1219,8 +1645,139 @@ const getStockBadgeClass = (item: PurchaseItem) => {
   return 'bg-primary-container/40 text-primary font-mono';
 };
 
+// ==========================================
+// PURCHASE ORDERS TAB COMPUTED & METHODS
+// ==========================================
+
+const resetPoFilters = () => {
+  poSearchQuery.value = '';
+  poStatusFilter.value = 'ALL';
+  poSupplierFilter.value = '';
+  poCurrentPage.value = 1;
+};
+
+const poSummaryTotalCost = computed(() => {
+  return purchaseOrders.value.reduce((sum, p) => sum + (Number(p.totalEstimatedCost) || 0), 0);
+});
+
+const poSummaryPendingCost = computed(() => {
+  return purchaseOrders.value
+    .filter(p => p.status === 'PENDING_APPROVAL')
+    .reduce((sum, p) => sum + (Number(p.totalEstimatedCost) || 0), 0);
+});
+
+const poSummaryApprovedCost = computed(() => {
+  return purchaseOrders.value
+    .filter(p => p.status === 'APPROVED' || p.status === 'PARTIALLY_RECEIVED')
+    .reduce((sum, p) => sum + (Number(p.totalEstimatedCost) || 0), 0);
+});
+
+const poSummaryReceivedCost = computed(() => {
+  return purchaseOrders.value
+    .filter(p => p.status === 'RECEIVED')
+    .reduce((sum, p) => sum + (Number(p.totalActualCost || p.totalEstimatedCost) || 0), 0);
+});
+
+const poPendingCount = computed(() => {
+  return purchaseOrders.value.filter(p => p.status === 'PENDING_APPROVAL').length;
+});
+
+const poApprovedCount = computed(() => {
+  return purchaseOrders.value.filter(p => p.status === 'APPROVED' || p.status === 'PARTIALLY_RECEIVED').length;
+});
+
+const poReceivedCount = computed(() => {
+  return purchaseOrders.value.filter(p => p.status === 'RECEIVED').length;
+});
+
+const filteredPurchaseOrders = computed(() => {
+  const query = poSearchQuery.value.trim().toLowerCase();
+  return purchaseOrders.value.filter(po => {
+    if (poStatusFilter.value !== 'ALL' && po.status !== poStatusFilter.value) {
+      return false;
+    }
+    if (poSupplierFilter.value && po.supplierId !== poSupplierFilter.value) {
+      return false;
+    }
+    if (query) {
+      const matchPoNumber = (po.poNumber || '').toLowerCase().includes(query);
+      const matchSupplier = (po.supplierName || '').toLowerCase().includes(query);
+      const matchItem = po.items?.some(i => i.productName.toLowerCase().includes(query));
+      if (!matchPoNumber && !matchSupplier && !matchItem) {
+        return false;
+      }
+    }
+    return true;
+  });
+});
+
+const poTotalPages = computed(() => Math.ceil(filteredPurchaseOrders.value.length / poItemsPerPage));
+
+const paginatedPurchaseOrders = computed(() => {
+  const start = (poCurrentPage.value - 1) * poItemsPerPage;
+  return filteredPurchaseOrders.value.slice(start, start + poItemsPerPage);
+});
+
+const fetchPurchaseOrders = async () => {
+  const branchId = localStorage.getItem('branchId');
+  if (!branchId) return;
+
+  isLoadingOrders.value = true;
+  try {
+    const res = await purchaseOrderService.searchPurchaseOrders({
+      branchId,
+      size: 100
+    });
+    purchaseOrders.value = res.content || [];
+  } catch (err: any) {
+    showToast(err.message || 'Failed to load purchase orders', 'error');
+  } finally {
+    isLoadingOrders.value = false;
+  }
+};
+
+const handleQuickSubmitPo = async (po: PurchaseOrder) => {
+  try {
+    const updated = await purchaseOrderService.submitForApproval(po.id);
+    const index = purchaseOrders.value.findIndex(p => p.id === po.id);
+    if (index > -1) {
+      purchaseOrders.value[index] = updated;
+    }
+    showToast(`Purchase order ${updated.poNumber} submitted for approval!`, 'success');
+  } catch (err: any) {
+    showToast(err.message || 'Failed to submit purchase order', 'error');
+  }
+};
+
+const getPoStatusBadgeClass = (status: PurchaseOrderStatus) => {
+  switch (status) {
+    case 'DRAFT': return 'bg-surface-container text-outline border border-outline-variant';
+    case 'PENDING_APPROVAL': return 'bg-amber-500/15 text-amber-700 border border-amber-500/30';
+    case 'APPROVED': return 'bg-blue-500/15 text-blue-700 border border-blue-500/30';
+    case 'PARTIALLY_RECEIVED': return 'bg-purple-500/15 text-purple-700 border border-purple-500/30';
+    case 'RECEIVED': return 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30';
+    case 'REJECTED':
+    case 'CANCELLED': return 'bg-error/15 text-error border border-error/30';
+    default: return 'bg-surface-container text-on-surface-variant';
+  }
+};
+
+const formatPoStatusLabel = (status: PurchaseOrderStatus) => {
+  switch (status) {
+    case 'DRAFT': return 'Draft';
+    case 'PENDING_APPROVAL': return 'Pending Approval';
+    case 'APPROVED': return 'Approved';
+    case 'PARTIALLY_RECEIVED': return 'Partially Received';
+    case 'RECEIVED': return 'Received';
+    case 'REJECTED': return 'Rejected';
+    case 'CANCELLED': return 'Cancelled';
+    default: return status;
+  }
+};
+
 onMounted(() => {
   fetchPurchases();
   fetchSuppliers();
+  fetchPurchaseOrders();
 });
 </script>

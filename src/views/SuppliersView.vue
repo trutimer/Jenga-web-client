@@ -425,68 +425,258 @@
       </template>
     </Modal>
 
-    <!-- MODAL: PROCUREMENT HISTORY / PURCHASE ORDERS -->
+    <!-- MODAL: PROCUREMENT HISTORY & PAYMENT HISTORY -->
     <Modal
       v-if="selectedSupplierForHistory"
       :isOpen="showHistoryModal"
       @close="showHistoryModal = false"
       :title="selectedSupplierForHistory.name"
       :subtitle="$t('suppliers.historyModalSubtitle', { code: selectedSupplierForHistory.code })"
-      maxWidth="max-w-2xl"
+      maxWidth="max-w-4xl"
     >
       <div class="flex flex-col gap-5">
-        <!-- Financial Snapshot Card -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="p-4 rounded-xl border border-outline-variant/60 bg-surface-container-low/50 flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-              <Coins class="w-5 h-5" />
+        <!-- Financial Snapshot Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Outstanding Balance Card -->
+          <div class="p-4 rounded-xl border border-outline-variant/60 bg-surface-container-low/50 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('suppliers.outstandingBalance') }}</span>
+              <div class="w-7 h-7 rounded-lg bg-error/10 text-error flex items-center justify-center">
+                <Coins class="w-4 h-4" />
+              </div>
             </div>
-            <div>
-              <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('suppliers.outstandingBalance') }}</p>
-              <p class="text-base font-bold font-mono text-on-surface mt-0.5">TZS {{ selectedSupplierForHistory.balance.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</p>
+            <div class="mt-2 flex items-baseline justify-between gap-2">
+              <span class="text-base font-bold font-mono" :class="selectedSupplierForHistory.balance > 0 ? 'text-error' : 'text-on-surface'">
+                TZS {{ selectedSupplierForHistory.balance.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}
+              </span>
+              <button
+                v-if="selectedSupplierForHistory.balance > 0"
+                @click="openPayModalFromHistory"
+                class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all active:scale-95 shadow-xs border-0 shrink-0"
+              >
+                <Banknote class="w-3.5 h-3.5" />
+                <span>{{ $t('suppliers.payBalance') }}</span>
+              </button>
             </div>
           </div>
-          
-          <div class="p-4 rounded-xl border border-outline-variant/60 bg-surface-container-low/50 flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-700 flex items-center justify-center">
-              <TrendingUp class="w-5 h-5" />
+
+          <!-- Total Payments Settled Card -->
+          <div class="p-4 rounded-xl border border-outline-variant/60 bg-surface-container-low/50 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('suppliers.totalPaymentsSettled') }}</span>
+              <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-700 flex items-center justify-center">
+                <CheckCircle2 class="w-4 h-4" />
+              </div>
             </div>
-            <div>
-              <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('suppliers.totalContractValue') }}</p>
-              <p class="text-base font-bold font-mono text-emerald-800 mt-0.5">TZS {{ (selectedSupplierForHistory.balance * 2.3 + 120000).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</p>
+            <div class="mt-2">
+              <p class="text-base font-bold font-mono text-emerald-800">
+                TZS {{ totalCompletedPaymentsAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}
+              </p>
+              <p class="text-[10px] text-on-surface-variant/70 font-semibold mt-0.5">
+                {{ paymentHistoryTotal }} {{ $t('suppliers.tabPaymentHistory').toLowerCase() }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Total Orders / Procurement Card -->
+          <div class="p-4 rounded-xl border border-outline-variant/60 bg-surface-container-low/50 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('suppliers.totalContractValue') }}</span>
+              <div class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                <Package class="w-4 h-4" />
+              </div>
+            </div>
+            <div class="mt-2">
+              <p class="text-base font-bold font-mono text-primary">
+                TZS {{ totalPurchasesAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}
+              </p>
+              <p class="text-[10px] text-on-surface-variant/70 font-semibold mt-0.5">
+                {{ purchasesTotalCount }} {{ $t('suppliers.tabProcurementOrders').toLowerCase() }}
+              </p>
             </div>
           </div>
         </div>
 
-        <!-- Purchase Orders List -->
-        <div>
-          <h4 class="text-xs font-black text-on-surface-variant uppercase tracking-widest mb-3">{{ $t('suppliers.procurementOrders') }}</h4>
+        <!-- TABS SELECTOR -->
+        <div class="flex border-b border-outline-variant">
+          <button
+            type="button"
+            @click="activeHistoryTab = 'PAYMENTS'"
+            class="px-4 py-2.5 font-bold text-xs flex items-center gap-2 border-b-2 cursor-pointer transition-colors"
+            :class="activeHistoryTab === 'PAYMENTS' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-on-surface-variant hover:text-on-surface'"
+          >
+            <Banknote class="w-4 h-4" />
+            <span>{{ $t('suppliers.tabPaymentHistory') }}</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-surface-container-high text-on-surface-variant">
+              {{ paymentHistoryTotal }}
+            </span>
+          </button>
           
-          <div class="border border-outline-variant rounded-xl overflow-hidden bg-surface-container-lowest">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="bg-surface-container-low border-b border-outline-variant text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">
-                  <th class="py-3 px-4">PO Code</th>
-                  <th class="py-3 px-4">Date</th>
-                  <th class="py-3 px-4 text-center">Items</th>
-                  <th class="py-3 px-4">Contract Cost</th>
-                  <th class="py-3 px-4 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-outline-variant/50">
-                <tr v-for="po in mockPurchaseOrders" :key="po.id" class="hover:bg-surface-container-low/30 transition-colors font-medium text-on-surface align-middle">
-                  <td class="py-3 px-4 font-bold font-mono">{{ po.poNumber }}</td>
-                  <td class="py-3 px-4 font-mono text-on-surface-variant/85">{{ po.date }}</td>
-                  <td class="py-3 px-4 text-center font-mono">{{ po.itemsCount }}</td>
-                  <td class="py-3 px-4 font-bold font-mono">TZS {{ po.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</td>
-                  <td class="py-3 px-4 text-center">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold select-none animate-fade-in" :class="getPoStatusClass(po.status)">
-                      {{ po.status }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <button
+            type="button"
+            @click="activeHistoryTab = 'PURCHASES'"
+            class="px-4 py-2.5 font-bold text-xs flex items-center gap-2 border-b-2 cursor-pointer transition-colors"
+            :class="activeHistoryTab === 'PURCHASES' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-on-surface-variant hover:text-on-surface'"
+          >
+            <Package class="w-4 h-4" />
+            <span>{{ $t('suppliers.tabProcurementOrders') }}</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-surface-container-high text-on-surface-variant">
+              {{ purchasesTotalCount }}
+            </span>
+          </button>
+        </div>
+
+        <!-- TAB 1: PAYMENT HISTORY TABLE -->
+        <div v-if="activeHistoryTab === 'PAYMENTS'" class="relative min-h-[220px]">
+          <JengaLoader 
+            v-if="isLoadingPaymentHistory" 
+            overlay 
+            size="md" 
+            label="Loading payments..." 
+          />
+
+          <div v-if="paymentHistory.length > 0" class="border border-outline-variant rounded-xl overflow-hidden bg-surface-container-lowest">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-surface-container-low border-b border-outline-variant text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">
+                    <th class="py-3 px-3.5">{{ $t('suppliers.paymentNumber') }}</th>
+                    <th class="py-3 px-3.5">{{ $t('suppliers.paymentDate') }}</th>
+                    <th class="py-3 px-3.5">{{ $t('suppliers.paymentMethod') }}</th>
+                    <th class="py-3 px-3.5">{{ $t('suppliers.referenceNumber') }}</th>
+                    <th class="py-3 px-3.5">{{ $t('suppliers.tableBalance') }}</th>
+                    <th class="py-3 px-3.5 text-center">{{ $t('suppliers.status') }}</th>
+                    <th class="py-3 px-3.5">{{ $t('suppliers.paidBy') }}</th>
+                    <th class="py-3 px-3.5">{{ $t('suppliers.notes') }}</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-outline-variant/50">
+                  <tr v-for="payment in paymentHistory" :key="payment.id" class="hover:bg-surface-container-low/30 transition-colors font-medium text-on-surface align-middle">
+                    <td class="py-3 px-3.5 font-bold font-mono text-primary">{{ payment.paymentNumber }}</td>
+                    <td class="py-3 px-3.5 font-mono text-[11px] text-on-surface-variant">{{ formatDateTime(payment.paymentDate || payment.createdAt) }}</td>
+                    <td class="py-3 px-3.5">
+                      <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold bg-surface-container-high border border-outline-variant/40">
+                        <component :is="getPaymentMethodIcon(payment.paymentMethod)" class="w-3.5 h-3.5 text-on-surface-variant" />
+                        <span>{{ getPaymentMethodLabel(payment.paymentMethod) }}</span>
+                      </span>
+                    </td>
+                    <td class="py-3 px-3.5 font-mono text-[11px] text-on-surface-variant">{{ payment.referenceNumber || '-' }}</td>
+                    <td class="py-3 px-3.5 font-bold font-mono text-emerald-700">
+                      TZS {{ Number(payment.amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}
+                    </td>
+                    <td class="py-3 px-3.5 text-center">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border select-none" :class="getPaymentStatusBadgeClass(payment.status)">
+                        {{ payment.status }}
+                      </span>
+                    </td>
+                    <td class="py-3 px-3.5 text-[11px] text-on-surface-variant">{{ payment.paidByName || '-' }}</td>
+                    <td class="py-3 px-3.5 text-[11px] text-on-surface-variant/80 max-w-[160px] truncate" :title="payment.notes || ''">
+                      {{ payment.notes || '-' }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Payments Pagination -->
+            <div v-if="paymentHistoryTotalPages > 1" class="py-2.5 px-4 border-t border-outline-variant bg-surface-container-low flex items-center justify-between text-xs">
+              <span class="text-on-surface-variant font-medium">
+                Page {{ paymentHistoryPage + 1 }} of {{ paymentHistoryTotalPages }} ({{ paymentHistoryTotal }} total)
+              </span>
+              <div class="flex items-center gap-1">
+                <button
+                  type="button"
+                  :disabled="paymentHistoryPage === 0"
+                  @click="fetchSupplierPaymentHistory(selectedSupplierForHistory.id, paymentHistoryPage - 1)"
+                  class="px-2.5 py-1 rounded-lg border border-outline-variant bg-white disabled:opacity-40 hover:bg-surface-container-high text-xs font-bold cursor-pointer transition-all"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  :disabled="paymentHistoryPage >= paymentHistoryTotalPages - 1"
+                  @click="fetchSupplierPaymentHistory(selectedSupplierForHistory.id, paymentHistoryPage + 1)"
+                  class="px-2.5 py-1 rounded-lg border border-outline-variant bg-white disabled:opacity-40 hover:bg-surface-container-high text-xs font-bold cursor-pointer transition-all"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty payments -->
+          <div v-else-if="!isLoadingPaymentHistory" class="p-8 border border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center gap-3 text-center bg-surface-container-lowest">
+            <div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant/40">
+              <Receipt class="w-6 h-6" />
+            </div>
+            <div>
+              <p class="text-sm font-bold text-on-surface">{{ $t('suppliers.noPaymentsFound') }}</p>
+              <p class="text-xs text-on-surface-variant/70 mt-0.5">Payments made against outstanding vendor balances will appear here with full ledger audits.</p>
+            </div>
+            <button
+              v-if="selectedSupplierForHistory.balance > 0"
+              @click="openPayModalFromHistory"
+              class="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-xs border-0 mt-1"
+            >
+              <Banknote class="w-4 h-4" />
+              <span>{{ $t('suppliers.recordFirstPayment') }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB 2: PROCUREMENT ORDERS TABLE -->
+        <div v-if="activeHistoryTab === 'PURCHASES'" class="relative min-h-[220px]">
+          <JengaLoader 
+            v-if="isLoadingPurchases" 
+            overlay 
+            size="md" 
+            label="Loading purchases..." 
+          />
+
+          <div v-if="supplierPurchases.length > 0" class="border border-outline-variant rounded-xl overflow-hidden bg-surface-container-lowest">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-surface-container-low border-b border-outline-variant text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-wider">
+                    <th class="py-3 px-4">PO / Invoice #</th>
+                    <th class="py-3 px-4">Date</th>
+                    <th class="py-3 px-4 text-center">Items</th>
+                    <th class="py-3 px-4">Total Cost</th>
+                    <th class="py-3 px-4 text-center">Payment Type</th>
+                    <th class="py-3 px-4 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-outline-variant/50">
+                  <tr v-for="po in supplierPurchases" :key="po.id" class="hover:bg-surface-container-low/30 transition-colors font-medium text-on-surface align-middle">
+                    <td class="py-3 px-4 font-bold font-mono text-primary">{{ po.id.slice(0, 8).toUpperCase() }}</td>
+                    <td class="py-3 px-4 font-mono text-on-surface-variant/85">{{ formatDateTime(po.createdAt) }}</td>
+                    <td class="py-3 px-4 text-center font-mono">{{ po.items?.length || 0 }} items</td>
+                    <td class="py-3 px-4 font-bold font-mono">TZS {{ Number(po.totalCost || 0).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</td>
+                    <td class="py-3 px-4 text-center">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-surface-container-high border border-outline-variant/40">
+                        {{ po.paymentType || 'CASH' }}
+                      </span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold select-none" :class="getPoStatusClass(po.status)">
+                        {{ po.status }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Empty purchases -->
+          <div v-else-if="!isLoadingPurchases" class="p-8 border border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center gap-3 text-center bg-surface-container-lowest">
+            <div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant/40">
+              <Package class="w-6 h-6" />
+            </div>
+            <div>
+              <p class="text-sm font-bold text-on-surface">{{ $t('suppliers.noPurchasesFound') }}</p>
+              <p class="text-xs text-on-surface-variant/70 mt-0.5">Purchases recorded for this vendor through product inventory restocks will appear here.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -628,12 +818,18 @@
       @close="showPayModal = false"
       :title="$t('suppliers.payModalTitle')"
       :subtitle="$t('suppliers.payModalSubtitle', { name: selectedSupplierForPay.name })"
+      maxWidth="max-w-lg"
     >
       <form id="pay-supplier-form" @submit.prevent="handlePaySupplier" class="flex flex-col gap-4">
         <!-- Outstanding Balance Display -->
-        <div class="p-4 rounded-xl border border-outline-variant/60 bg-surface-container-low/50">
-          <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('suppliers.currentOutstandingBalance') }}</p>
-          <p class="text-xl font-bold font-mono text-error mt-0.5">TZS {{ selectedSupplierForPay.balance.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</p>
+        <div class="p-4 rounded-xl border border-outline-variant/60 bg-surface-container-low/50 flex items-center justify-between">
+          <div>
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('suppliers.currentOutstandingBalance') }}</p>
+            <p class="text-xl font-bold font-mono text-error mt-0.5">TZS {{ selectedSupplierForPay.balance.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-error/10 text-error flex items-center justify-center">
+            <Coins class="w-5 h-5" />
+          </div>
         </div>
 
         <!-- Payment Amount input -->
@@ -669,6 +865,121 @@
             </button>
           </div>
         </div>
+
+        <!-- Payment Method Selector -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ $t('suppliers.selectPaymentMethod') }}</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              @click="paymentMethod = 'MOBILE'"
+              class="h-11 px-3 rounded-xl border flex items-center gap-2.5 text-xs font-bold transition-all cursor-pointer"
+              :class="paymentMethod === 'MOBILE' ? 'border-primary bg-primary/10 text-primary shadow-xs' : 'border-outline-variant bg-white hover:bg-surface-container-high text-on-surface'"
+            >
+              <Smartphone class="w-4 h-4 shrink-0" />
+              <span>{{ $t('suppliers.methodMobile') }}</span>
+            </button>
+
+            <button
+              type="button"
+              @click="paymentMethod = 'BANK_TRANSFER'"
+              class="h-11 px-3 rounded-xl border flex items-center gap-2.5 text-xs font-bold transition-all cursor-pointer"
+              :class="paymentMethod === 'BANK_TRANSFER' ? 'border-primary bg-primary/10 text-primary shadow-xs' : 'border-outline-variant bg-white hover:bg-surface-container-high text-on-surface'"
+            >
+              <Building class="w-4 h-4 shrink-0" />
+              <span>{{ $t('suppliers.methodBank') }}</span>
+            </button>
+
+            <button
+              type="button"
+              @click="paymentMethod = 'CASH'"
+              class="h-11 px-3 rounded-xl border flex items-center gap-2.5 text-xs font-bold transition-all cursor-pointer"
+              :class="paymentMethod === 'CASH' ? 'border-primary bg-primary/10 text-primary shadow-xs' : 'border-outline-variant bg-white hover:bg-surface-container-high text-on-surface'"
+            >
+              <Banknote class="w-4 h-4 shrink-0" />
+              <span>{{ $t('suppliers.methodCash') }}</span>
+            </button>
+
+            <button
+              type="button"
+              @click="paymentMethod = 'CARD'"
+              class="h-11 px-3 rounded-xl border flex items-center gap-2.5 text-xs font-bold transition-all cursor-pointer"
+              :class="paymentMethod === 'CARD' ? 'border-primary bg-primary/10 text-primary shadow-xs' : 'border-outline-variant bg-white hover:bg-surface-container-high text-on-surface'"
+            >
+              <CreditCard class="w-4 h-4 shrink-0" />
+              <span>{{ $t('suppliers.methodCard') }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cash Details & Shift Selection (if CASH) -->
+        <div v-if="paymentMethod === 'CASH'" class="flex flex-col gap-2 p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/60">
+          <div v-if="vm.userRole.value !== 'CASHIER'" class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+              <User class="w-3.5 h-3.5" />
+              <span>{{ $t('suppliers.selectCashierShift') }}</span>
+            </label>
+
+            <div v-if="isLoadingOpenShifts" class="text-xs text-on-surface-variant flex items-center gap-1.5 py-1">
+              <RotateCw class="w-3.5 h-3.5 animate-spin" />
+              <span>Checking open shifts...</span>
+            </div>
+
+            <select
+              v-else-if="openShifts.length > 0"
+              v-model="selectedTargetShiftId"
+              required
+              class="w-full h-11 px-3.5 rounded-xl border border-outline-variant bg-white focus:outline-none focus:border-primary text-xs font-semibold cursor-pointer text-on-surface"
+            >
+              <option value="" disabled>{{ $t('suppliers.selectCashierShiftPlaceholder') }}</option>
+              <option v-for="shift in openShifts" :key="shift.id" :value="shift.id">
+                {{ shift.cashierName }} (Till: {{ shift.terminalId || 'MAIN' }}) - Drawer: TZS {{ Number(shift.expectedCash || 0).toLocaleString() }}
+              </option>
+            </select>
+
+            <div v-else class="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2">
+              <AlertTriangle class="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+              <span>{{ $t('suppliers.noOpenShiftsWarning') }}</span>
+            </div>
+
+            <p class="text-[11px] text-on-surface-variant/80 mt-1">
+              {{ $t('suppliers.nonCashierPendingApprovalNotice') }}
+            </p>
+          </div>
+
+          <div v-else class="p-2.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-start gap-2">
+            <CheckCircle2 class="w-4 h-4 shrink-0 text-blue-600 mt-0.5" />
+            <span>{{ $t('suppliers.cashierDirectDeductionNotice') }}</span>
+          </div>
+        </div>
+
+        <!-- Reference Number -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+            {{ $t('suppliers.referenceNumber') }}
+            <span class="text-[10px] text-on-surface-variant/60 font-normal lowercase">(optional)</span>
+          </label>
+          <input
+            type="text"
+            v-model="paymentReference"
+            :placeholder="referencePlaceholder"
+            class="h-11 px-3.5 rounded-xl border border-outline-variant bg-white focus:outline-none focus:border-primary text-sm text-on-surface font-mono"
+          />
+        </div>
+
+        <!-- Notes / Memo -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+            {{ $t('suppliers.notes') }}
+            <span class="text-[10px] text-on-surface-variant/60 font-normal lowercase">(optional)</span>
+          </label>
+          <input
+            type="text"
+            v-model="paymentNotes"
+            :placeholder="$t('suppliers.notesPlaceholder')"
+            class="h-11 px-3.5 rounded-xl border border-outline-variant bg-white focus:outline-none focus:border-primary text-sm text-on-surface"
+          />
+        </div>
       </form>
       <template #footer>
         <button
@@ -681,9 +992,11 @@
         <button
           type="submit"
           form="pay-supplier-form"
-          class="h-11 px-6 bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-sm rounded-xl cursor-pointer transition-all active:scale-[0.98] shadow-sm border-0"
+          :disabled="isSubmittingPayment || (paymentMethod === 'CASH' && vm.userRole.value !== 'CASHIER' && !selectedTargetShiftId)"
+          class="h-11 px-6 bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-sm rounded-xl cursor-pointer transition-all active:scale-[0.98] shadow-sm border-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          {{ $t('suppliers.recordPayment') }}
+          <RotateCw v-if="isSubmittingPayment" class="w-4 h-4 animate-spin" />
+          <span>{{ isSubmittingPayment ? $t('suppliers.recordingPayment') : $t('suppliers.recordPayment') }}</span>
         </button>
       </template>
     </Modal>
@@ -713,17 +1026,23 @@ import {
   Coins,
   AlertCircle,
   Pencil,
-  Banknote
+  Banknote,
+  CreditCard,
+  Smartphone,
+  Building,
+  CheckCircle2,
+  RotateCw,
+  Receipt,
+  Package,
+  AlertTriangle,
+  User
 } from 'lucide-vue-next';
-
-interface PurchaseOrder {
-  id: string;
-  poNumber: string;
-  date: string;
-  totalAmount: number;
-  itemsCount: number;
-  status: 'Received' | 'Pending' | 'Shipped';
-}
+import { 
+  supplierPaymentService,
+  type SupplierPaymentMethod,
+  type SupplierPaymentViewModel,
+  type SupplierPaymentStatus
+} from '../services/supplierPaymentService';
 
 const vm = useAppViewModel();
 
@@ -753,6 +1072,24 @@ const editCode = ref('');
 const showPayModal = ref(false);
 const selectedSupplierForPay = ref<Supplier | null>(null);
 const paymentAmount = ref('');
+const paymentMethod = ref<SupplierPaymentMethod>('MOBILE');
+const paymentReference = ref('');
+const paymentNotes = ref('');
+const selectedTargetShiftId = ref('');
+const openShifts = ref<any[]>([]);
+const isLoadingOpenShifts = ref(false);
+const isSubmittingPayment = ref(false);
+
+// History modal states
+const activeHistoryTab = ref<'PAYMENTS' | 'PURCHASES'>('PAYMENTS');
+const paymentHistory = ref<SupplierPaymentViewModel[]>([]);
+const paymentHistoryTotal = ref(0);
+const paymentHistoryPage = ref(0);
+const paymentHistoryTotalPages = ref(1);
+const isLoadingPaymentHistory = ref(false);
+const supplierPurchases = ref<any[]>([]);
+const purchasesTotalCount = ref(0);
+const isLoadingPurchases = ref(false);
 
 // Form variables
 const newSupplierName = ref('');
@@ -871,14 +1208,151 @@ const getAvatarColor = (name: string = '') => {
   return colors[index] || colors[0];
 };
 
-const mockPurchaseOrders = computed((): PurchaseOrder[] => {
-  return [];
+const referencePlaceholder = computed(() => {
+  switch (paymentMethod.value) {
+    case 'MOBILE':
+      return t('suppliers.refPlaceholderMobile');
+    case 'BANK_TRANSFER':
+      return t('suppliers.refPlaceholderBank');
+    case 'CARD':
+      return t('suppliers.refPlaceholderCard');
+    case 'CASH':
+      return t('suppliers.refPlaceholderCash');
+    default:
+      return '';
+  }
 });
 
+const totalCompletedPaymentsAmount = computed(() => {
+  return paymentHistory.value
+    .filter(p => p.status === 'COMPLETED')
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+});
+
+const totalPurchasesAmount = computed(() => {
+  return supplierPurchases.value
+    .reduce((sum, p) => sum + (Number(p.totalCost) || 0), 0);
+});
+
+const getPaymentMethodIcon = (method: SupplierPaymentMethod | string) => {
+  switch (method) {
+    case 'CASH': return Banknote;
+    case 'MOBILE': return Smartphone;
+    case 'BANK_TRANSFER': return Building;
+    case 'CARD': return CreditCard;
+    default: return Coins;
+  }
+};
+
+const getPaymentMethodLabel = (method: SupplierPaymentMethod | string) => {
+  switch (method) {
+    case 'CASH': return t('suppliers.methodCash');
+    case 'MOBILE': return t('suppliers.methodMobile');
+    case 'BANK_TRANSFER': return t('suppliers.methodBank');
+    case 'CARD': return t('suppliers.methodCard');
+    default: return method;
+  }
+};
+
+const getPaymentStatusBadgeClass = (status: SupplierPaymentStatus | string) => {
+  switch (status) {
+    case 'COMPLETED':
+      return 'bg-emerald-50 text-emerald-800 border-emerald-200';
+    case 'PENDING_APPROVAL':
+      return 'bg-amber-50 text-amber-800 border-amber-200';
+    case 'REJECTED':
+    case 'CANCELLED':
+      return 'bg-rose-50 text-rose-800 border-rose-200';
+    default:
+      return 'bg-surface-container-high text-on-surface-variant border-outline-variant';
+  }
+};
+
+const formatDateTime = (dateStr?: string | null) => {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return dateStr;
+  }
+};
+
 const getPoStatusClass = (status: string) => {
-  if (status === 'Received') return 'bg-emerald-50 text-emerald-800';
-  if (status === 'Pending') return 'bg-amber-50 text-amber-800';
-  return 'bg-blue-50 text-blue-800';
+  if (status === 'Received' || status === 'COMPLETED') return 'bg-emerald-50 text-emerald-800 border-emerald-100';
+  if (status === 'Pending' || status === 'PENDING') return 'bg-amber-50 text-amber-800 border-amber-100';
+  return 'bg-blue-50 text-blue-800 border-blue-100';
+};
+
+const fetchOpenShifts = async () => {
+  const branchId = localStorage.getItem('branchId') || vm.activeBranchId.value;
+  if (!branchId) return;
+
+  isLoadingOpenShifts.value = true;
+  try {
+    const data = await api.get<any[]>(`/api/shifts/branch/${branchId}`);
+    if (Array.isArray(data)) {
+      openShifts.value = data.filter((s: any) => s.status === 'OPEN');
+      if (openShifts.value.length > 0 && !selectedTargetShiftId.value) {
+        selectedTargetShiftId.value = openShifts.value[0].id;
+      }
+    } else {
+      openShifts.value = [];
+    }
+  } catch (err) {
+    console.error('Failed to load open shifts:', err);
+    openShifts.value = [];
+  } finally {
+    isLoadingOpenShifts.value = false;
+  }
+};
+
+const fetchSupplierPaymentHistory = async (supplierId: string, page: number = 0) => {
+  isLoadingPaymentHistory.value = true;
+  try {
+    const res = await supplierPaymentService.getPaymentsBySupplier(supplierId, page, 10);
+    paymentHistory.value = res.content || [];
+    paymentHistoryTotal.value = res.totalElements || 0;
+    paymentHistoryTotalPages.value = res.totalPages || 1;
+    paymentHistoryPage.value = res.number || 0;
+  } catch (err) {
+    console.error('Failed to fetch supplier payment history:', err);
+    paymentHistory.value = [];
+  } finally {
+    isLoadingPaymentHistory.value = false;
+  }
+};
+
+const fetchSupplierPurchases = async (supplierId: string) => {
+  const branchId = localStorage.getItem('branchId') || vm.activeBranchId.value;
+  if (!branchId) return;
+
+  isLoadingPurchases.value = true;
+  try {
+    const res: any = await api.get(`/api/purchases?branchId=${branchId}&supplierId=${supplierId}&size=50`);
+    const rawList: any[] = Array.isArray(res) ? res : (res?.content || []);
+    supplierPurchases.value = rawList;
+    purchasesTotalCount.value = res?.totalElements || rawList.length;
+  } catch (err) {
+    console.error('Failed to fetch supplier purchases:', err);
+    supplierPurchases.value = [];
+  } finally {
+    isLoadingPurchases.value = false;
+  }
+};
+
+const openPayModalFromHistory = () => {
+  if (!selectedSupplierForHistory.value) return;
+  const sup = selectedSupplierForHistory.value;
+  showHistoryModal.value = false;
+  handleOpenPayModal(sup);
 };
 
 const handleExportCSV = () => {
@@ -973,9 +1447,15 @@ const handleAddSupplier = async () => {
   }
 };
 
-const handleOpenHistoryModal = (supplier: Supplier) => {
+const handleOpenHistoryModal = async (supplier: Supplier) => {
   selectedSupplierForHistory.value = supplier;
+  activeHistoryTab.value = 'PAYMENTS';
+  paymentHistoryPage.value = 0;
   showHistoryModal.value = true;
+  await Promise.all([
+    fetchSupplierPaymentHistory(supplier.id, 0),
+    fetchSupplierPurchases(supplier.id)
+  ]);
 };
 
 const handleOpenEditModal = (supplier: Supplier) => {
@@ -1039,10 +1519,16 @@ const handleEditSupplier = async () => {
   }
 };
 
-const handleOpenPayModal = (supplier: Supplier) => {
+const handleOpenPayModal = async (supplier: Supplier) => {
   selectedSupplierForPay.value = supplier;
   paymentAmount.value = '';
+  paymentMethod.value = 'MOBILE';
+  paymentReference.value = '';
+  paymentNotes.value = '';
+  selectedTargetShiftId.value = '';
+  isSubmittingPayment.value = false;
   showPayModal.value = true;
+  await fetchOpenShifts();
 };
 
 const handlePaySupplier = async () => {
@@ -1057,43 +1543,62 @@ const handlePaySupplier = async () => {
     return;
   }
 
-  const newBalance = Math.max(0, selectedSupplierForPay.value.balance - payVal);
-
-  try {
-    const storeId = localStorage.getItem('storeId');
-    if (!storeId) {
-      showToast('Error: Store ID is missing. Please log in again.', 'error');
+  const isCashier = vm.userRole.value === 'CASHIER';
+  if (paymentMethod.value === 'CASH' && !isCashier) {
+    if (!selectedTargetShiftId.value) {
+      showToast('Please select an active cashier shift for cash disbursement.', 'error');
       return;
     }
+  }
 
-    const updatedVm = await api.put(`/api/suppliers/${selectedSupplierForPay.value.id}`, {
-      storeId,
-      code: selectedSupplierForPay.value.code,
-      name: selectedSupplierForPay.value.name,
-      contactPerson: selectedSupplierForPay.value.contactPerson,
-      phone: selectedSupplierForPay.value.phone,
-      email: selectedSupplierForPay.value.email,
-      category: selectedSupplierForPay.value.category,
-      balance: newBalance,
-      status: selectedSupplierForPay.value.status
+  const branchId = localStorage.getItem('branchId') || vm.activeBranchId.value || undefined;
+
+  isSubmittingPayment.value = true;
+  try {
+    const payment = await supplierPaymentService.recordPayment({
+      supplierId: selectedSupplierForPay.value.id,
+      branchId: branchId,
+      shiftId: paymentMethod.value === 'CASH' && !isCashier ? selectedTargetShiftId.value : undefined,
+      amount: payVal,
+      paymentMethod: paymentMethod.value,
+      referenceNumber: paymentReference.value.trim() || undefined,
+      notes: paymentNotes.value.trim() || undefined
     });
+
+    const newBal = payment.supplierBalanceAfter !== undefined
+      ? Number(payment.supplierBalanceAfter)
+      : Math.max(0, selectedSupplierForPay.value.balance - (payment.status === 'COMPLETED' ? payVal : 0));
 
     const index = vm.suppliers.value.findIndex(s => s.id === selectedSupplierForPay.value?.id);
     if (index !== -1 && vm.suppliers.value[index]) {
       vm.suppliers.value[index] = {
         ...vm.suppliers.value[index],
-        balance: Number(updatedVm.balance) || 0
+        balance: newBal
       };
     }
 
-    showToast(t('suppliers.paymentRecordedSuccess', {
-      amount: payVal.toLocaleString(),
-      name: updatedVm.name,
-      balance: newBalance.toLocaleString()
-    }));
+    if (selectedSupplierForHistory.value && selectedSupplierForHistory.value.id === selectedSupplierForPay.value.id) {
+      selectedSupplierForHistory.value.balance = newBal;
+    }
+
+    if (payment.status === 'PENDING_APPROVAL') {
+      showToast(t('suppliers.paymentRecordedPendingApproval', { amount: payVal.toLocaleString() }), 'success');
+    } else {
+      showToast(t('suppliers.paymentRecordedSuccess', {
+        amount: payVal.toLocaleString(),
+        name: selectedSupplierForPay.value.name,
+        balance: newBal.toLocaleString()
+      }), 'success');
+    }
+
     showPayModal.value = false;
+    // Also re-fetch suppliers from API to ensure full consistency
+    vm.fetchSuppliers();
   } catch (err: any) {
-    showToast('Failed to record payment: ' + (err.message || err), 'error');
+    const errMsg = err.response?.data?.error || err.message || 'Failed to record supplier payment';
+    showToast(errMsg, 'error');
+  } finally {
+    isSubmittingPayment.value = false;
   }
 };
 </script>
