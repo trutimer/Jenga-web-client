@@ -1921,6 +1921,8 @@ export const sw = {
     insufficientShiftCash: 'Fedha hazitoshi sandukuni: Zamu iliyochaguliwa ina {available}, lakini oda hii inahitaji {required}.',
     cashDrawerBalance: 'Kiasi Kilichopo Sandukuni',
     cashierDirectShiftNotice: 'Fedha taslimu zitakatwa moja kwa moja kutoka kwenye sanduku la zamu yako iliyo wazi.',
+    creditSupplierRequiredNotice: 'Manunuzi ya mkopo yanahitaji msambazaji aliyetajwa. Msambazaji wa moja kwa moja hawezi kutumika kwa mkopo.',
+    supplierRequiredForCredit: 'Tafadhali chagua msambazaji kwa ajili ya oda hii ya mkopo.',
   },
   purchaseOrders: {
     title: 'Oda za Manunuzi',

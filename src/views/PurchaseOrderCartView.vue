@@ -230,18 +230,32 @@
 
           <!-- Supplier Dropdown -->
           <div class="space-y-1 text-xs">
-            <label class="text-[11px] font-mono font-bold uppercase text-outline block">
-              {{ $t('poCart.selectSupplier') }}
+            <label class="text-[11px] font-mono font-bold uppercase block flex items-center justify-between" :class="paymentType === 'CREDIT' ? 'text-primary' : 'text-outline'">
+              <span>
+                {{ $t('poCart.selectSupplier') }}
+                <span v-if="paymentType === 'CREDIT'" class="text-error font-bold">*</span>
+              </span>
+              <span v-if="paymentType === 'CREDIT'" class="text-[10px] font-sans font-bold text-error uppercase tracking-wider">
+                Required for Credit
+              </span>
             </label>
             <select 
               v-model="selectedSupplierId"
-              class="w-full bg-surface-container-low p-2.5 rounded-xl border border-outline-variant text-xs font-semibold text-on-surface outline-none focus:border-primary cursor-pointer"
+              class="w-full p-2.5 rounded-xl border text-xs font-semibold text-on-surface outline-none focus:border-primary cursor-pointer transition-colors"
+              :class="isCreditMissingSupplier ? 'bg-error-container/10 border-error ring-1 ring-error/30' : 'bg-surface-container-low border-outline-variant'"
             >
-              <option value="">{{ $t('poCart.noSupplier') }}</option>
+              <option value="" :disabled="paymentType === 'CREDIT'">
+                {{ paymentType === 'CREDIT' ? '-- Select a Supplier (Required for Credit) --' : $t('poCart.noSupplier') }}
+              </option>
               <option v-for="sup in suppliers" :key="sup.id" :value="sup.id">
                 {{ sup.name }} ({{ sup.category || 'Vendor' }})
               </option>
             </select>
+            <!-- Warning when credit is chosen without a supplier -->
+            <p v-if="isCreditMissingSupplier" class="text-[11px] text-error font-medium flex items-start gap-1.5 mt-1 leading-tight">
+              <AlertTriangle class="w-3.5 h-3.5 shrink-0 text-error mt-0.5" />
+              <span>{{ $t('poCart.creditSupplierRequiredNotice') }}</span>
+            </p>
           </div>
 
           <!-- Expected Delivery Date -->
@@ -520,9 +534,15 @@ const hasInsufficientCash = computed(() => {
   }
 });
 
+// Balance & supplier validation
+const isCreditMissingSupplier = computed(() => {
+  return paymentType.value === 'CREDIT' && !selectedSupplierId.value;
+});
+
 // Submit button gating
 const isSubmitDisabled = computed(() => {
   if (cartItems.value.length === 0) return true;
+  if (isCreditMissingSupplier.value) return true;
   if (paymentType.value === 'CASH') {
     if (isCashDisabled.value) return true;
     if (isNonCashier.value && !selectedShiftId.value) return true;
@@ -533,6 +553,9 @@ const isSubmitDisabled = computed(() => {
 
 const submitDisabledReason = computed(() => {
   if (cartItems.value.length === 0) return 'Your cart is empty.';
+  if (isCreditMissingSupplier.value) {
+    return 'Supplier is required for credit purchase orders. Please select a supplier.';
+  }
   if (paymentType.value === 'CASH') {
     if (isCashDisabled.value) {
       return isNonCashier.value 
@@ -626,6 +649,12 @@ const handleSubmitOrder = async (submitForApproval: boolean) => {
   const branchId = localStorage.getItem('branchId') || (vm.activeBranchId.value ?? '');
   if (!branchId) {
     showToast('No active branch selected. Please select a branch first.', 'error');
+    return;
+  }
+
+  // Pre-submission validation for CREDIT payment
+  if (paymentType.value === 'CREDIT' && !selectedSupplierId.value) {
+    showToast('A supplier must be selected for credit purchase orders.', 'error');
     return;
   }
 

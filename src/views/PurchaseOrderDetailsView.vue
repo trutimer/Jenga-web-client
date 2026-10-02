@@ -943,6 +943,10 @@ const fetchPoDetails = async () => {
 
 const handleSubmitForApproval = async () => {
   if (!po.value) return;
+  if (po.value.paymentType === 'CREDIT' && !po.value.supplierId) {
+    showToast('Cannot submit for approval: A supplier is required for credit purchase orders.', 'error');
+    return;
+  }
   isProcessingAction.value = true;
   try {
     const updated = await purchaseOrderService.submitForApproval(po.value.id);

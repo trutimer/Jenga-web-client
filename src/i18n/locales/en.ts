@@ -1921,6 +1921,8 @@ export const en = {
     insufficientShiftCash: 'Insufficient register cash: Selected shift has {available} available, but this order requires {required}.',
     cashDrawerBalance: 'Drawer Balance',
     cashierDirectShiftNotice: 'Cash will be deducted directly from your open register shift drawer upon creation.',
+    creditSupplierRequiredNotice: 'Credit purchases require an identified supplier. Direct / Walk-in supplier cannot be used on credit.',
+    supplierRequiredForCredit: 'Please select a supplier for this credit purchase order.',
   },
   purchaseOrders: {
     title: 'Purchase Orders',
