@@ -137,10 +137,16 @@ export const en = {
     keepSessionActive: 'Keep Session Active',
     yesLogout: 'Yes, Logout',
     sessionExpired: 'Your session has expired. Please log in again.',
+    lockScreen: 'Lock Screen',
+    lockScreenDesc: 'Lock screen without closing your register shift',
+    justSteppingAway: 'Stepping away temporarily?',
+    lockScreenTooltip: 'Lock Screen (Keep shift active)',
+    screenLocked: 'Screen locked. Enter password to resume.',
   },
 
   // Top Navigation & Header
   topNav: {
+    lockScreen: 'Lock Screen',
     addAccount: 'Add Account',
     newJournal: 'New Journal',
     brand: 'Jenga POS',
@@ -1605,7 +1611,10 @@ export const en = {
     audioFeedback: 'Audio Scan Feedback',
     audioFeedbackDesc: 'Play high-pitch tone on successful lookup, warning buzz on missing item.',
     passwordRequirementsTitle: 'Password Requirements:',
-    passwordMinLength: 'At least 6 characters long',
+    passwordMinLength: 'At least 8 characters long',
+    passwordLettersCase: 'Contains uppercase & lowercase letters',
+    passwordNumberAndSymbol: 'Contains at least one number & symbol',
+    passwordNoCommonWords: 'No easy words (names, animals, cities, brands)',
     passwordsMatch: 'Passwords match',
   },
 

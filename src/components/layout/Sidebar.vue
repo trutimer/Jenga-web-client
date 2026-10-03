@@ -124,6 +124,16 @@
         <span v-if="!sidebarCollapsed" class="text-sm font-semibold">{{ $t('sidebar.help') }}</span>
       </button>
       <button 
+        v-if="onLock"
+        @click="onLock"
+        class="py-3 flex items-center text-on-surface-variant hover:bg-surface-variant/50 rounded-xl transition-all duration-200 cursor-pointer text-left"
+        :class="sidebarCollapsed ? 'justify-center mx-1.5 px-0' : 'gap-3.5 px-4.5 mx-1.5'"
+        :title="sidebarCollapsed ? $t('auth.lockScreen') : ''"
+      >
+        <Lock class="w-5 h-5 stroke-[2px]" />
+        <span v-if="!sidebarCollapsed" class="text-sm font-semibold">{{ $t('auth.lockScreen') }}</span>
+      </button>
+      <button 
         @click="onLogout"
         class="py-3 flex items-center text-error hover:bg-error-container/50 rounded-xl transition-all duration-200 cursor-pointer text-left"
         :class="sidebarCollapsed ? 'justify-center mx-1.5 px-0' : 'gap-3.5 px-4.5 mx-1.5'"
@@ -156,6 +166,7 @@ import {
   Settings, 
   HelpCircle, 
   LogOut, 
+  Lock,
   Store, 
   ChevronLeft, 
   ChevronRight, 
@@ -171,6 +182,7 @@ import { t } from '../../i18n';
 
 defineProps<{
   onLogout: () => void;
+  onLock?: () => void;
   branchName: string;
 }>();
 
@@ -224,7 +236,38 @@ watch(() => route.path, (newPath) => {
   }
 }, { immediate: true });
 
+const canAccessInventory = computed(() => 
+  userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN' || vm.hasPermission('inventory:view')
+);
+
+const canAccessPurchases = computed(() => 
+  userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN' || vm.hasPermission('purchase_order:view') || vm.hasPermission('purchase_order:create')
+);
+
+const canAccessMakerChecker = computed(() => 
+  userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN' || 
+  vm.hasPermission('maker_checker:view') || 
+  vm.hasPermission('maker_checker:approve') || 
+  vm.hasPermission('maker_checker:manage_policies')
+);
+
 const menuItems = computed<MenuItem[]>(() => {
+  const inventoryChildren: SubMenuItem[] = [];
+  if (canAccessInventory.value) {
+    inventoryChildren.push({ path: '/inventory', label: t('sidebar.inventory'), icon: Package });
+  }
+  if (canAccessPurchases.value) {
+    inventoryChildren.push({ path: '/purchases', label: t('sidebar.purchases'), icon: ShoppingBag });
+  }
+
+  const settingsChildren: SubMenuItem[] = [
+    { section: 'profile', label: t('settings.storeProfile'), icon: Store },
+    ...(canAccessMakerChecker.value ? [{ section: 'maker-checker', label: t('settings.makerCheckerConfig'), icon: ShieldCheck }] : []),
+    { section: 'hardware', label: t('settings.hardwareBarcode'), icon: QrCode },
+    { section: 'account', label: t('settings.accountProfile'), icon: User },
+    ...(isElectronApp.value ? [{ section: 'updates', label: t('settings.appUpdates'), icon: RefreshCw }] : [])
+  ];
+
   const raw: MenuItem[] = [
     { id: 'dashboard', label: t('sidebar.dashboard'), icon: LayoutDashboard },
     { id: 'checkout', label: t('sidebar.checkout'), icon: CreditCard },
@@ -232,10 +275,7 @@ const menuItems = computed<MenuItem[]>(() => {
       id: 'inventory_group', 
       label: t('sidebar.inventoryPurchases'), 
       icon: Package, 
-      children: [
-        { path: '/inventory', label: t('sidebar.inventory'), icon: Package },
-        { path: '/purchases', label: t('sidebar.purchases'), icon: ShoppingBag },
-      ]
+      children: inventoryChildren
     },
     { id: 'suppliers', label: t('sidebar.suppliers'), icon: Truck },
     { id: 'customers', label: t('sidebar.customers'), icon: Users },
@@ -257,19 +297,13 @@ const menuItems = computed<MenuItem[]>(() => {
       id: 'settings', 
       label: t('sidebar.settings'), 
       icon: Settings,
-      children: [
-        { section: 'profile', label: t('settings.storeProfile'), icon: Store },
-        { section: 'maker-checker', label: t('settings.makerCheckerConfig'), icon: ShieldCheck },
-        { section: 'hardware', label: t('settings.hardwareBarcode'), icon: QrCode },
-        { section: 'account', label: t('settings.accountProfile'), icon: User },
-        ...(isElectronApp.value ? [{ section: 'updates', label: t('settings.appUpdates'), icon: RefreshCw }] : [])
-      ]
+      children: settingsChildren
     },
   ];
 
   return raw.filter(item => {
     if (item.id === 'inventory_group') {
-      return userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN' || vm.hasPermission('inventory:view');
+      return (canAccessInventory.value || canAccessPurchases.value) && inventoryChildren.length > 0;
     }
     if (item.id === 'finance') {
       return userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN' || vm.hasPermission('finance:view');

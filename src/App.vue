@@ -34,12 +34,12 @@
   <!-- Authenticated Layout -->
   <div v-else class="flex h-screen w-full bg-background text-on-background overflow-hidden relative font-sans antialiased">
     <!-- Desktop Sidebar -->
-    <Sidebar v-if="userRole !== 'CASHIER'" :onLogout="triggerLogoutConfirm" :branchName="settings.name" />
+    <Sidebar v-if="userRole !== 'CASHIER'" :onLogout="triggerLogoutConfirm" :onLock="handleLockScreen" :branchName="settings.name" />
 
     <!-- Mobile Drawer Overlay -->
     <div v-if="mobileMenuOpen && userRole !== 'CASHIER'" class="fixed inset-0 z-40 flex md:hidden font-sans">
       <div 
-        @click="mobileMenuOpen = false"
+        @click="mobileMenuOpen = false" 
         class="fixed inset-0 bg-on-background/40 backdrop-blur-sm"
       ></div>
       
@@ -62,13 +62,22 @@
           </button>
         </div>
 
-        <button 
-          @click="triggerLogoutConfirm"
-          class="mt-auto flex items-center gap-3 px-4 py-4 rounded-lg text-sm font-bold text-error text-left border-t border-outline-variant/50 hover:bg-error-container/20 cursor-pointer"
-        >
-          <LogOut class="w-5 h-5" />
-          <span>{{ $t('auth.logoutCashier') }}</span>
-        </button>
+        <div class="mt-auto flex flex-col gap-1 pt-2 border-t border-outline-variant/50">
+          <button 
+            @click="handleLockScreen"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold text-on-surface-variant hover:bg-surface-variant/40 cursor-pointer"
+          >
+            <Lock class="w-5 h-5 text-primary" />
+            <span>{{ $t('auth.lockScreen') }}</span>
+          </button>
+          <button 
+            @click="triggerLogoutConfirm"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold text-error text-left hover:bg-error-container/20 cursor-pointer"
+          >
+            <LogOut class="w-5 h-5" />
+            <span>{{ $t('auth.logoutCashier') }}</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -82,6 +91,7 @@
         @update:searchQuery="val => searchQuery = val"
         @mobileMenuToggle="mobileMenuOpen = true"
         @logout="triggerLogoutConfirm"
+        @lock="handleLockScreen"
       />
 
       <main class="flex-1 overflow-y-auto p-4 sm:p-5 md:px-5 md:py-6 pb-24 relative bg-surface">
@@ -111,18 +121,28 @@
     </div>
     
     <template #footer>
-      <button 
-        @click="showLogoutModal = false" 
-        class="flex-1 py-3 text-xs font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-all border border-outline-variant bg-transparent cursor-pointer"
-      >
-        {{ $t('auth.keepSessionActive') }}
-      </button>
-      <button 
-        @click="confirmLogout" 
-        class="flex-1 py-3 bg-error text-on-error hover:bg-opacity-95 rounded-xl transition-all font-bold text-xs cursor-pointer text-white border-0 shadow-md shadow-error/15"
-      >
-        {{ $t('auth.yesLogout') }}
-      </button>
+      <div class="flex flex-col sm:flex-row gap-2 w-full">
+        <button 
+          @click="showLogoutModal = false" 
+          class="flex-1 py-3 text-xs font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-all border border-outline-variant bg-transparent cursor-pointer"
+        >
+          {{ $t('auth.keepSessionActive') }}
+        </button>
+        <button 
+          type="button"
+          @click="handleLockScreen" 
+          class="flex-1 py-3 bg-surface-container-high hover:bg-surface-container-highest text-primary border border-primary/30 rounded-xl transition-all font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+        >
+          <Lock class="w-3.5 h-3.5" />
+          <span>{{ $t('auth.lockScreen') }}</span>
+        </button>
+        <button 
+          @click="confirmLogout" 
+          class="flex-1 py-3 bg-error text-on-error hover:bg-opacity-95 rounded-xl transition-all font-bold text-xs cursor-pointer text-white border-0 shadow-md shadow-error/15"
+        >
+          {{ $t('auth.yesLogout') }}
+        </button>
+      </div>
     </template>
   </Modal>
 
@@ -134,6 +154,27 @@
     maxWidth="max-w-md"
   >
     <div class="flex flex-col space-y-4">
+      <!-- Stepping Away / Quick Lock Screen Banner -->
+      <div class="p-3.5 bg-primary/5 border border-primary/20 rounded-2xl flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <Lock class="w-4.5 h-4.5 stroke-[2.2px]" />
+          </div>
+          <div class="text-left min-w-0">
+            <div class="text-xs font-bold text-on-surface truncate">{{ $t('auth.justSteppingAway') }}</div>
+            <div class="text-[11px] text-on-surface-variant leading-tight">{{ $t('auth.lockScreenDesc') }}</div>
+          </div>
+        </div>
+        <button 
+          type="button"
+          @click="handleLockScreen"
+          class="px-3 py-2 bg-primary text-on-primary hover:bg-opacity-95 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm shadow-primary/20"
+        >
+          <Lock class="w-3.5 h-3.5" />
+          <span>{{ $t('auth.lockScreen') }}</span>
+        </button>
+      </div>
+
       <div class="space-y-2 text-center pb-2 border-b border-outline-variant">
         <h4 class="text-md font-bold text-on-surface">{{ $t('checkout.declareCashDrawer') }}</h4>
         <p class="text-xs text-on-surface-variant leading-relaxed">
@@ -167,19 +208,29 @@
     </div>
     
     <template #footer>
-      <button 
-        @click="showCloseShiftModal = false" 
-        class="flex-1 py-3.5 text-xs font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-all border border-outline-variant bg-transparent cursor-pointer"
-      >
-        {{ $t('common.cancel') }}
-      </button>
-      <button 
-        @click="handleCloseShift" 
-        :disabled="isClosingShift || !actualCashInput"
-        class="flex-1 py-3.5 bg-error text-on-error hover:bg-opacity-95 rounded-xl transition-all font-bold text-sm cursor-pointer text-white border-0 shadow-lg shadow-error/20 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {{ isClosingShift ? $t('checkout.closingShiftBtn') : $t('checkout.closeAndLogout') }}
-      </button>
+      <div class="flex flex-col sm:flex-row gap-2 w-full">
+        <button 
+          @click="showCloseShiftModal = false" 
+          class="flex-1 py-3 text-xs font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-all border border-outline-variant bg-transparent cursor-pointer"
+        >
+          {{ $t('common.cancel') }}
+        </button>
+        <button 
+          type="button"
+          @click="handleLockScreen" 
+          class="flex-1 py-3 bg-surface-container-high hover:bg-surface-container-highest text-primary border border-primary/30 rounded-xl transition-all font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+        >
+          <Lock class="w-3.5 h-3.5" />
+          <span>{{ $t('auth.lockScreen') }}</span>
+        </button>
+        <button 
+          @click="handleCloseShift" 
+          :disabled="isClosingShift || !actualCashInput"
+          class="flex-1 py-3 bg-error text-on-error hover:bg-opacity-95 rounded-xl transition-all font-bold text-xs cursor-pointer text-white border-0 shadow-md shadow-error/20 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {{ isClosingShift ? $t('checkout.closingShiftBtn') : $t('checkout.closeAndLogout') }}
+        </button>
+      </div>
     </template>
   </Modal>
 
@@ -216,7 +267,7 @@ import TopNav from './components/layout/TopNav.vue';
 import Modal from './components/common/Modal.vue';
 import TwoFactorPromptModal from './components/common/TwoFactorPromptModal.vue';
 import { t } from './i18n';
-import { Store, LogOut, LayoutDashboard, CreditCard, Package, BarChart3, Settings as SettingsIcon, Truck, UserCog } from 'lucide-vue-next';
+import { Store, LogOut, Lock, LayoutDashboard, CreditCard, Package, BarChart3, Settings as SettingsIcon, Truck, UserCog } from 'lucide-vue-next';
 
 const {
   user,
@@ -229,6 +280,7 @@ const {
   searchQuery,
   currentShift,
   handleLogout: performLogout,
+  lockScreen,
   closeShift,
   fetchCurrentShift
 } = useAppViewModel();
@@ -353,6 +405,14 @@ const handleCloseShift = async () => {
 const confirmLogout = () => {
   showLogoutModal.value = false;
   performLogout();
+};
+
+const handleLockScreen = () => {
+  showLogoutModal.value = false;
+  showCloseShiftModal.value = false;
+  actualCashInput.value = '';
+  shiftNotesInput.value = '';
+  lockScreen();
 };
 
 const menuItems = computed(() => [

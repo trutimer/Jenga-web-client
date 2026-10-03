@@ -123,48 +123,63 @@
 
           <!-- SECTION 2: MAKER-CHECKER (DUAL-AUTHORIZATION) CONFIGURATION -->
           <div v-else-if="activeSection === 'maker-checker'" class="space-y-6">
-            
-            <!-- Sub-tab switcher: Policies vs Pending Approvals -->
-            <div class="flex items-center gap-3 border-b border-outline-variant/60 pb-3">
-              <button
+            <div v-if="!canAccessMakerChecker" class="p-12 text-center bg-surface-container-lowest border border-outline-variant rounded-2xl max-w-lg mx-auto my-12">
+              <ShieldAlert class="w-12 h-12 text-error mx-auto mb-3" />
+              <h3 class="text-base font-bold text-on-surface mb-1">Access Denied</h3>
+              <p class="text-xs text-on-surface-variant mb-4">You do not have permission to view or manage Maker-Checker dual authorizations.</p>
+              <button 
                 type="button"
-                @click="makerCheckerTab = 'policies'"
-                class="px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border-0 flex items-center gap-2"
-                :class="makerCheckerTab === 'policies'
-                  ? 'bg-primary text-on-primary shadow-xs'
-                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'"
+                @click="activeSection = 'profile'"
+                class="px-4 py-2 rounded-xl bg-primary text-on-primary font-bold text-xs cursor-pointer border-0"
               >
-                <ShieldCheck class="w-4 h-4" />
-                <span>{{ $t('settings.activePoliciesTab') }}</span>
-                <span
-                  class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold"
-                  :class="makerCheckerTab === 'policies' ? 'bg-white/20 text-white' : 'bg-surface-container-highest text-on-surface-variant'"
-                >
-                  {{ makerCheckerPolicies.filter(p => p.isEnabled).length }} active
-                </span>
-              </button>
-
-              <button
-                type="button"
-                @click="makerCheckerTab = 'pending'"
-                class="px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border-0 flex items-center gap-2"
-                :class="makerCheckerTab === 'pending'
-                  ? 'bg-primary text-on-primary shadow-xs'
-                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'"
-              >
-                <Clock class="w-4 h-4" />
-                <span>{{ $t('settings.pendingApprovalsTab') }}</span>
-                <span
-                  v-if="pendingApprovals.length > 0"
-                  class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500 text-white animate-pulse"
-                >
-                  {{ pendingApprovals.length }}
-                </span>
+                Go to Store Profile
               </button>
             </div>
 
-            <!-- TAB 1: POLICIES CONFIGURATION -->
-            <div v-if="makerCheckerTab === 'policies'" class="space-y-5">
+            <template v-else>
+              <!-- Sub-tab switcher: Policies vs Pending Approvals -->
+              <div class="flex items-center gap-3 border-b border-outline-variant/60 pb-3">
+                <button
+                  v-if="canManagePolicies"
+                  type="button"
+                  @click="makerCheckerTab = 'policies'"
+                  class="px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border-0 flex items-center gap-2"
+                  :class="makerCheckerTab === 'policies'
+                    ? 'bg-primary text-on-primary shadow-xs'
+                    : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'"
+                >
+                  <ShieldCheck class="w-4 h-4" />
+                  <span>{{ $t('settings.activePoliciesTab') }}</span>
+                  <span
+                    class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold"
+                    :class="makerCheckerTab === 'policies' ? 'bg-white/20 text-white' : 'bg-surface-container-highest text-on-surface-variant'"
+                  >
+                    {{ makerCheckerPolicies.filter(p => p.isEnabled).length }} active
+                  </span>
+                </button>
+
+                <button
+                  v-if="canViewMakerChecker || canApproveMakerChecker"
+                  type="button"
+                  @click="makerCheckerTab = 'pending'"
+                  class="px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border-0 flex items-center gap-2"
+                  :class="makerCheckerTab === 'pending'
+                    ? 'bg-primary text-on-primary shadow-xs'
+                    : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'"
+                >
+                  <Clock class="w-4 h-4" />
+                  <span>{{ $t('settings.pendingApprovalsTab') }}</span>
+                  <span
+                    v-if="pendingApprovals.length > 0"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500 text-white animate-pulse"
+                  >
+                    {{ pendingApprovals.length }}
+                  </span>
+                </button>
+              </div>
+
+              <!-- TAB 1: POLICIES CONFIGURATION -->
+              <div v-if="makerCheckerTab === 'policies' && canManagePolicies" class="space-y-5">
               <!-- Banner Card -->
               <div class="p-4 bg-surface-container-low border border-outline-variant/70 rounded-2xl flex items-start gap-3.5">
                 <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 mt-0.5">
@@ -315,7 +330,7 @@
             </div>
 
             <!-- TAB 2: PENDING APPROVALS QUEUE -->
-            <div v-else class="space-y-4">
+            <div v-else-if="makerCheckerTab === 'pending' && (canViewMakerChecker || canApproveMakerChecker)" class="space-y-4">
               <!-- Refresh & Status Header -->
               <div class="flex items-center justify-between">
                 <div class="text-xs text-on-surface-variant font-medium">
@@ -405,23 +420,25 @@
                       <span>View PO</span>
                     </router-link>
 
-                    <button
-                      type="button"
-                      @click="openDecisionModal(req, 'reject')"
-                      class="px-3.5 py-2 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 border border-rose-500/20 transition-colors flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <X class="w-3.5 h-3.5" />
-                      <span>Reject</span>
-                    </button>
+                      <button
+                        v-if="canApproveMakerChecker"
+                        type="button"
+                        @click="openDecisionModal(req, 'reject')"
+                        class="px-3.5 py-2 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 border border-rose-500/20 transition-colors flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <X class="w-3.5 h-3.5" />
+                        <span>Reject</span>
+                      </button>
 
-                    <button
-                      type="button"
-                      @click="openDecisionModal(req, 'approve')"
-                      class="px-3.5 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors flex items-center gap-1.5 cursor-pointer border-0 shadow-xs"
-                    >
-                      <CheckCircle2 class="w-3.5 h-3.5" />
-                      <span>Approve</span>
-                    </button>
+                      <button
+                        v-if="canApproveMakerChecker"
+                        type="button"
+                        @click="openDecisionModal(req, 'approve')"
+                        class="px-3.5 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors flex items-center gap-1.5 cursor-pointer border-0 shadow-xs"
+                      >
+                        <CheckCircle2 class="w-3.5 h-3.5" />
+                        <span>Approve</span>
+                      </button>
                   </div>
                 </div>
               </div>
@@ -505,6 +522,7 @@
                 </button>
               </template>
             </Modal>
+            </template>
 
           </div>
 
@@ -1092,10 +1110,20 @@
                   <div class="font-mono font-bold text-on-surface-variant uppercase text-[10px] tracking-wider">
                     {{ $t('settings.passwordRequirementsTitle') }}
                   </div>
-                  <div class="flex items-center gap-2" :class="passwordForm.newPassword.length >= 6 ? 'text-emerald-700 font-bold' : 'text-on-surface-variant'">
-                    <CheckCircle2 v-if="passwordForm.newPassword.length >= 6" class="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+                  <div class="flex items-center gap-2" :class="hasMinLength ? 'text-emerald-700 font-bold' : 'text-on-surface-variant'">
+                    <CheckCircle2 v-if="hasMinLength" class="w-3.5 h-3.5 shrink-0 text-emerald-600" />
                     <AlertCircle v-else class="w-3.5 h-3.5 shrink-0" />
                     <span>{{ $t('settings.passwordMinLength') }}</span>
+                  </div>
+                  <div class="flex items-center gap-2" :class="hasUpperLower ? 'text-emerald-700 font-bold' : 'text-on-surface-variant'">
+                    <CheckCircle2 v-if="hasUpperLower" class="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+                    <AlertCircle v-else class="w-3.5 h-3.5 shrink-0" />
+                    <span>{{ $t('settings.passwordLettersCase') }}</span>
+                  </div>
+                  <div class="flex items-center gap-2" :class="hasDigitSpecial ? 'text-emerald-700 font-bold' : 'text-on-surface-variant'">
+                    <CheckCircle2 v-if="hasDigitSpecial" class="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+                    <AlertCircle v-else class="w-3.5 h-3.5 shrink-0" />
+                    <span>{{ $t('settings.passwordNumberAndSymbol') }}</span>
                   </div>
                   <div class="flex items-center gap-2" :class="passwordsMatch ? 'text-emerald-700 font-bold' : 'text-on-surface-variant'">
                     <CheckCircle2 v-if="passwordsMatch" class="w-3.5 h-3.5 shrink-0 text-emerald-600" />
@@ -1566,14 +1594,31 @@ const activeSection = ref<'profile' | 'maker-checker' | 'hardware' | 'account' |
 const makerCheckerTab = ref<'policies' | 'pending'>('policies');
 const appVersion = ref(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '2.6.0');
 
+// Permission Controls
+const isOwnerOrAdmin = computed(() => userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN');
+const canViewMakerChecker = computed(() => isOwnerOrAdmin.value || vm.hasPermission('maker_checker:view'));
+const canApproveMakerChecker = computed(() => isOwnerOrAdmin.value || vm.hasPermission('maker_checker:approve'));
+const canManagePolicies = computed(() => isOwnerOrAdmin.value || vm.hasPermission('maker_checker:manage_policies'));
+const canAccessMakerChecker = computed(() => canViewMakerChecker.value || canApproveMakerChecker.value || canManagePolicies.value);
+
 const syncSectionFromRoute = () => {
   const sec = route.query.section as string;
   if (sec && ['profile', 'maker-checker', 'hardware', 'account', 'updates'].includes(sec)) {
-    activeSection.value = sec as any;
+    if (sec === 'maker-checker' && !canAccessMakerChecker.value) {
+      activeSection.value = 'profile';
+    } else {
+      activeSection.value = sec as any;
+    }
   }
   const tab = route.query.tab as string;
   if (tab === 'pending' || tab === 'policies') {
-    makerCheckerTab.value = tab;
+    if (tab === 'policies' && !canManagePolicies.value) {
+      makerCheckerTab.value = 'pending';
+    } else {
+      makerCheckerTab.value = tab;
+    }
+  } else if (!canManagePolicies.value) {
+    makerCheckerTab.value = 'pending';
   }
 };
 
@@ -1711,9 +1756,15 @@ const passwordsMatch = computed(() => {
   return passwordForm.value.newPassword === passwordForm.value.confirmPassword;
 });
 
+const hasMinLength = computed(() => passwordForm.value.newPassword.length >= 8);
+const hasUpperLower = computed(() => /[A-Z]/.test(passwordForm.value.newPassword) && /[a-z]/.test(passwordForm.value.newPassword));
+const hasDigitSpecial = computed(() => /[0-9]/.test(passwordForm.value.newPassword) && /[^a-zA-Z0-9]/.test(passwordForm.value.newPassword));
+
 const isPasswordFormValid = computed(() => {
   return passwordForm.value.oldPassword.trim().length > 0 &&
-         passwordForm.value.newPassword.length >= 6 && 
+         hasMinLength.value &&
+         hasUpperLower.value &&
+         hasDigitSpecial.value &&
          passwordsMatch.value;
 });
 
@@ -1817,8 +1868,20 @@ const updatePassword = async () => {
   if (!passwordForm.value.newPassword) {
     passwordErrors.value.newPassword = 'New password is required';
     hasErr = true;
-  } else if (passwordForm.value.newPassword.length < 6) {
-    passwordErrors.value.newPassword = 'Password must be at least 6 characters';
+  } else if (passwordForm.value.newPassword.length < 8) {
+    passwordErrors.value.newPassword = 'Password must be at least 8 characters long';
+    hasErr = true;
+  } else if (!/[A-Z]/.test(passwordForm.value.newPassword)) {
+    passwordErrors.value.newPassword = 'Password must contain at least one uppercase letter (A-Z)';
+    hasErr = true;
+  } else if (!/[a-z]/.test(passwordForm.value.newPassword)) {
+    passwordErrors.value.newPassword = 'Password must contain at least one lowercase letter (a-z)';
+    hasErr = true;
+  } else if (!/[0-9]/.test(passwordForm.value.newPassword)) {
+    passwordErrors.value.newPassword = 'Password must contain at least one number (0-9)';
+    hasErr = true;
+  } else if (!/[^a-zA-Z0-9]/.test(passwordForm.value.newPassword)) {
+    passwordErrors.value.newPassword = 'Password must contain at least one special character';
     hasErr = true;
   }
   if (!passwordForm.value.confirmPassword) {
@@ -2118,6 +2181,7 @@ const formatDateTime = (dateStr?: string): string => {
 };
 
 const fetchMakerCheckerPolicies = async () => {
+  if (!canManagePolicies.value && !canViewMakerChecker.value) return;
   isLoadingPolicies.value = true;
   try {
     const list = await makerCheckerService.getPolicies();
@@ -2158,6 +2222,7 @@ const fetchMakerCheckerPolicies = async () => {
 };
 
 const fetchPendingApprovals = async () => {
+  if (!canViewMakerChecker.value && !canApproveMakerChecker.value) return;
   isLoadingPending.value = true;
   try {
     const reqs = await makerCheckerService.getPendingRequests(activeBranchId?.value || undefined);
@@ -2170,6 +2235,10 @@ const fetchPendingApprovals = async () => {
 };
 
 const handleSavePolicy = async (policy: StoreApprovalPolicy) => {
+  if (!canManagePolicies.value) {
+    showToast('Permission denied: You do not have permission to manage approval policies.', 'error');
+    return;
+  }
   savingPolicyAction.value = policy.actionType;
   try {
     const payload = {
@@ -2199,6 +2268,10 @@ const openDecisionModal = (req: MakerCheckerRequest, type: 'approve' | 'reject')
 
 const submitDecision = async () => {
   if (!activeRequest.value) return;
+  if (!canApproveMakerChecker.value) {
+    showToast('Permission denied: You do not have permission to approve or reject requests.', 'error');
+    return;
+  }
   if (decisionType.value === 'reject' && !decisionNotes.value.trim()) {
     showToast('Rejection reason is required', 'error');
     return;

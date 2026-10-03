@@ -293,6 +293,15 @@
         <!-- Cloud Sync & Offline Status -->
         <SyncStatusBadge />
 
+        <!-- Quick Lock Screen Button -->
+        <button 
+          @click="$emit('lock')"
+          class="p-2 hover:bg-surface-container-high rounded-full transition-colors flex items-center justify-center cursor-pointer text-on-surface-variant hover:text-primary"
+          :title="$t('auth.lockScreenTooltip')"
+        >
+          <Lock class="w-5 h-5 stroke-[2px]" />
+        </button>
+
         <!-- Logout for Cashier (since they don't have sidebar) -->
         <button 
           v-if="userRole === 'CASHIER'"
@@ -378,6 +387,7 @@ import { useAppViewModel } from '../../viewmodels/useAppViewModel';
 import { 
   Menu,
   LogOut,
+  Lock,
   Coins,
   List,
   Download,
@@ -407,6 +417,7 @@ defineEmits<{
   (e: 'update:searchQuery', val: string): void;
   (e: 'mobileMenuToggle'): void;
   (e: 'logout'): void;
+  (e: 'lock'): void;
 }>();
 
 const router = useRouter();

@@ -137,10 +137,16 @@ export const sw = {
     keepSessionActive: 'Baki Ndani ya Mfumo',
     yesLogout: 'Ndiyo, Toka Sasa',
     sessionExpired: 'Kipindi chako kimeisha muda wake. Tafadhali ingia tena kwenye mfumo.',
+    lockScreen: 'Funga Skrini',
+    lockScreenDesc: 'Funga skrini bila kuhitimisha zamu yako',
+    justSteppingAway: 'Unaondoka kwa muda mfupi?',
+    lockScreenTooltip: 'Funga Skrini (Zamu haitafungwa)',
+    screenLocked: 'Skrini imefungwa. Weka nenosiri ili kuendelea.',
   },
 
   // Menyu ya Juu (Top Navigation)
   topNav: {
+    lockScreen: 'Funga Skrini',
     addAccount: 'Ongeza Akaunti',
     newJournal: 'Jarida Jipya',
     brand: 'Jenga POS',
@@ -1605,7 +1611,10 @@ export const sw = {
     audioFeedback: 'Mlio wa Sauti Unaposoma',
     audioFeedbackDesc: 'Piga mlio wa sauti ya juu bidhaa ikipatikana, na mlio wa tahadhari bidhaa isipopatikana.',
     passwordRequirementsTitle: 'Vigezo vya Nenosiri:',
-    passwordMinLength: 'Herufi zisizopungua 6',
+    passwordMinLength: 'Herufi zisizopungua 8',
+    passwordLettersCase: 'Ina herufi kubwa na ndogo',
+    passwordNumberAndSymbol: 'Ina angalau namba moja na alama',
+    passwordNoCommonWords: 'Haina majina ya watu, wanyama, miji au bidhaa',
     passwordsMatch: 'Nenosiri zinalingana',
   },
 

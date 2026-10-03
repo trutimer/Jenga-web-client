@@ -618,7 +618,7 @@ const processSuccessfulLogin = async (res: any) => {
 
   // Store permissions immediately from login response or token claims
   let permissionsToStore: string[] = [];
-  if (res.user && Array.isArray(res.user.permissions) && res.user.permissions.length > 0) {
+  if (res.user && Array.isArray(res.user.permissions)) {
     permissionsToStore = res.user.permissions;
   } else if (res.accessToken) {
     const payload = parseJwtPayload(res.accessToken);
@@ -626,10 +626,8 @@ const processSuccessfulLogin = async (res: any) => {
       permissionsToStore = payload.permissions;
     }
   }
-  if (permissionsToStore.length > 0) {
-    localStorage.setItem('userPermissions', JSON.stringify(permissionsToStore));
-    vm.userPermissions.value = permissionsToStore;
-  }
+  localStorage.setItem('userPermissions', JSON.stringify(permissionsToStore));
+  vm.userPermissions.value = permissionsToStore;
 
   if (res.user) {
     localStorage.setItem('userId', res.user.id);
@@ -678,10 +676,11 @@ const processSuccessfulLogin = async (res: any) => {
     localStorage.setItem('cashierRole', res.user.role || 'ADMIN');
     localStorage.removeItem('branchId');
 
-    if (remember.value) {
-      localStorage.setItem('lastPhone', phone.value);
+    localStorage.setItem('lastPhone', phone.value);
+    if (!remember.value) {
+      sessionStorage.setItem('forgetPhoneOnLogout', 'true');
     } else {
-      localStorage.removeItem('lastPhone');
+      sessionStorage.removeItem('forgetPhoneOnLogout');
     }
 
     isLoggingIn.value = false;
@@ -723,10 +722,11 @@ const processSuccessfulLogin = async (res: any) => {
   localStorage.setItem('cashierName', res.user.fullName);
   localStorage.setItem('cashierRole', res.user.role || '');
 
-  if (remember.value) {
-    localStorage.setItem('lastPhone', phone.value);
+  localStorage.setItem('lastPhone', phone.value);
+  if (!remember.value) {
+    sessionStorage.setItem('forgetPhoneOnLogout', 'true');
   } else {
-    localStorage.removeItem('lastPhone');
+    sessionStorage.removeItem('forgetPhoneOnLogout');
   }
   isLoggingIn.value = false;
   vm.handleLogin(res.user.fullName, branchId || '');
@@ -974,8 +974,24 @@ const handleConfirmReset = async () => {
     resetError.value = 'Please enter a valid 6-digit code';
     return;
   }
-  if (!resetNewPassword.value || resetNewPassword.value.length < 6) {
-    resetError.value = 'Password must be at least 6 characters';
+  if (!resetNewPassword.value || resetNewPassword.value.length < 8) {
+    resetError.value = 'Password must be at least 8 characters long';
+    return;
+  }
+  if (!/[A-Z]/.test(resetNewPassword.value)) {
+    resetError.value = 'Password must contain at least one uppercase letter (A-Z)';
+    return;
+  }
+  if (!/[a-z]/.test(resetNewPassword.value)) {
+    resetError.value = 'Password must contain at least one lowercase letter (a-z)';
+    return;
+  }
+  if (!/[0-9]/.test(resetNewPassword.value)) {
+    resetError.value = 'Password must contain at least one number (0-9)';
+    return;
+  }
+  if (!/[^a-zA-Z0-9]/.test(resetNewPassword.value)) {
+    resetError.value = 'Password must contain at least one special character';
     return;
   }
 

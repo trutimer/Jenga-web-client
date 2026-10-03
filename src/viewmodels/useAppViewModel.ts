@@ -36,16 +36,16 @@ const isInitialAuthValid = () => {
 const getInitialUserPermissions = (): string[] => {
   try {
     const rawStored = localStorage.getItem('userPermissions');
-    if (rawStored) {
+    if (rawStored !== null) {
       const parsed = JSON.parse(rawStored);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         return parsed;
       }
     }
     const token = localStorage.getItem('accessToken');
     if (token) {
       const payload = parseJwtPayload(token);
-      if (payload && Array.isArray(payload.permissions) && payload.permissions.length > 0) {
+      if (payload && Array.isArray(payload.permissions)) {
         localStorage.setItem('userPermissions', JSON.stringify(payload.permissions));
         return payload.permissions;
       }
@@ -96,22 +96,30 @@ registerSessionExpireCallback(() => {
   currentShift.value = null;
 });
 
-// Inactivity lockout timer
+// Lockout & inactivity functions
 let timeoutId: any = null;
 const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+
+export const lockScreen = () => {
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+    timeoutId = null;
+  }
+  user.value = null;
+  userRole.value = null;
+  userId.value = null;
+  activeBranchId.value = null;
+  userPermissions.value = [];
+  mobileMenuOpen.value = false;
+  websocketService.disconnect();
+  clearAuthStorage();
+  router.push('/login');
+};
 
 const resetInactivityTimeout = () => {
   if (timeoutId) clearTimeout(timeoutId);
   timeoutId = setTimeout(() => {
-    user.value = null;
-    userRole.value = null;
-    userId.value = null;
-    activeBranchId.value = null;
-    userPermissions.value = [];
-    mobileMenuOpen.value = false;
-    websocketService.disconnect();
-    clearAuthStorage();
-    router.push('/login');
+    lockScreen();
   }, 5 * 60 * 1000); // 5 minutes
 };
 
@@ -503,10 +511,10 @@ export function useAppViewModel() {
     const currentUserId = userId.value || localStorage.getItem('cashierId') || localStorage.getItem('userId');
     const token = localStorage.getItem('accessToken');
 
-    // Pre-populate immediately from token claims if current state is empty
-    if (token && userPermissions.value.length === 0) {
+    // Pre-populate immediately from token claims ONLY if storage has never been initialized
+    if (token && localStorage.getItem('userPermissions') === null) {
       const payload = parseJwtPayload(token);
-      if (payload && Array.isArray(payload.permissions) && payload.permissions.length > 0) {
+      if (payload && Array.isArray(payload.permissions)) {
         userPermissions.value = payload.permissions;
         localStorage.setItem('userPermissions', JSON.stringify(payload.permissions));
       }
@@ -514,17 +522,17 @@ export function useAppViewModel() {
 
     if (!currentUserId) return;
     try {
-      const res = await api.get<any>(`/api/users/${currentUserId}/permissions`);
+      const res = await api.get<any>(`/api/users/${currentUserId}/permissions`, { suppressToast: true });
       if (res && Array.isArray(res.permissions)) {
         userPermissions.value = res.permissions;
         localStorage.setItem('userPermissions', JSON.stringify(res.permissions));
       }
     } catch (err) {
       console.warn('Failed to fetch current user permissions from server:', err);
-      // Fallback to token payload if server call fails (e.g. offline on desktop)
-      if (token && userPermissions.value.length === 0) {
+      // Fallback to token payload if server call fails and storage was never populated
+      if (token && localStorage.getItem('userPermissions') === null) {
         const payload = parseJwtPayload(token);
-        if (payload && Array.isArray(payload.permissions) && payload.permissions.length > 0) {
+        if (payload && Array.isArray(payload.permissions)) {
           userPermissions.value = payload.permissions;
           localStorage.setItem('userPermissions', JSON.stringify(payload.permissions));
         }
@@ -610,7 +618,11 @@ export function useAppViewModel() {
     mobileMenuOpen.value = false;
     currentShift.value = null;
     userPermissions.value = [];
+    const forgetPhone = sessionStorage.getItem('forgetPhoneOnLogout') === 'true';
     clearAuthStorage();
+    if (forgetPhone) {
+      localStorage.removeItem('lastPhone');
+    }
     router.push('/login');
   };
 
@@ -722,6 +734,20 @@ export function useAppViewModel() {
     fetchCurrentUserPermissions().catch(() => {});
   }
 
+  if (typeof window !== 'undefined') {
+    window.addEventListener('focus', () => {
+      if (isInitialAuthValid()) {
+        fetchCurrentUserPermissions().catch(() => {});
+      }
+    });
+  }
+
+  router.afterEach(() => {
+    if (isInitialAuthValid()) {
+      fetchCurrentUserPermissions().catch(() => {});
+    }
+  });
+
   return {
     user,
     userRole,
@@ -743,6 +769,7 @@ export function useAppViewModel() {
     setActiveBranch,
     handleLogin,
     handleLogout,
+    lockScreen,
     updateSettings: handleUpdateSettings,
     toggleCogs,
     handleTransactionCompleted,

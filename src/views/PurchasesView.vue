@@ -27,6 +27,7 @@
 
         <!-- PO Cart button with counter badge -->
         <button 
+          v-if="canCreatePo || canViewPo"
           @click="handleOpenCart"
           class="h-10 px-4 rounded-lg border border-outline hover:bg-surface-container-low text-on-surface font-semibold text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm bg-surface-container-lowest relative"
           :title="$t('poCart.cartTooltip', { count: cartCount })"
@@ -61,6 +62,7 @@
       </button>
 
       <button
+        v-if="canViewPo || canCreatePo"
         type="button"
         @click="activeTab = 'orders'"
         class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border-0"
@@ -722,7 +724,7 @@
 
                     <!-- Receive Goods (If Approved or Partial) -->
                     <button 
-                      v-if="po.status === 'APPROVED' || po.status === 'PARTIALLY_RECEIVED'"
+                      v-if="(po.status === 'APPROVED' || po.status === 'PARTIALLY_RECEIVED') && canReceivePo"
                       @click="router.push('/purchases/orders/' + po.id)"
                       class="px-2 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 transition-all border-0 flex items-center gap-1 cursor-pointer"
                       title="Receive Goods into Inventory"
@@ -733,7 +735,7 @@
 
                     <!-- Submit Draft (If Draft) -->
                     <button 
-                      v-if="po.status === 'DRAFT'"
+                      v-if="po.status === 'DRAFT' && canSubmitPo"
                       @click="handleQuickSubmitPo(po)"
                       class="px-2 py-1 rounded-lg text-xs font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-all border-0 flex items-center gap-1 cursor-pointer"
                       title="Submit for Approval"
@@ -1204,6 +1206,14 @@ const vm = useAppViewModel();
 
 const currency = computed(() => vm.settings.value?.currency || 'TZS');
 
+// Permission Controls
+const isOwnerOrAdmin = computed(() => vm.userRole.value === 'ADMIN' || vm.userRole.value === 'SUPER_ADMIN');
+const canViewPo = computed(() => isOwnerOrAdmin.value || vm.hasPermission('purchase_order:view'));
+const canCreatePo = computed(() => isOwnerOrAdmin.value || vm.hasPermission('purchase_order:create'));
+const canEditPo = computed(() => isOwnerOrAdmin.value || vm.hasPermission('purchase_order:edit'));
+const canSubmitPo = computed(() => isOwnerOrAdmin.value || vm.hasPermission('purchase_order:submit') || vm.hasPermission('purchase_order:create'));
+const canReceivePo = computed(() => isOwnerOrAdmin.value || vm.hasPermission('purchase_order:receive'));
+
 // PO Procurement Cart Integration
 const poCart = usePurchaseOrderCart();
 const { cartCount, showEmptyCartModal } = poCart;
@@ -1217,10 +1227,15 @@ const handleOpenCart = () => {
 };
 
 // Tabs: Invoices & Receipts vs Purchase Orders
-const activeTab = ref<'invoices' | 'orders'>((route.query.tab as string) === 'orders' ? 'orders' : 'invoices');
+const initialTab = (route.query.tab as string) === 'orders' && (canViewPo.value || canCreatePo.value) ? 'orders' : 'invoices';
+const activeTab = ref<'invoices' | 'orders'>(initialTab);
 
-watch(() => route.query.tab, (tab) => {
-  if (tab === 'orders') activeTab.value = 'orders';
+watch([() => route.query.tab, canViewPo, canCreatePo], ([tab]) => {
+  if (tab === 'orders' && (canViewPo.value || canCreatePo.value)) {
+    activeTab.value = 'orders';
+  } else if (!canViewPo.value && !canCreatePo.value && activeTab.value === 'orders') {
+    activeTab.value = 'invoices';
+  }
 });
 
 // State (Invoices)
@@ -1719,6 +1734,7 @@ const paginatedPurchaseOrders = computed(() => {
 });
 
 const fetchPurchaseOrders = async () => {
+  if (!canViewPo.value && !canCreatePo.value) return;
   const branchId = localStorage.getItem('branchId');
   if (!branchId) return;
 
@@ -1737,6 +1753,10 @@ const fetchPurchaseOrders = async () => {
 };
 
 const handleQuickSubmitPo = async (po: PurchaseOrder) => {
+  if (!canSubmitPo.value) {
+    showToast('Permission denied: You cannot submit purchase orders for approval', 'error');
+    return;
+  }
   try {
     const updated = await purchaseOrderService.submitForApproval(po.id);
     const index = purchaseOrders.value.findIndex(p => p.id === po.id);
@@ -1778,6 +1798,8 @@ const formatPoStatusLabel = (status: PurchaseOrderStatus) => {
 onMounted(() => {
   fetchPurchases();
   fetchSuppliers();
-  fetchPurchaseOrders();
+  if (canViewPo.value || canCreatePo.value) {
+    fetchPurchaseOrders();
+  }
 });
 </script>

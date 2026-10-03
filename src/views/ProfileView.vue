@@ -350,10 +350,20 @@
               <div class="font-mono font-bold text-on-surface-variant uppercase text-[10px] tracking-wider">
                 {{ $t('settings.passwordRequirementsTitle') }}
               </div>
-              <div class="flex items-center gap-2" :class="passwordForm.newPassword.length >= 6 ? 'text-success font-bold' : 'text-on-surface-variant'">
-                <CheckCircle2 v-if="passwordForm.newPassword.length >= 6" class="w-3.5 h-3.5 shrink-0" />
+              <div class="flex items-center gap-2" :class="hasMinLength ? 'text-success font-bold' : 'text-on-surface-variant'">
+                <CheckCircle2 v-if="hasMinLength" class="w-3.5 h-3.5 shrink-0" />
                 <AlertCircle v-else class="w-3.5 h-3.5 shrink-0" />
                 <span>{{ $t('settings.passwordMinLength') }}</span>
+              </div>
+              <div class="flex items-center gap-2" :class="hasUpperLower ? 'text-success font-bold' : 'text-on-surface-variant'">
+                <CheckCircle2 v-if="hasUpperLower" class="w-3.5 h-3.5 shrink-0" />
+                <AlertCircle v-else class="w-3.5 h-3.5 shrink-0" />
+                <span>{{ $t('settings.passwordLettersCase') }}</span>
+              </div>
+              <div class="flex items-center gap-2" :class="hasDigitSpecial ? 'text-success font-bold' : 'text-on-surface-variant'">
+                <CheckCircle2 v-if="hasDigitSpecial" class="w-3.5 h-3.5 shrink-0" />
+                <AlertCircle v-else class="w-3.5 h-3.5 shrink-0" />
+                <span>{{ $t('settings.passwordNumberAndSymbol') }}</span>
               </div>
               <div class="flex items-center gap-2" :class="passwordsMatch ? 'text-success font-bold' : 'text-on-surface-variant'">
                 <CheckCircle2 v-if="passwordsMatch" class="w-3.5 h-3.5 shrink-0" />
@@ -729,9 +739,15 @@ const passwordsMatch = computed(() => {
   return passwordForm.value.newPassword === passwordForm.value.confirmPassword;
 });
 
+const hasMinLength = computed(() => passwordForm.value.newPassword.length >= 8);
+const hasUpperLower = computed(() => /[A-Z]/.test(passwordForm.value.newPassword) && /[a-z]/.test(passwordForm.value.newPassword));
+const hasDigitSpecial = computed(() => /[0-9]/.test(passwordForm.value.newPassword) && /[^a-zA-Z0-9]/.test(passwordForm.value.newPassword));
+
 const isPasswordFormValid = computed(() => {
   return passwordForm.value.oldPassword.trim().length > 0 &&
-         passwordForm.value.newPassword.length >= 6 && 
+         hasMinLength.value &&
+         hasUpperLower.value &&
+         hasDigitSpecial.value &&
          passwordsMatch.value;
 });
 
@@ -967,8 +983,20 @@ const updatePassword = async () => {
   if (!passwordForm.value.newPassword) {
     passwordErrors.value.newPassword = 'New password is required';
     hasErr = true;
-  } else if (passwordForm.value.newPassword.length < 6) {
-    passwordErrors.value.newPassword = 'Password must be at least 6 characters';
+  } else if (passwordForm.value.newPassword.length < 8) {
+    passwordErrors.value.newPassword = 'Password must be at least 8 characters long';
+    hasErr = true;
+  } else if (!/[A-Z]/.test(passwordForm.value.newPassword)) {
+    passwordErrors.value.newPassword = 'Password must contain at least one uppercase letter (A-Z)';
+    hasErr = true;
+  } else if (!/[a-z]/.test(passwordForm.value.newPassword)) {
+    passwordErrors.value.newPassword = 'Password must contain at least one lowercase letter (a-z)';
+    hasErr = true;
+  } else if (!/[0-9]/.test(passwordForm.value.newPassword)) {
+    passwordErrors.value.newPassword = 'Password must contain at least one number (0-9)';
+    hasErr = true;
+  } else if (!/[^a-zA-Z0-9]/.test(passwordForm.value.newPassword)) {
+    passwordErrors.value.newPassword = 'Password must contain at least one special character';
     hasErr = true;
   }
   if (!passwordForm.value.confirmPassword) {

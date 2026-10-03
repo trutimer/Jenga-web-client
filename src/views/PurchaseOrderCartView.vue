@@ -500,6 +500,9 @@ const currentBranchName = computed(() => {
 // Role & Permission Checks
 const userRole = computed(() => vm.userRole.value);
 const isNonCashier = computed(() => ['ADMIN', 'MANAGER', 'SUPER_ADMIN'].includes(userRole.value || ''));
+const isOwnerOrAdmin = computed(() => userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN');
+const canCreatePo = computed(() => isOwnerOrAdmin.value || vm.hasPermission('purchase_order:create'));
+const canSubmitPo = computed(() => isOwnerOrAdmin.value || vm.hasPermission('purchase_order:submit') || vm.hasPermission('purchase_order:create'));
 
 // Shifts for cash payment funding
 const openShifts = ref<CashierShift[]>([]);
@@ -541,6 +544,7 @@ const isCreditMissingSupplier = computed(() => {
 
 // Submit button gating
 const isSubmitDisabled = computed(() => {
+  if (!canCreatePo.value) return true;
   if (cartItems.value.length === 0) return true;
   if (isCreditMissingSupplier.value) return true;
   if (paymentType.value === 'CASH') {
@@ -552,6 +556,9 @@ const isSubmitDisabled = computed(() => {
 });
 
 const submitDisabledReason = computed(() => {
+  if (!canCreatePo.value) {
+    return 'Permission denied: You do not have permission to create purchase orders.';
+  }
   if (cartItems.value.length === 0) return 'Your cart is empty.';
   if (isCreditMissingSupplier.value) {
     return 'Supplier is required for credit purchase orders. Please select a supplier.';
@@ -641,6 +648,16 @@ const handleClearCart = () => {
 };
 
 const handleSubmitOrder = async (submitForApproval: boolean) => {
+  if (!canCreatePo.value) {
+    showToast('Permission denied: You do not have permission to create purchase orders.', 'error');
+    return;
+  }
+
+  if (submitForApproval && !canSubmitPo.value) {
+    showToast('Permission denied: You do not have permission to submit purchase orders for approval.', 'error');
+    return;
+  }
+
   if (cartItems.value.length === 0) {
     showToast('Your cart is empty. Add products before creating a purchase order.', 'error');
     return;
@@ -736,6 +753,11 @@ const handleSubmitOrder = async (submitForApproval: boolean) => {
 };
 
 onMounted(async () => {
+  if (!isOwnerOrAdmin.value && !vm.hasPermission('purchase_order:create') && !vm.hasPermission('purchase_order:view')) {
+    showToast('Permission denied: You cannot access Purchase Order creation.', 'error');
+    router.replace('/inventory');
+    return;
+  }
   if (suppliers.value.length === 0) {
     vm.fetchSuppliers();
   }

@@ -12,6 +12,7 @@
       <div class="flex items-center gap-3">
         <!-- PO Cart Button -->
         <button 
+          v-if="vm.userRole.value === 'ADMIN' || vm.userRole.value === 'SUPER_ADMIN' || vm.hasPermission('purchase_order:create') || vm.hasPermission('purchase_order:view')"
           @click="handleOpenCart"
           class="h-10 px-3.5 rounded-lg border border-outline hover:bg-surface-container-low text-on-surface-variant font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm text-center bg-surface-container-lowest relative"
           :title="$t('poCart.cartTooltip', { count: cartCount })"
@@ -319,6 +320,7 @@
                     </button>
                     <!-- Add to PO Cart (replaces edit as requested) -->
                     <button 
+                      v-if="vm.userRole.value === 'ADMIN' || vm.userRole.value === 'SUPER_ADMIN' || vm.hasPermission('purchase_order:create')"
                       @click.stop="handleAddToCart(p)"
                       class="p-1.5 rounded-lg transition-all cursor-pointer border-0"
                       :class="isInCart(p.id) 
@@ -337,7 +339,7 @@
                       <PlusCircle class="w-4.5 h-4.5" />
                     </button>
                     <button 
-                      v-if="!showInactive && (vm.hasPermission('inventory:delete') || vm.hasPermission('inventory:edit'))"
+                      v-if="!showInactive && vm.hasPermission('inventory:delete')"
                       @click.stop="confirmDeleteProduct(p)"
                       class="p-1.5 hover:bg-error-container/30 rounded-lg text-on-surface-variant hover:text-error transition-colors cursor-pointer border-0 bg-transparent"
                       :title="$t('inventory.deleteProductTooltip')"
@@ -1372,6 +1374,9 @@ const handleOpenCart = () => {
 };
 
 const handleAddToCart = (p: Product) => {
+  if (vm.userRole.value !== 'ADMIN' && vm.userRole.value !== 'SUPER_ADMIN' && !vm.hasPermission('purchase_order:create')) {
+    return;
+  }
   addToCart(p);
 };
 

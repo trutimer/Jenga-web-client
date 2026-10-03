@@ -82,7 +82,7 @@
 
           <!-- Submit Draft (If Draft) -->
           <button 
-            v-if="po.status === 'DRAFT'"
+            v-if="po.status === 'DRAFT' && canSubmitPo"
             type="button"
             @click="handleSubmitForApproval"
             :disabled="isProcessingAction"
@@ -94,7 +94,7 @@
 
           <!-- Receive Goods (If Approved or Partially Received) -->
           <button 
-            v-if="po.status === 'APPROVED' || po.status === 'PARTIALLY_RECEIVED'"
+            v-if="(po.status === 'APPROVED' || po.status === 'PARTIALLY_RECEIVED') && canReceivePo"
             type="button"
             @click="showReceiveModal = true"
             class="h-9 px-4.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 border-0"
@@ -105,7 +105,7 @@
 
           <!-- Cancel PO (If Draft, Approved, Partially Received) -->
           <button 
-            v-if="po.status === 'DRAFT' || po.status === 'APPROVED' || po.status === 'PENDING_APPROVAL'"
+            v-if="(po.status === 'DRAFT' || po.status === 'APPROVED' || po.status === 'PENDING_APPROVAL') && canEditPo"
             type="button"
             @click="handleCancelPo"
             :disabled="isProcessingAction"
@@ -117,7 +117,7 @@
 
           <!-- Delete Draft (Draft only) -->
           <button 
-            v-if="po.status === 'DRAFT'"
+            v-if="po.status === 'DRAFT' && canEditPo"
             type="button"
             @click="handleDeleteDraft"
             :disabled="isProcessingAction"
@@ -815,6 +815,14 @@ const isProcessingAction = ref<boolean>(false);
 const currency = computed(() => vm.settings.value?.currency || 'TZS');
 const userRole = computed(() => vm.userRole.value || 'CASHIER');
 const currentUserId = computed(() => vm.userId.value || '');
+
+// Permissions
+const isOwnerOrAdmin = computed(() => userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN');
+const canViewPo = computed(() => isOwnerOrAdmin.value || vm.hasPermission('purchase_order:view') || vm.hasPermission('purchase_order:create'));
+const canEditPo = computed(() => isOwnerOrAdmin.value || vm.hasPermission('purchase_order:edit') || vm.hasPermission('purchase_order:create'));
+const canSubmitPo = computed(() => isOwnerOrAdmin.value || vm.hasPermission('purchase_order:submit') || vm.hasPermission('purchase_order:create'));
+const canReceivePo = computed(() => isOwnerOrAdmin.value || vm.hasPermission('purchase_order:receive'));
+
 const storeSettings = computed(() => vm.settings.value);
 const currentSupplier = computed(() => {
   if (!po.value?.supplierId) return null;
@@ -861,9 +869,7 @@ const isApprovedOrBeyond = computed(() => {
 
 const canUserApprove = computed(() => {
   if (!po.value || po.value.status !== 'PENDING_APPROVAL') return false;
-  // Checker must be ADMIN, MANAGER, or SUPER_ADMIN
-  const isManagerOrAdmin = ['ADMIN', 'MANAGER', 'SUPER_ADMIN'].includes(userRole.value);
-  return isManagerOrAdmin;
+  return isOwnerOrAdmin.value || vm.hasPermission('maker_checker:approve');
 });
 
 const totalOrderedUnits = computed(() => {

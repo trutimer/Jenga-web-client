@@ -189,6 +189,21 @@ const router = createRouter({
   routes
 });
 
+function hasUserPermission(userPermissions: string[], perm: string): boolean {
+  if (userPermissions.includes('*')) return true;
+  if (userPermissions.includes(perm)) return true;
+  const prefix = perm.includes(':') ? perm.split(':')[0] + ':*' : '';
+  return !prefix ? false : userPermissions.includes(prefix);
+}
+
+function hasAnyUserPermission(userPermissions: string[], ...perms: string[]): boolean {
+  if (userPermissions.includes('*')) return true;
+  for (const p of perms) {
+    if (hasUserPermission(userPermissions, p)) return true;
+  }
+  return false;
+}
+
 // Navigation Guard
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('accessToken');
@@ -226,43 +241,70 @@ router.beforeEach((to, from, next) => {
     }
   } else if (isAuthenticated && role === 'ADMIN' && (!branchId || branchId === 'null' || branchId === 'undefined') && to.name !== 'select-branch') {
     next({ name: 'select-branch' });
-  } else if (isAuthenticated && role === 'CASHIER') {
-    const routeName = String(to.name || '');
-    const cashierAlwaysAllowed = ['checkout', 'receipt', 'cash-movements', 'shift-sales', 'shift-details', 'cashier-shifts', 'profile', 'help'];
-    if (cashierAlwaysAllowed.includes(routeName)) {
-      next();
-    } else {
-      const routePermissions: Record<string, string> = {
-        'inventory': 'inventory:view',
-        'product-details': 'inventory:view',
-        'purchases': 'inventory:view',
-        'purchase-order-cart': 'inventory:view',
-        'purchase-order-details': 'inventory:view',
-        'top-selling-products': 'inventory:view',
-        'customers': 'customers:view',
-        'suppliers': 'suppliers:view',
-        'reports': 'reports:view',
-        'users': 'users:view',
-        'finance': 'finance:view',
-        'dashboard': 'dashboard:view'
-      };
-      const requiredPerm = routePermissions[routeName];
-      const userPermissions: string[] = JSON.parse(localStorage.getItem('userPermissions') || '[]');
-      if (requiredPerm && userPermissions.includes(requiredPerm)) {
-        next();
-      } else {
-        next({ name: 'checkout' });
+  } else {
+    const isOwnerOrAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
+    const userPermissions: string[] = JSON.parse(localStorage.getItem('userPermissions') || '[]');
+
+    // Enforce PO and Maker-Checker permissions for all non-admin users
+    if (isAuthenticated && !isOwnerOrAdmin) {
+      if (to.name === 'purchase-order-cart') {
+        if (!hasAnyUserPermission(userPermissions, 'purchase_order:create', 'purchase_order:view')) {
+          return next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
+        }
+      }
+      if (to.name === 'purchase-order-details') {
+        if (!hasAnyUserPermission(userPermissions, 'purchase_order:view', 'purchase_order:create')) {
+          return next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
+        }
+      }
+      if (to.name === 'purchases') {
+        if (!hasAnyUserPermission(userPermissions, 'inventory:view', 'purchase_order:view', 'purchase_order:create')) {
+          return next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
+        }
+      }
+      if (to.name === 'settings' && to.query.section === 'maker-checker') {
+        if (!hasAnyUserPermission(userPermissions, 'maker_checker:view', 'maker_checker:approve', 'maker_checker:manage_policies')) {
+          return next({ path: '/settings', query: { section: 'profile' } });
+        }
       }
     }
-  } else if (to.name === 'finance' && role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
-    const userPermissions: string[] = JSON.parse(localStorage.getItem('userPermissions') || '[]');
-    if (userPermissions.includes('finance:view')) {
-      next();
+
+    if (isAuthenticated && role === 'CASHIER') {
+      const routeName = String(to.name || '');
+      const cashierAlwaysAllowed = [
+        'checkout', 'receipt', 'cash-movements', 'shift-sales', 'shift-details', 
+        'cashier-shifts', 'profile', 'help', 'purchase-order-cart', 'purchase-order-details', 'purchases'
+      ];
+      if (cashierAlwaysAllowed.includes(routeName)) {
+        next();
+      } else {
+        const routePermissions: Record<string, string> = {
+          'inventory': 'inventory:view',
+          'product-details': 'inventory:view',
+          'top-selling-products': 'inventory:view',
+          'customers': 'customers:view',
+          'suppliers': 'suppliers:view',
+          'reports': 'reports:view',
+          'users': 'users:view',
+          'finance': 'finance:view',
+          'dashboard': 'dashboard:view'
+        };
+        const requiredPerm = routePermissions[routeName];
+        if (requiredPerm && hasUserPermission(userPermissions, requiredPerm)) {
+          next();
+        } else {
+          next({ name: 'checkout' });
+        }
+      }
+    } else if (to.name === 'finance' && !isOwnerOrAdmin) {
+      if (hasUserPermission(userPermissions, 'finance:view')) {
+        next();
+      } else {
+        next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
+      }
     } else {
-      next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
+      next();
     }
-  } else {
-    next();
   }
 });
 
