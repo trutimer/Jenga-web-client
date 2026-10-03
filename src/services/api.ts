@@ -276,6 +276,13 @@ async function handleOfflineFallback<T>(
       }
       return null as any;
     }
+
+    // User Permissions GET Fallback
+    if (endpoint.includes('/permissions')) {
+      const stored = localStorage.getItem('userPermissions');
+      const perms = stored ? JSON.parse(stored) : [];
+      return { permissions: perms } as any;
+    }
   }
 
   // 2. Offline Sales / Shifts / Money Movements POST Handlers

@@ -53,7 +53,7 @@
       <!-- Quick Action Buttons -->
       <div class="flex flex-wrap items-center gap-2.5 self-stretch md:self-auto">
         <button 
-          v-if="vm.hasPermission('inventory:edit')"
+          v-if="vm.hasPermission('inventory:edit') || vm.hasPermission('inventory:restock')"
           @click="openRestockModal"
           class="h-10 px-4 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/15 text-primary font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs"
           :title="$t('productDetail.restockProduct')"
@@ -1035,11 +1035,10 @@
         <!-- Movement Type Selector -->
         <div class="space-y-1.5">
           <label class="font-bold text-on-surface">{{ $t('productDetail.colType') }}</label>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div class="grid grid-cols-3 gap-2">
             <button 
               type="button"
               v-for="tOpt in [
-                { key: 'PURCHASE', label: 'Purchase (Restock)' },
                 { key: 'ADJUSTMENT', label: 'Adjustment' },
                 { key: 'RETURN', label: 'Return' },
                 { key: 'DAMAGED', label: 'Damaged (Loss)' }
@@ -1074,35 +1073,6 @@
             </span>
           </div>
         </div>
-
-        <!-- Supplier & Payment if PURCHASE -->
-        <template v-if="restockType === 'PURCHASE'">
-          <div class="space-y-1.5">
-            <label class="font-bold text-on-surface">{{ $t('inventory.assignedSupplier') }}</label>
-            <select 
-              v-model="restockSupplierId"
-              class="w-full p-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-xs outline-none focus:border-primary cursor-pointer font-medium"
-            >
-              <option value="">{{ $t('inventory.selectSupplierOptional') }}</option>
-              <option v-for="sup in vm.suppliers.value" :key="sup.id" :value="sup.id">
-                {{ sup.name }}
-              </option>
-            </select>
-          </div>
-
-          <div class="space-y-1.5">
-            <label class="font-bold text-on-surface">{{ $t('inventory.paymentMethod') }}</label>
-            <select 
-              v-model="restockPaymentMethod"
-              class="w-full p-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-xs outline-none focus:border-primary cursor-pointer font-medium"
-            >
-              <option value="CASH">{{ $t('inventory.cashPayout') }}</option>
-              <option value="ONCREDIT">{{ $t('inventory.onCreditPayment') }}</option>
-              <option value="BANK_TRANSFER">{{ $t('inventory.bankTransfer') }}</option>
-              <option value="MOBILE_TRANSFER">{{ $t('inventory.mobileTransfer') }}</option>
-            </select>
-          </div>
-        </template>
 
         <!-- Notes / Reason -->
         <div class="space-y-1.5">
@@ -1244,10 +1214,8 @@ const editForm = ref({
   expiryDate: ''
 });
 
-const restockType = ref<'PURCHASE' | 'ADJUSTMENT' | 'RETURN' | 'DAMAGED'>('PURCHASE');
+const restockType = ref<'ADJUSTMENT' | 'RETURN' | 'DAMAGED'>('ADJUSTMENT');
 const restockQty = ref('');
-const restockSupplierId = ref('');
-const restockPaymentMethod = ref('CASH');
 const restockNotes = ref('');
 
 const movementTypeFilters = [
@@ -1608,10 +1576,8 @@ const handleSaveEdit = async () => {
 
 // Restock Modal Actions
 const openRestockModal = () => {
-  restockType.value = 'PURCHASE';
+  restockType.value = 'ADJUSTMENT';
   restockQty.value = '';
-  restockSupplierId.value = '';
-  restockPaymentMethod.value = 'CASH';
   restockNotes.value = '';
   showRestockModal.value = true;
 };
@@ -1639,14 +1605,13 @@ const handleSaveRestock = async () => {
       notes: restockNotes.value.trim() || undefined
     };
 
-    if (restockType.value === 'PURCHASE') {
-      payload.paymentType = restockPaymentMethod.value;
-      if (restockSupplierId.value) {
-        payload.supplierId = restockSupplierId.value;
-      }
-    }
+    const res: any = await api.post(`/api/products/${p.id}/stock-movement`, payload);
 
-    await api.post(`/api/products/${p.id}/stock-movement`, payload);
+    if (res?.status === 'PENDING_APPROVAL') {
+      showToast(res.message || 'Stock adjustment submitted for Store Owner/Admin approval.', 'info');
+      showRestockModal.value = false;
+      return;
+    }
 
     // Locally update product stock
     const isDeduction = restockType.value === 'DAMAGED';
@@ -1777,6 +1742,7 @@ const getMovementTypeIcon = (type?: string) => {
 };
 
 onMounted(() => {
+  vm.fetchCurrentUserPermissions().catch(() => {});
   fetchData();
   if (vm.suppliers.value.length === 0) {
     vm.fetchSuppliers();

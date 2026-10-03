@@ -510,6 +510,7 @@ import {
   ArrowRightLeft
 } from 'lucide-vue-next';
 import { getDesktopDeviceMetadata, clearAuthStorage } from '../services/deviceService';
+import { parseJwtPayload } from '../services/authSession';
 
 const vm = useAppViewModel();
 
@@ -614,6 +615,21 @@ const processSuccessfulLogin = async (res: any) => {
   }
 
   localStorage.setItem('accessToken', res.accessToken);
+
+  // Store permissions immediately from login response or token claims
+  let permissionsToStore: string[] = [];
+  if (res.user && Array.isArray(res.user.permissions) && res.user.permissions.length > 0) {
+    permissionsToStore = res.user.permissions;
+  } else if (res.accessToken) {
+    const payload = parseJwtPayload(res.accessToken);
+    if (payload && Array.isArray(payload.permissions)) {
+      permissionsToStore = payload.permissions;
+    }
+  }
+  if (permissionsToStore.length > 0) {
+    localStorage.setItem('userPermissions', JSON.stringify(permissionsToStore));
+    vm.userPermissions.value = permissionsToStore;
+  }
 
   if (res.user) {
     localStorage.setItem('userId', res.user.id);

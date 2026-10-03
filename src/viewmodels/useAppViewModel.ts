@@ -6,7 +6,7 @@ import { showToast } from '../services/toastService';
 import { isElectron } from '../services/offlineSalesService';
 import { websocketService } from '../services/websocketService';
 import { clearAuthStorage, deregisterCurrentDevice } from '../services/deviceService';
-import { isJwtExpired, registerSessionExpireCallback } from '../services/authSession';
+import { isJwtExpired, registerSessionExpireCallback, parseJwtPayload } from '../services/authSession';
 import router from '../router';
 
 const formatDateForInput = (dateStr?: string | null): string => {
@@ -31,6 +31,29 @@ if (initialToken && isJwtExpired(initialToken)) {
 const isInitialAuthValid = () => {
   const token = localStorage.getItem('accessToken');
   return !!token && !isJwtExpired(token) && !!localStorage.getItem('storeId');
+};
+
+const getInitialUserPermissions = (): string[] => {
+  try {
+    const rawStored = localStorage.getItem('userPermissions');
+    if (rawStored) {
+      const parsed = JSON.parse(rawStored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      const payload = parseJwtPayload(token);
+      if (payload && Array.isArray(payload.permissions) && payload.permissions.length > 0) {
+        localStorage.setItem('userPermissions', JSON.stringify(payload.permissions));
+        return payload.permissions;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to parse initial permissions:', err);
+  }
+  return [];
 };
 
 // Global shared reactive states
@@ -60,9 +83,7 @@ const searchQuery = ref('');
 const currentShift = ref<CashierShift | null>(null);
 const cashMovementAnalytics = ref<any>(null);
 const shiftSales = ref<any[]>([]);
-const userPermissions = ref<string[]>(
-  JSON.parse(localStorage.getItem('userPermissions') || '[]')
-);
+const userPermissions = ref<string[]>(getInitialUserPermissions());
 
 // Register session expire callback to reset user state when token expires
 registerSessionExpireCallback(() => {
@@ -479,16 +500,35 @@ export function useAppViewModel() {
   };
 
   const fetchCurrentUserPermissions = async () => {
-    const currentUserId = userId.value || localStorage.getItem('cashierId');
+    const currentUserId = userId.value || localStorage.getItem('cashierId') || localStorage.getItem('userId');
+    const token = localStorage.getItem('accessToken');
+
+    // Pre-populate immediately from token claims if current state is empty
+    if (token && userPermissions.value.length === 0) {
+      const payload = parseJwtPayload(token);
+      if (payload && Array.isArray(payload.permissions) && payload.permissions.length > 0) {
+        userPermissions.value = payload.permissions;
+        localStorage.setItem('userPermissions', JSON.stringify(payload.permissions));
+      }
+    }
+
     if (!currentUserId) return;
     try {
       const res = await api.get<any>(`/api/users/${currentUserId}/permissions`);
-      if (res && res.permissions) {
+      if (res && Array.isArray(res.permissions)) {
         userPermissions.value = res.permissions;
         localStorage.setItem('userPermissions', JSON.stringify(res.permissions));
       }
     } catch (err) {
-      console.error('Failed to fetch current user permissions:', err);
+      console.warn('Failed to fetch current user permissions from server:', err);
+      // Fallback to token payload if server call fails (e.g. offline on desktop)
+      if (token && userPermissions.value.length === 0) {
+        const payload = parseJwtPayload(token);
+        if (payload && Array.isArray(payload.permissions) && payload.permissions.length > 0) {
+          userPermissions.value = payload.permissions;
+          localStorage.setItem('userPermissions', JSON.stringify(payload.permissions));
+        }
+      }
     }
   };
 
@@ -496,10 +536,25 @@ export function useAppViewModel() {
     if (userRole.value === 'SUPER_ADMIN' || userRole.value === 'ADMIN') {
       return true;
     }
-    if (userRole.value === 'CASHIER' && code === 'pos:checkout') {
+    if (userRole.value === 'CASHIER' && (code === 'pos:checkout' || code === 'POS_CHECKOUT')) {
       return true;
     }
-    return userPermissions.value.includes(code);
+    if (!code || userPermissions.value.length === 0) {
+      return false;
+    }
+    const target = code.toLowerCase().trim();
+    const targetNormalized = target.replace(/_/g, ':');
+    return userPermissions.value.some((p) => {
+      const perm = p.toLowerCase().trim();
+      const permNormalized = perm.replace(/_/g, ':');
+      return (
+        perm === target ||
+        permNormalized === targetNormalized ||
+        perm === '*' ||
+        permNormalized === '*' ||
+        permNormalized === targetNormalized.split(':')[0] + ':*'
+      );
+    });
   };
 
   const hasCategoryAccess = (category: string): boolean => {
@@ -662,6 +717,10 @@ export function useAppViewModel() {
       showToast('Failed to save transaction to backend: ' + (err.message || err), 'error');
     }
   };
+
+  if (isInitialAuthValid()) {
+    fetchCurrentUserPermissions().catch(() => {});
+  }
 
   return {
     user,

@@ -329,7 +329,7 @@
                       <ShoppingCart class="w-4.5 h-4.5" />
                     </button>
                     <button 
-                      v-if="!showInactive && vm.hasPermission('inventory:edit')"
+                      v-if="!showInactive && (vm.hasPermission('inventory:edit') || vm.hasPermission('inventory:restock'))"
                       @click.stop="openRestockModal(p)"
                       class="p-1.5 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-on-primary-container transition-colors cursor-pointer border-0 bg-transparent"
                       :title="$t('inventory.restockTooltip')"
@@ -1208,15 +1208,14 @@
             :disabled="isRestocking"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
           >
-            <option value="PURCHASE">{{ $t('inventory.restockPurchase') }}</option>
             <option value="ADJUSTMENT">{{ $t('inventory.restockAdjustment') }}</option>
             <option value="RETURN">{{ $t('inventory.restockReturn') }}</option>
             <option value="DAMAGED">{{ $t('inventory.restockDamaged') }}</option>
           </select>
         </div>
 
-        <!-- Notes / Reason - Shown for DAMAGED and ADJUSTMENT -->
-        <div v-if="restockType === 'DAMAGED' || restockType === 'ADJUSTMENT'" class="flex flex-col gap-1.5">
+        <!-- Notes / Reason -->
+        <div class="flex flex-col gap-1.5">
           <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
             {{ restockType === 'DAMAGED' ? $t('inventory.damageReasonNotes') : $t('inventory.adjustmentReasonNotes') }}
           </label>
@@ -1241,36 +1240,6 @@
               }) }}
             </span>
           </div>
-        </div>
-
-        <!-- Payment Method - Only when restockType is PURCHASE -->
-        <div v-if="restockType === 'PURCHASE'" class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.paymentMethod') }}</label>
-          <select 
-            v-model="restockPaymentMethod"
-            :disabled="isRestocking"
-            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
-          >
-            <option value="CASH">{{ $t('inventory.cashPayout') }}</option>
-            <option value="ONCREDIT">{{ $t('inventory.onCreditPayment') }}</option>
-            <option value="BANK_TRANSFER">{{ $t('inventory.bankTransfer') }}</option>
-            <option value="MOBILE_TRANSFER">{{ $t('inventory.mobileTransfer') }}</option>
-          </select>
-        </div>
-
-        <!-- Supplier Dropdown (Optional) - Only when restockType is PURCHASE -->
-        <div v-if="restockType === 'PURCHASE'" class="flex flex-col gap-1.5">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.selectSupplierOptional') }}</label>
-          <select 
-            v-model="restockSupplierId"
-            :disabled="isRestocking"
-            class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2.5 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
-          >
-            <option value="">{{ $t('inventory.selectSupplierOptional') }}</option>
-            <option v-for="sup in filteredRestockSuppliers" :key="sup.id" :value="sup.id">
-              {{ sup.name }} <template v-if="sup.category">({{ sup.category }})</template>
-            </option>
-          </select>
         </div>
 
         <div class="flex justify-end gap-3 pt-4 border-t border-outline-variant/50">
@@ -1560,6 +1529,7 @@ const products = computed(() => showInactive.value ? inactiveProducts.value : vm
 const currency = computed(() => vm.settings.value.currency);
 
 onMounted(async () => {
+  vm.fetchCurrentUserPermissions().catch(() => {});
   if (route.query.status && typeof route.query.status === 'string') {
     stockStatus.value = route.query.status;
   }
@@ -1984,18 +1954,7 @@ const isRestocking = ref(false);
 const restockingProduct = ref<Product | null>(null);
 const restockQty = ref('');
 const restockNotes = ref('');
-const restockType = ref<'PURCHASE' | 'ADJUSTMENT' | 'RETURN' | 'DAMAGED'>('PURCHASE');
-const restockPaymentMethod = ref<'CASH' | 'ONCREDIT' | 'BANK_TRANSFER' | 'MOBILE_TRANSFER'>('CASH');
-const restockSupplierId = ref<string>('');
-
-const filteredRestockSuppliers = computed(() => {
-  const allSups = vm.suppliers.value || [];
-  if (!allSups.length || !restockingProduct.value) return allSups;
-  const selectedCat = (restockingProduct.value.category || '').trim();
-  if (!selectedCat) return allSups;
-
-  return allSups.filter(s => isCategoryMatch(selectedCat, s.category || ''));
-});
+const restockType = ref<'ADJUSTMENT' | 'RETURN' | 'DAMAGED'>('ADJUSTMENT');
 
 // Global 2D Barcode Scanner integration
 useBarcodeScanner({
@@ -2152,9 +2111,7 @@ const openRestockModal = (p: Product) => {
   restockingProduct.value = p;
   restockQty.value = '';
   restockNotes.value = '';
-  restockType.value = 'PURCHASE';
-  restockPaymentMethod.value = 'CASH';
-  restockSupplierId.value = '';
+  restockType.value = 'ADJUSTMENT';
   isRestocking.value = false;
   showRestockModal.value = true;
 };
@@ -2199,14 +2156,13 @@ const handleRestockProduct = async () => {
       payload.notes = restockNotes.value.trim();
     }
 
-    if (restockType.value === 'PURCHASE') {
-      payload.paymentType = restockPaymentMethod.value;
-      if (restockSupplierId.value) {
-        payload.supplierId = restockSupplierId.value;
-      }
-    }
+    const res: any = await api.post(`/api/products/${restockingProduct.value.id}/stock-movement`, payload);
 
-    await api.post(`/api/products/${restockingProduct.value.id}/stock-movement`, payload);
+    if (res?.status === 'PENDING_APPROVAL') {
+      showToast(res.message || 'Stock adjustment submitted for Store Owner/Admin approval.', 'info');
+      showRestockModal.value = false;
+      return;
+    }
 
     const index = vm.products.value.findIndex(p => p.id === restockingProduct.value?.id);
     if (index !== -1) {

@@ -3883,7 +3883,12 @@ const executeQuickRestock = async (item: CriticalReorderItem) => {
       payload.supplierId = item.supplierId;
     }
 
-    await api.post(`/api/products/${item.id}/stock-movement`, payload);
+    const res: any = await api.post(`/api/products/${item.id}/stock-movement`, payload);
+
+    if (res?.status === 'PENDING_APPROVAL') {
+      showToast(res.message || 'Restock request submitted for Store Owner/Admin approval.', 'info');
+      return;
+    }
 
     // Update vm.products locally
     const idx = vm.products.value.findIndex((p) => p.id === item.id);
