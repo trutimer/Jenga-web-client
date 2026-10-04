@@ -1038,12 +1038,10 @@ const updatePassword = async () => {
     const serverError = err.message || 'Failed to update account password.';
     const lower = serverError.toLowerCase();
     
-    if (lower.includes('old password') || lower.includes('current') || lower.includes('incorrect') || lower.includes('wrong') || lower.includes('invalid') || lower.includes('required')) {
+    if (lower.includes('current') || lower.includes('old password') || lower.includes('current (old)')) {
       passwordErrors.value.oldPassword = serverError;
-    } else if (lower.includes('at least 6 characters') || lower.includes('new password')) {
-      passwordErrors.value.newPassword = serverError;
     } else {
-      passwordErrors.value.oldPassword = serverError;
+      passwordErrors.value.newPassword = serverError;
     }
   } finally {
     isUpdatingPassword.value = false;

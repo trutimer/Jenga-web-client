@@ -1132,6 +1132,15 @@
                   </div>
                 </div>
 
+                <!-- Cloudflare Turnstile Bot Defense -->
+                <div class="py-1">
+                  <TurnstileWidget 
+                    ref="settingsTurnstileRef"
+                    action="change_password"
+                    @success="token => changePassTurnstileToken = token"
+                  />
+                </div>
+
                 <div class="pt-4 flex items-center gap-3">
                   <button 
                     type="submit"
@@ -1536,6 +1545,7 @@ import { showToast } from '../services/toastService';
 import { t } from '../i18n';
 import LanguageSelector from '../components/common/LanguageSelector.vue';
 import Modal from '../components/common/Modal.vue';
+import TurnstileWidget from '../components/common/TurnstileWidget.vue';
 import QRCode from 'qrcode';
 import { 
   Sliders, 
@@ -1750,6 +1760,8 @@ const passwordErrors = ref<{
 const isSavingInfo = ref(false);
 const isUpdatingPassword = ref(false);
 const currentBranchName = ref('Main Store');
+const settingsTurnstileRef = ref<any>(null);
+const changePassTurnstileToken = ref('');
 
 const passwordsMatch = computed(() => {
   if (!passwordForm.value.newPassword || !passwordForm.value.confirmPassword) return false;
@@ -1906,32 +1918,30 @@ const updatePassword = async () => {
   isUpdatingPassword.value = true;
   try {
     const payload = {
-      storeId: storeId || undefined,
-      branchId: branchId || undefined,
-      fullName: formInfo.value.fullName,
-      phone: formInfo.value.phone,
-      email: formInfo.value.email || undefined,
-      role: userRole.value || localStorage.getItem('cashierRole') || 'ADMIN',
-      password: passwordForm.value.newPassword,
-      oldPassword: passwordForm.value.oldPassword
+      oldPassword: passwordForm.value.oldPassword,
+      newPassword: passwordForm.value.newPassword,
+      turnstileToken: changePassTurnstileToken.value
     };
 
-    await api.put(`/api/users/${id}`, payload, { suppressToast: true });
+    await api.post('/api/auth/change-password', payload, { suppressToast: true });
     showToast('Account password updated successfully!', 'success');
     passwordForm.value.oldPassword = '';
     passwordForm.value.newPassword = '';
     passwordForm.value.confirmPassword = '';
+    settingsTurnstileRef.value?.reset();
+    changePassTurnstileToken.value = '';
     accountSubView.value = 'overview';
   } catch (err: any) {
+    settingsTurnstileRef.value?.reset();
+    changePassTurnstileToken.value = '';
+
     const serverError = err.message || 'Failed to update account password.';
     const lower = serverError.toLowerCase();
     
-    if (lower.includes('old password') || lower.includes('current') || lower.includes('incorrect') || lower.includes('wrong') || lower.includes('invalid') || lower.includes('required')) {
+    if (lower.includes('current') || lower.includes('old password') || lower.includes('current (old)')) {
       passwordErrors.value.oldPassword = serverError;
-    } else if (lower.includes('at least 6 characters') || lower.includes('new password')) {
-      passwordErrors.value.newPassword = serverError;
     } else {
-      passwordErrors.value.oldPassword = serverError;
+      passwordErrors.value.newPassword = serverError;
     }
   } finally {
     isUpdatingPassword.value = false;
@@ -2072,44 +2082,39 @@ const storeCurrency = ref<'TZS' | 'USD' | 'EUR'>('TZS');
 const storeTimezone = ref('');
 const enablePerpetualCogs = ref(false);
 
-onMounted(async () => {
-  checkAndAutoStart(route.path);
-  await vm.fetchSettings();
-  await fetchUserProfile();
-  
-  // Sync inputs
-  storeName.value = vm.settings.value.name;
-  storeTin.value = vm.settings.value.tin;
-  storeAddress.value = vm.settings.value.physicalAddress;
-  storePhone.value = vm.settings.value.phone;
-  storeEmail.value = vm.settings.value.email;
-  storeCurrency.value = vm.settings.value.currency;
-  storeTimezone.value = vm.settings.value.timezone;
-  enablePerpetualCogs.value = !!vm.settings.value.enablePerpetualCogs;
+// Lazy-loaded section cache flags
+const isStoreLoaded = ref(false);
+const isUserLoaded = ref(false);
+const isMakerCheckerPoliciesLoaded = ref(false);
+const isPendingApprovalsLoaded = ref(false);
 
-  // Initialize Desktop Auto-Updater listener
-  if (isElectronApp.value) {
-    (window as any).ipcRenderer.on('updater:status-changed', onUpdateStatusChanged);
-    try {
-      const initial = await (window as any).ipcRenderer.invoke('updater:get-status');
-      if (initial) {
-        updateInfo.value = { ...updateInfo.value, ...initial };
-      }
-    } catch (_) {}
+const loadStoreSettings = async (force = false) => {
+  if (isStoreLoaded.value && !force) return;
+  try {
+    await vm.fetchSettings();
+    storeName.value = vm.settings.value.name;
+    storeTin.value = vm.settings.value.tin;
+    storeAddress.value = vm.settings.value.physicalAddress;
+    storePhone.value = vm.settings.value.phone;
+    storeEmail.value = vm.settings.value.email;
+    storeCurrency.value = vm.settings.value.currency;
+    storeTimezone.value = vm.settings.value.timezone;
+    enablePerpetualCogs.value = !!vm.settings.value.enablePerpetualCogs;
+    isStoreLoaded.value = true;
+  } catch (err) {
+    console.error('Failed to load store settings:', err);
   }
+};
 
-  syncSectionFromRoute();
-  fetchMakerCheckerPolicies();
-  fetchPendingApprovals();
-  window.addEventListener('refresh-pending-approvals', fetchPendingApprovals);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('refresh-pending-approvals', fetchPendingApprovals);
-  if (isElectronApp.value && (window as any).ipcRenderer?.off) {
-    (window as any).ipcRenderer.off('updater:status-changed', onUpdateStatusChanged);
+const loadUserProfile = async (force = false) => {
+  if (isUserLoaded.value && !force) return;
+  try {
+    await fetchUserProfile();
+    isUserLoaded.value = true;
+  } catch (err) {
+    console.error('Failed to load user profile:', err);
   }
-});
+};
 
 // ==========================================
 // MAKER-CHECKER (DUAL-AUTHORIZATION) STATE
@@ -2294,22 +2299,95 @@ const submitDecision = async () => {
   }
 };
 
-watch(activeSection, (newSec) => {
-  if (route.query.section !== newSec) {
-    router.replace({ query: { ...route.query, section: newSec } });
+const loadMakerCheckerData = async (force = false) => {
+  if (activeSection.value !== 'maker-checker' || !canAccessMakerChecker.value) return;
+  const tasks: Promise<any>[] = [];
+  if (canManagePolicies.value && (!isMakerCheckerPoliciesLoaded.value || force)) {
+    tasks.push(
+      fetchMakerCheckerPolicies().then(() => {
+        isMakerCheckerPoliciesLoaded.value = true;
+      })
+    );
   }
-  if (newSec === 'maker-checker') {
-    fetchMakerCheckerPolicies();
+  if ((canViewMakerChecker.value || canApproveMakerChecker.value) && (!isPendingApprovalsLoaded.value || force)) {
+    tasks.push(
+      fetchPendingApprovals().then(() => {
+        isPendingApprovalsLoaded.value = true;
+      })
+    );
+  }
+  if (tasks.length > 0) {
+    await Promise.all(tasks);
+  }
+};
+
+const loadDataForCurrentSection = async (force = false) => {
+  switch (activeSection.value) {
+    case 'profile':
+      await loadStoreSettings(force);
+      break;
+    case 'account':
+      await loadUserProfile(force);
+      break;
+    case 'maker-checker':
+      await loadMakerCheckerData(force);
+      break;
+    case 'hardware':
+    case 'updates':
+      // Hardware and desktop updates do not require REST backend calls
+      break;
+  }
+};
+
+const onRefreshPendingApprovals = () => {
+  if (activeSection.value === 'maker-checker') {
     fetchPendingApprovals();
+  } else {
+    isPendingApprovalsLoaded.value = false;
+  }
+};
+
+onMounted(async () => {
+  checkAndAutoStart(route.path);
+  syncSectionFromRoute();
+
+  // Initialize Desktop Auto-Updater listener
+  if (isElectronApp.value) {
+    (window as any).ipcRenderer.on('updater:status-changed', onUpdateStatusChanged);
+    try {
+      const initial = await (window as any).ipcRenderer.invoke('updater:get-status');
+      if (initial) {
+        updateInfo.value = { ...updateInfo.value, ...initial };
+      }
+    } catch (_) {}
+  }
+
+  // Lazily load data strictly for the currently active section
+  await loadDataForCurrentSection();
+
+  window.addEventListener('refresh-pending-approvals', onRefreshPendingApprovals);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('refresh-pending-approvals', onRefreshPendingApprovals);
+  if (isElectronApp.value && (window as any).ipcRenderer?.off) {
+    (window as any).ipcRenderer.off('updater:status-changed', onUpdateStatusChanged);
   }
 });
 
-watch(makerCheckerTab, (newTab) => {
+watch(activeSection, async (newSec) => {
+  if (route.query.section !== newSec) {
+    router.replace({ query: { ...route.query, section: newSec } });
+  }
+  await loadDataForCurrentSection();
+});
+
+watch(makerCheckerTab, async (newTab) => {
   if (activeSection.value === 'maker-checker' && route.query.tab !== newTab) {
     router.replace({ query: { ...route.query, tab: newTab } });
   }
-  if (newTab === 'pending') {
-    fetchPendingApprovals();
+  if (activeSection.value === 'maker-checker' && newTab === 'pending') {
+    await fetchPendingApprovals();
   }
 });
 

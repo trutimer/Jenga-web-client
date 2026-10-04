@@ -84,6 +84,78 @@ const currentShift = ref<CashierShift | null>(null);
 const cashMovementAnalytics = ref<any>(null);
 const shiftSales = ref<any[]>([]);
 const userPermissions = ref<string[]>(getInitialUserPermissions());
+let inFlightPermissionsPromise: Promise<void> | null = null;
+let lastPermissionsFetchTime = 0;
+const PERMISSIONS_CACHE_TTL_MS = 60 * 1000; // 60s cache TTL
+
+export const fetchCurrentUserPermissions = async (force: boolean = false): Promise<void> => {
+  const currentUserId = userId.value || localStorage.getItem('cashierId') || localStorage.getItem('userId');
+  const token = localStorage.getItem('accessToken');
+
+  // Pre-populate immediately from token claims ONLY if storage has never been initialized
+  if (token && localStorage.getItem('userPermissions') === null) {
+    const payload = parseJwtPayload(token);
+    if (payload && Array.isArray(payload.permissions)) {
+      userPermissions.value = payload.permissions;
+      localStorage.setItem('userPermissions', JSON.stringify(payload.permissions));
+    }
+  }
+
+  if (!currentUserId || !token || isJwtExpired(token)) return;
+
+  const now = Date.now();
+  if (!force && (now - lastPermissionsFetchTime < PERMISSIONS_CACHE_TTL_MS) && userPermissions.value.length > 0) {
+    return;
+  }
+
+  if (inFlightPermissionsPromise) {
+    return inFlightPermissionsPromise;
+  }
+
+  inFlightPermissionsPromise = (async () => {
+    try {
+      const res = await api.get<any>(`/api/users/${currentUserId}/permissions`, { suppressToast: true });
+      if (res && Array.isArray(res.permissions)) {
+        userPermissions.value = res.permissions;
+        localStorage.setItem('userPermissions', JSON.stringify(res.permissions));
+        lastPermissionsFetchTime = Date.now();
+      }
+    } catch (err) {
+      console.warn('Failed to fetch current user permissions from server:', err);
+      // Fallback to token payload if server call fails and storage was never populated
+      if (token && localStorage.getItem('userPermissions') === null) {
+        const payload = parseJwtPayload(token);
+        if (payload && Array.isArray(payload.permissions)) {
+          userPermissions.value = payload.permissions;
+          localStorage.setItem('userPermissions', JSON.stringify(payload.permissions));
+        }
+      }
+    } finally {
+      inFlightPermissionsPromise = null;
+    }
+  })();
+
+  return inFlightPermissionsPromise;
+};
+
+// Global single-registration listeners for permissions
+if (isInitialAuthValid()) {
+  fetchCurrentUserPermissions().catch(() => {});
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('focus', () => {
+    if (isInitialAuthValid()) {
+      fetchCurrentUserPermissions().catch(() => {});
+    }
+  });
+}
+
+router.afterEach(() => {
+  if (isInitialAuthValid()) {
+    fetchCurrentUserPermissions().catch(() => {});
+  }
+});
 
 // Register session expire callback to reset user state when token expires
 registerSessionExpireCallback(() => {
@@ -94,6 +166,7 @@ registerSessionExpireCallback(() => {
   userPermissions.value = [];
   mobileMenuOpen.value = false;
   currentShift.value = null;
+  lastPermissionsFetchTime = 0;
 });
 
 // Lockout & inactivity functions
@@ -112,6 +185,7 @@ export const lockScreen = () => {
   userPermissions.value = [];
   mobileMenuOpen.value = false;
   websocketService.disconnect();
+  lastPermissionsFetchTime = 0;
   clearAuthStorage();
   router.push('/login');
 };
@@ -507,39 +581,6 @@ export function useAppViewModel() {
     await fetchProducts();
   };
 
-  const fetchCurrentUserPermissions = async () => {
-    const currentUserId = userId.value || localStorage.getItem('cashierId') || localStorage.getItem('userId');
-    const token = localStorage.getItem('accessToken');
-
-    // Pre-populate immediately from token claims ONLY if storage has never been initialized
-    if (token && localStorage.getItem('userPermissions') === null) {
-      const payload = parseJwtPayload(token);
-      if (payload && Array.isArray(payload.permissions)) {
-        userPermissions.value = payload.permissions;
-        localStorage.setItem('userPermissions', JSON.stringify(payload.permissions));
-      }
-    }
-
-    if (!currentUserId) return;
-    try {
-      const res = await api.get<any>(`/api/users/${currentUserId}/permissions`, { suppressToast: true });
-      if (res && Array.isArray(res.permissions)) {
-        userPermissions.value = res.permissions;
-        localStorage.setItem('userPermissions', JSON.stringify(res.permissions));
-      }
-    } catch (err) {
-      console.warn('Failed to fetch current user permissions from server:', err);
-      // Fallback to token payload if server call fails and storage was never populated
-      if (token && localStorage.getItem('userPermissions') === null) {
-        const payload = parseJwtPayload(token);
-        if (payload && Array.isArray(payload.permissions)) {
-          userPermissions.value = payload.permissions;
-          localStorage.setItem('userPermissions', JSON.stringify(payload.permissions));
-        }
-      }
-    }
-  };
-
   const hasPermission = (code: string): boolean => {
     if (userRole.value === 'SUPER_ADMIN' || userRole.value === 'ADMIN') {
       return true;
@@ -581,7 +622,7 @@ export function useAppViewModel() {
     user.value = name;
     userRole.value = localStorage.getItem('cashierRole') || 'CASHIER';
     userId.value = localStorage.getItem('cashierId');
-    fetchCurrentUserPermissions();
+    fetchCurrentUserPermissions(true);
     if (userRole.value === 'CASHIER') {
       fetchCurrentShift();
     }
@@ -618,6 +659,7 @@ export function useAppViewModel() {
     mobileMenuOpen.value = false;
     currentShift.value = null;
     userPermissions.value = [];
+    lastPermissionsFetchTime = 0;
     const forgetPhone = sessionStorage.getItem('forgetPhoneOnLogout') === 'true';
     clearAuthStorage();
     if (forgetPhone) {
@@ -729,24 +771,6 @@ export function useAppViewModel() {
       showToast('Failed to save transaction to backend: ' + (err.message || err), 'error');
     }
   };
-
-  if (isInitialAuthValid()) {
-    fetchCurrentUserPermissions().catch(() => {});
-  }
-
-  if (typeof window !== 'undefined') {
-    window.addEventListener('focus', () => {
-      if (isInitialAuthValid()) {
-        fetchCurrentUserPermissions().catch(() => {});
-      }
-    });
-  }
-
-  router.afterEach(() => {
-    if (isInitialAuthValid()) {
-      fetchCurrentUserPermissions().catch(() => {});
-    }
-  });
 
   return {
     user,
