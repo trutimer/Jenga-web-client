@@ -12,6 +12,8 @@
         <button
           v-if="vm.hasPermission('reports:export')"
           @click="handleExportReport"
+          data-telemetry="REPORTS_EXPORT"
+          data-telemetry-name="Export Report"
           class="px-4 py-2.5 bg-primary text-on-primary font-bold text-xs rounded-lg hover:bg-opacity-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow shadow-primary/10 border-0"
         >
           <Download class="w-4 h-4" />

@@ -291,6 +291,8 @@
           <button 
             type="button" 
             @click="handleHold"
+            data-telemetry="POS_HOLD_CART"
+            data-telemetry-name="Hold Cart"
             :disabled="cart.length === 0"
             class="h-12 px-4 bg-surface-container text-on-surface font-bold text-xs rounded-xl hover:bg-surface-variant transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 shrink-0 border border-outline-variant/60"
           >
@@ -300,8 +302,10 @@
 
           <!-- Complete Sale & Print Button -->
           <button 
-            type="button"
+            type="button" 
             @click="handleCompleteSale"
+            data-telemetry="POS_COMPLETE_SALE"
+            data-telemetry-name="Complete Sale & Print"
             :disabled="cart.length === 0 || (vm.userRole.value === 'CASHIER' && (!vm.currentShift.value || vm.currentShift.value.status !== 'OPEN'))"
             class="flex-1 h-12 bg-primary text-on-primary rounded-xl text-sm font-bold hover:bg-primary/95 active:scale-[0.99] transition-all flex items-center justify-center gap-2.5 shadow-md shadow-primary/15 cursor-pointer disabled:opacity-50"
           >

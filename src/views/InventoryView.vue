@@ -14,6 +14,8 @@
         <button 
           v-if="vm.userRole.value === 'ADMIN' || vm.userRole.value === 'SUPER_ADMIN' || vm.hasPermission('purchase_order:create') || vm.hasPermission('purchase_order:view')"
           @click="handleOpenCart"
+          data-telemetry="PO_CART_OPEN"
+          data-telemetry-name="Open PO Cart"
           class="h-10 px-3.5 rounded-lg border border-outline hover:bg-surface-container-low text-on-surface-variant font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-sm text-center bg-surface-container-lowest relative"
           :title="$t('poCart.cartTooltip', { count: cartCount })"
         >
@@ -30,6 +32,8 @@
         <button 
           v-if="vm.hasPermission('inventory:create')"
           @click="showAddModal = true"
+          data-telemetry="INVENTORY_ADD_PRODUCT"
+          data-telemetry-name="Add Product"
           class="h-10 px-4.5 rounded-lg font-bold text-sm text-white flex items-center gap-2 transition-all cursor-pointer shadow-sm text-center border-0 bg-primary text-on-primary"
         >
           <Plus class="w-4.5 h-4.5 text-on-primary" />

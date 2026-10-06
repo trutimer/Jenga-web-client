@@ -1,8 +1,8 @@
 {
-  "version": "3.0.0",
+  "version": "3.0.1",
   "downloadUrl": "/Jenga-Setup-Latest.exe",
   "windowsDownloadUrl": "/Jenga-Setup-Latest.exe",
   "macDownloadUrl": "/Jenga-Latest.dmg",
   "releaseNotes": "Jenga POS v3.0.0: Offline sales, multi-platform macOS and Windows support, and automated desktop background updates.",
-  "releaseDate": "2026-10-04"
+  "releaseDate": "2026-10-06"
 }

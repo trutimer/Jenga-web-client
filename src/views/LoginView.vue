@@ -534,7 +534,7 @@ import { parseJwtPayload } from '../services/authSession';
 
 const vm = useAppViewModel();
 
-const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v3.0.0';
+const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v3.0.1';
 const isElectronApp = ref(isElectron());
 const showDownloadModal = ref(false);
 
