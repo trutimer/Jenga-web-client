@@ -541,11 +541,13 @@ export function generatePurchaseOrderVoucherHtml(
                 <span class="item-name">${escapeHtml(item.productName)}</span>
                 <div class="item-sub">
                   ${escapeHtml(item.barcode || item.sku || 'No SKU')}
-                  ${item.isWholesale ? ' • Wholesale' : ''}
+                  ${item.isWholesale ? ` • Wholesale${(item.conversionFactor || 1) > 1 ? ` (x${item.conversionFactor})` : ''}` : ''}
                   ${item.notes ? ` • Note: ${escapeHtml(item.notes)}` : ''}
                 </div>
               </td>
-              <td class="text-center font-mono" style="font-weight: 800; color: #000000;">${item.quantityOrdered} pcs</td>
+              <td class="text-center font-mono" style="font-weight: 800; color: #000000;">
+                ${item.quantityOrdered} ${item.isWholesale && (item.conversionFactor || 1) > 1 ? `packs (${item.quantityOrdered * (item.conversionFactor || 1)} pcs)` : 'pcs'}
+              </td>
               <td class="text-right font-mono" style="color: #000000;">${formatCurrencyWithoutSymbol(item.unitCost, currency)}</td>
               <td class="text-right font-mono" style="font-weight: 800; color: #000000;">${formatCurrencyWithoutSymbol(item.totalCost || (item.quantityOrdered * item.unitCost), currency)}</td>
             </tr>

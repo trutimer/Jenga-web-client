@@ -16,13 +16,19 @@ export const purchaseOrderService = {
     branchId?: string;
     supplierId?: string;
     status?: PurchaseOrderStatus;
+    date?: string;
+    startDate?: string;
+    endDate?: string;
     page?: number;
     size?: number;
   } = {}): Promise<PageResponse<PurchaseOrder>> {
     const query = new URLSearchParams();
     if (params.branchId) query.append('branchId', params.branchId);
     if (params.supplierId) query.append('supplierId', params.supplierId);
-    if (params.status) query.append('status', params.status);
+    if (params.status && (params.status as string) !== 'ALL') query.append('status', params.status);
+    if (params.date) query.append('date', params.date);
+    if (params.startDate) query.append('startDate', params.startDate);
+    if (params.endDate) query.append('endDate', params.endDate);
     query.append('page', String(params.page ?? 0));
     query.append('size', String(params.size ?? 20));
 

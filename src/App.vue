@@ -225,7 +225,7 @@
         </button>
         <button 
           @click="handleCloseShift" 
-          :disabled="isClosingShift || !actualCashInput"
+          :disabled="isClosingShift || actualCashInput === '' || actualCashInput === null || isNaN(Number(actualCashInput)) || Number(actualCashInput) < 0"
           class="flex-1 py-3 bg-error text-on-error hover:bg-opacity-95 rounded-xl transition-all font-bold text-xs cursor-pointer text-white border-0 shadow-md shadow-error/20 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ isClosingShift ? $t('checkout.closingShiftBtn') : $t('checkout.closeAndLogout') }}
@@ -386,7 +386,11 @@ const triggerLogoutConfirm = async () => {
 };
 
 const handleCloseShift = async () => {
-  const amount = parseFloat(actualCashInput.value);
+  if (actualCashInput.value === '' || actualCashInput.value === null || actualCashInput.value === undefined) {
+    showToast(t('checkout.enterValidActualCash'), 'error');
+    return;
+  }
+  const amount = Number(actualCashInput.value);
   if (isNaN(amount) || amount < 0) {
     showToast(t('checkout.enterValidActualCash'), 'error');
     return;

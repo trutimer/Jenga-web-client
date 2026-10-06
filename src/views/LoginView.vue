@@ -210,7 +210,7 @@
         </form>
 
         <!-- Footer Status Indicators -->
-        <footer class="mt-4 pt-6 flex justify-center lg:justify-start items-center gap-4 text-xs font-mono text-outline border-t border-outline-variant/30">
+        <footer class="mt-4 pt-6 flex flex-wrap justify-center lg:justify-start items-center gap-4 text-xs font-mono text-outline border-t border-outline-variant/30">
           <div class="flex items-center gap-1.5 font-medium text-primary">
             <ShieldCheck class="w-4 h-4" />
             <span>{{ $t('auth.enterpriseEdition') }}</span>
@@ -219,10 +219,28 @@
           <div class="flex items-center gap-1.5">
             <span>{{ appVersion }}</span>
           </div>
+          <template v-if="!isElectronApp">
+            <div class="w-1 h-1 rounded-full bg-outline-variant" />
+            <button
+              type="button"
+              @click="showDownloadModal = true"
+              class="flex items-center gap-1.5 hover:text-primary transition-colors cursor-pointer text-on-surface-variant/80 hover:text-primary font-medium"
+              :title="$t('topNav.downloadDesktopTooltip')"
+            >
+              <Download class="w-3.5 h-3.5 text-primary" />
+              <span>{{ $t('topNav.desktopApp') }}</span>
+            </button>
+          </template>
         </footer>
         
       </main>
     </div>
+
+    <!-- Download Desktop App Modal -->
+    <DownloadDesktopModal 
+      :isOpen="showDownloadModal" 
+      :onClose="() => showDownloadModal = false"
+    />
 
     <!-- Password Reset Flow Modal -->
     <div v-if="showForgotModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#122131]/60 backdrop-blur-sm">
@@ -490,6 +508,7 @@ import { t } from '../i18n';
 import LanguageSelector from '../components/common/LanguageSelector.vue';
 import JengaLoader from '../components/common/JengaLoader.vue';
 import TurnstileWidget from '../components/common/TurnstileWidget.vue';
+import DownloadDesktopModal from '../components/common/DownloadDesktopModal.vue';
 import { 
   Phone, 
   Lock, 
@@ -507,14 +526,17 @@ import {
   Monitor,
   Globe,
   Clock,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Download
 } from 'lucide-vue-next';
 import { getDesktopDeviceMetadata, clearAuthStorage } from '../services/deviceService';
 import { parseJwtPayload } from '../services/authSession';
 
 const vm = useAppViewModel();
 
-const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v2.8.0';
+const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v3.0.0';
+const isElectronApp = ref(isElectron());
+const showDownloadModal = ref(false);
 
 const phone = ref(localStorage.getItem('lastPhone') || '');
 const password = ref('');

@@ -1,6 +1,8 @@
 {
-  "version": "2.8.0",
+  "version": "3.0.0",
   "downloadUrl": "/Jenga-Setup-Latest.exe",
-  "releaseNotes": "Jenga POS v2.6.0: Offline sales, hardware integration, and automated desktop background updates.",
-  "releaseDate": "2026-09-20"
+  "windowsDownloadUrl": "/Jenga-Setup-Latest.exe",
+  "macDownloadUrl": "/Jenga-Latest.dmg",
+  "releaseNotes": "Jenga POS v3.0.0: Offline sales, multi-platform macOS and Windows support, and automated desktop background updates.",
+  "releaseDate": "2026-10-04"
 }

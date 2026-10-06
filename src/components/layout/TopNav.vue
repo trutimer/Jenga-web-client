@@ -315,43 +315,10 @@
     </div>
 
     <!-- Download Desktop App Modal -->
-    <Modal 
+    <DownloadDesktopModal 
       :isOpen="showDownloadModal" 
-      :title="$t('topNav.downloadAppTitle')" 
       :onClose="() => showDownloadModal = false"
-      maxWidth="max-w-md"
-    >
-      <div class="flex flex-col items-center text-center gap-4 py-4">
-        <div class="w-16 h-16 bg-primary-container/20 rounded-full flex items-center justify-center mb-2">
-          <Download class="w-8 h-8 text-primary" />
-        </div>
-        <h3 class="text-xl font-black text-on-surface">{{ $t('topNav.downloadAppHeader') }}</h3>
-        <p class="text-sm text-on-surface-variant leading-relaxed">
-          {{ $t('topNav.downloadAppDesc') }}
-        </p>
-        
-        <div class="bg-surface-container-low w-full rounded-xl p-4 mt-2 border border-outline-variant/50">
-          <div class="flex justify-between items-center text-sm font-mono">
-            <span class="text-on-surface-variant uppercase font-bold text-xs">{{ $t('topNav.currentVersion') }}</span>
-            <span class="text-primary font-bold">{{ $t('topNav.latestRelease') }}</span>
-          </div>
-          <div class="flex justify-between items-center text-sm font-mono mt-2 pt-2 border-t border-outline-variant/30">
-            <span class="text-on-surface-variant uppercase font-bold text-xs">{{ $t('topNav.platform') }}</span>
-            <span class="text-on-surface font-bold">{{ $t('topNav.windowsPlatform') }}</span>
-          </div>
-        </div>
-
-        <a 
-          :href="desktopDownloadUrl"
-          download="Jenga-Setup-Latest.exe"
-          @click="showDownloadModal = false"
-          class="w-full mt-4 bg-primary text-on-primary py-3.5 rounded-xl font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
-        >
-          <Download class="w-5 h-5" />
-          <span>{{ $t('topNav.downloadInstaller') }}</span>
-        </a>
-      </div>
-    </Modal>
+    />
 
     <!-- License Information Modal -->
     <LicenseModal 
@@ -373,7 +340,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import Modal from '../common/Modal.vue';
+import DownloadDesktopModal from '../common/DownloadDesktopModal.vue';
 import LicenseModal from '../common/LicenseModal.vue';
 import LicenseExpiryAlertModal from '../common/LicenseExpiryAlertModal.vue';
 import SyncStatusBadge from '../SyncStatusBadge.vue';
@@ -429,10 +396,6 @@ const modulesMenuOpen = ref(false);
 const showDownloadModal = ref(false);
 const showLicenseModal = ref(false);
 const showExpiryAlertModal = ref(false);
-
-const desktopDownloadUrl = computed(() => {
-  return (import.meta.env.VITE_DESKTOP_DOWNLOAD_URL as string) || '/Jenga-Setup-Latest.exe';
-});
 
 const navigateToModule = (path: string) => {
   modulesMenuOpen.value = false;

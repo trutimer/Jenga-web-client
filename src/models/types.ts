@@ -900,6 +900,7 @@ export interface PurchaseOrderItem {
   unitCost: number;
   totalCost: number;
   isWholesale?: boolean;
+  conversionFactor?: number;
   notes?: string;
 }
 

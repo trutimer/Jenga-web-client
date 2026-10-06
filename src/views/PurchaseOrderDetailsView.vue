@@ -341,6 +341,7 @@
               <tr>
                 <th class="p-3.5 pl-4 font-bold min-w-[200px]">Product</th>
                 <th class="p-3.5 text-center font-bold">Unit Cost</th>
+                <th class="p-3.5 text-center font-bold">{{ $t('purchaseOrders.wholesaleCol') }}</th>
                 <th class="p-3.5 text-center font-bold">Ordered</th>
                 <th class="p-3.5 text-center font-bold">Received</th>
                 <th class="p-3.5 text-center font-bold">Remaining</th>
@@ -359,9 +360,6 @@
                   <span class="font-bold text-on-surface block">{{ item.productName }}</span>
                   <div class="flex items-center gap-2 text-xs text-outline font-mono mt-0.5">
                     <span>{{ item.barcode || item.sku || 'No SKU' }}</span>
-                    <span v-if="item.isWholesale" class="px-1.5 py-0.2 rounded text-[10px] bg-primary/10 text-primary font-bold">
-                      Wholesale
-                    </span>
                   </div>
                   <span v-if="item.notes" class="text-xs text-outline italic block mt-0.5">
                     Note: {{ item.notes }}
@@ -373,19 +371,47 @@
                   {{ formatCurrencyWithoutSymbol(item.unitCost, currency) }}
                 </td>
 
+                <!-- Wholesale Column -->
+                <td class="p-3.5 text-center">
+                  <span 
+                    v-if="item.isWholesale" 
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20"
+                  >
+                    <span>Yes</span>
+                    <span v-if="(item.conversionFactor || 1) > 1" class="font-mono text-[10px] text-primary/80">
+                      (x{{ item.conversionFactor }})
+                    </span>
+                  </span>
+                  <span 
+                    v-else 
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-container text-outline"
+                  >
+                    No
+                  </span>
+                </td>
+
                 <!-- Ordered Qty -->
                 <td class="p-3.5 text-center font-mono font-bold text-on-surface">
-                  {{ item.quantityOrdered }} pcs
+                  <div>{{ item.quantityOrdered }} {{ item.isWholesale && (item.conversionFactor || 1) > 1 ? 'packs' : 'pcs' }}</div>
+                  <div v-if="item.isWholesale && (item.conversionFactor || 1) > 1" class="text-[10px] font-normal text-outline">
+                    ({{ item.quantityOrdered * (item.conversionFactor || 1) }} pcs)
+                  </div>
                 </td>
 
                 <!-- Received Qty -->
                 <td class="p-3.5 text-center font-mono font-bold text-emerald-700">
-                  {{ item.quantityReceived || 0 }} pcs
+                  <div>{{ item.quantityReceived || 0 }} {{ item.isWholesale && (item.conversionFactor || 1) > 1 ? 'packs' : 'pcs' }}</div>
+                  <div v-if="item.isWholesale && (item.conversionFactor || 1) > 1 && (item.quantityReceived || 0) > 0" class="text-[10px] font-normal text-emerald-600/80">
+                    ({{ (item.quantityReceived || 0) * (item.conversionFactor || 1) }} pcs)
+                  </div>
                 </td>
 
                 <!-- Remaining Qty -->
                 <td class="p-3.5 text-center font-mono font-bold" :class="item.remainingQuantity > 0 ? 'text-amber-700' : 'text-outline'">
-                  {{ item.remainingQuantity !== undefined ? item.remainingQuantity : (item.quantityOrdered - (item.quantityReceived || 0)) }} pcs
+                  <div>{{ item.remainingQuantity !== undefined ? item.remainingQuantity : (item.quantityOrdered - (item.quantityReceived || 0)) }} {{ item.isWholesale && (item.conversionFactor || 1) > 1 ? 'packs' : 'pcs' }}</div>
+                  <div v-if="item.isWholesale && (item.conversionFactor || 1) > 1" class="text-[10px] font-normal text-outline">
+                    ({{ (item.remainingQuantity !== undefined ? item.remainingQuantity : (item.quantityOrdered - (item.quantityReceived || 0))) * (item.conversionFactor || 1) }} pcs)
+                  </div>
                 </td>
 
                 <!-- Line Total -->
@@ -447,9 +473,24 @@
               class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/60 flex items-center justify-between gap-3 text-xs"
             >
               <div class="min-w-0 flex-1">
-                <span class="font-bold text-on-surface block truncate">{{ item.productName }}</span>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-on-surface block truncate">{{ item.productName }}</span>
+                  <span 
+                    v-if="item.isWholesale" 
+                    class="px-1.5 py-0.5 rounded text-[10px] bg-primary/10 text-primary font-bold inline-flex items-center gap-0.5 shrink-0"
+                  >
+                    Wholesale
+                    <span v-if="(item.conversionFactor || 1) > 1" class="font-mono text-[9px]">(x{{ item.conversionFactor }})</span>
+                  </span>
+                </div>
                 <span class="text-[11px] text-outline font-mono">
-                  Ordered: {{ item.ordered }} • Already Received: {{ item.alreadyReceived }} • Remaining: {{ item.remaining }}
+                  Ordered: {{ item.ordered }} {{ item.isWholesale && (item.conversionFactor || 1) > 1 ? 'packs' : 'pcs' }} • Received: {{ item.alreadyReceived }} • Remaining: {{ item.remaining }}
+                </span>
+                <span 
+                  v-if="item.isWholesale && (item.conversionFactor || 1) > 1 && item.receiveNow > 0" 
+                  class="block text-[11px] text-emerald-600 font-semibold mt-0.5"
+                >
+                  &rarr; Adds {{ item.receiveNow * (item.conversionFactor || 1) }} pcs to stock inventory
                 </span>
               </div>
 
@@ -463,7 +504,7 @@
                   :max="item.remaining"
                   class="w-20 text-center font-mono font-bold text-xs bg-surface-container-lowest border border-outline-variant rounded-lg py-1.5 px-2 outline-none focus:border-primary text-on-surface"
                 />
-                <span class="text-xs font-mono text-outline">pcs</span>
+                <span class="text-xs font-mono text-outline">{{ item.isWholesale && (item.conversionFactor || 1) > 1 ? 'packs' : 'pcs' }}</span>
               </div>
             </div>
           </div>
@@ -554,6 +595,120 @@
           >
             <RotateCw v-if="isProcessingAction" class="w-3.5 h-3.5 animate-spin" />
             <span>{{ decisionType === 'APPROVE' ? 'Confirm Approval' : 'Confirm Rejection' }}</span>
+          </button>
+        </template>
+      </Modal>
+
+      <!-- CANCEL PURCHASE ORDER MODAL -->
+      <Modal 
+        :isOpen="showCancelModal" 
+        :onClose="() => { showCancelModal = false; cancelReason = ''; }"
+        :title="$t('purchaseOrders.cancelPoBtn') || 'Cancel Purchase Order'"
+        maxWidth="max-w-md"
+      >
+        <div class="space-y-4 text-xs font-sans">
+          <!-- Warning banner -->
+          <div class="p-3.5 rounded-xl bg-error/10 border border-error/25 flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-error/15 flex items-center justify-center shrink-0 text-error mt-0.5">
+              <AlertTriangle class="w-4 h-4" />
+            </div>
+            <div class="space-y-1">
+              <span class="font-bold text-on-surface block text-xs">
+                Cancel Purchase Order {{ po.poNumber }}?
+              </span>
+              <p class="text-on-surface-variant text-[11px] leading-relaxed">
+                This will cancel the order and mark it as void.
+                <span v-if="po.paymentType === 'CASH'">
+                  Any reserved register funds will automatically be released back to the cashier shift drawer.
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Quick order summary pill -->
+          <div class="p-2.5 rounded-xl bg-surface-container-low border border-outline-variant/60 flex items-center justify-between text-[11px]">
+            <span class="text-outline font-medium">Order Total:</span>
+            <span class="font-mono font-bold text-on-surface">{{ formatCurrency(po.totalEstimatedCost, currency) }}</span>
+          </div>
+
+          <!-- Reason input -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-mono font-bold uppercase text-outline block">
+              Reason for Cancellation <span class="text-error">*</span>
+            </label>
+            <textarea 
+              v-model="cancelReason"
+              rows="3"
+              required
+              placeholder="e.g. Supplier out of stock, vendor cannot fulfill, duplicate order..."
+              class="w-full bg-surface-container-low p-2.5 rounded-xl border border-outline-variant text-xs outline-none focus:border-error focus:ring-1 focus:ring-error resize-none font-medium text-on-surface transition-all placeholder:text-outline/60"
+            />
+          </div>
+        </div>
+
+        <template #footer>
+          <button 
+            type="button"
+            @click="showCancelModal = false"
+            class="px-4 py-2 rounded-lg border border-outline text-xs font-bold text-on-surface-variant hover:bg-surface-container-high cursor-pointer bg-transparent transition-colors"
+          >
+            Keep Order
+          </button>
+
+          <button 
+            type="button"
+            @click="handleConfirmCancel"
+            :disabled="isProcessingAction || !cancelReason.trim()"
+            class="px-4.5 py-2 rounded-lg bg-error hover:bg-error/90 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-40 border-0 transition-colors"
+          >
+            <RotateCw v-if="isProcessingAction" class="w-3.5 h-3.5 animate-spin" />
+            <XCircle v-else class="w-3.5 h-3.5" />
+            <span>{{ isProcessingAction ? 'Cancelling...' : 'Confirm Cancellation' }}</span>
+          </button>
+        </template>
+      </Modal>
+
+      <!-- DELETE DRAFT MODAL -->
+      <Modal 
+        :isOpen="showDeleteModal" 
+        :onClose="() => showDeleteModal = false"
+        title="Delete Draft Purchase Order"
+        maxWidth="max-w-md"
+      >
+        <div class="space-y-4 text-xs font-sans">
+          <div class="p-3.5 rounded-xl bg-error/10 border border-error/25 flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-error/15 flex items-center justify-center shrink-0 text-error mt-0.5">
+              <Trash2 class="w-4 h-4" />
+            </div>
+            <div class="space-y-1">
+              <span class="font-bold text-on-surface block text-xs">
+                Permanently delete draft {{ po.poNumber }}?
+              </span>
+              <p class="text-on-surface-variant text-[11px] leading-relaxed">
+                This action is permanent and cannot be undone. Any reserved cash will be returned immediately to the active shift register.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <template #footer>
+          <button 
+            type="button"
+            @click="showDeleteModal = false"
+            class="px-4 py-2 rounded-lg border border-outline text-xs font-bold text-on-surface-variant hover:bg-surface-container-high cursor-pointer bg-transparent transition-colors"
+          >
+            {{ $t('common.cancel') }}
+          </button>
+
+          <button 
+            type="button"
+            @click="handleConfirmDelete"
+            :disabled="isProcessingAction"
+            class="px-4.5 py-2 rounded-lg bg-error hover:bg-error/90 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-40 border-0 transition-colors"
+          >
+            <RotateCw v-if="isProcessingAction" class="w-3.5 h-3.5 animate-spin" />
+            <Trash2 v-else class="w-3.5 h-3.5" />
+            <span>{{ isProcessingAction ? 'Deleting...' : 'Delete Draft' }}</span>
           </button>
         </template>
       </Modal>
@@ -798,6 +953,7 @@ import {
   ShieldAlert,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   Truck,
   Building2
 } from 'lucide-vue-next';
@@ -850,6 +1006,9 @@ const showReceiveModal = ref<boolean>(false);
 const showDecisionModal = ref<boolean>(false);
 const decisionType = ref<'APPROVE' | 'REJECT'>('APPROVE');
 const decisionText = ref<string>('');
+const showCancelModal = ref<boolean>(false);
+const cancelReason = ref<string>('');
+const showDeleteModal = ref<boolean>(false);
 
 // Receive items state
 interface ReceiveItemRow {
@@ -858,6 +1017,8 @@ interface ReceiveItemRow {
   ordered: number;
   alreadyReceived: number;
   remaining: number;
+  isWholesale?: boolean;
+  conversionFactor?: number;
   receiveNow: number;
 }
 const receiveItemsState = ref<ReceiveItemRow[]>([]);
@@ -936,6 +1097,8 @@ const fetchPoDetails = async () => {
         ordered,
         alreadyReceived: already,
         remaining,
+        isWholesale: !!item.isWholesale,
+        conversionFactor: Number(item.conversionFactor) || 1,
         receiveNow: remaining // default to receiving all remaining
       };
     });
@@ -1005,16 +1168,21 @@ const handleConfirmReceive = async () => {
   }
 };
 
-const handleCancelPo = async () => {
+const handleCancelPo = () => {
   if (!po.value) return;
-  const reason = prompt('Please specify a reason for cancelling this Purchase Order:');
-  if (reason === null) return; // User clicked Cancel
+  cancelReason.value = '';
+  showCancelModal.value = true;
+};
+
+const handleConfirmCancel = async () => {
+  if (!po.value || !cancelReason.value.trim()) return;
 
   isProcessingAction.value = true;
   try {
-    const updated = await purchaseOrderService.cancelPurchaseOrder(po.value.id, reason || 'Cancelled by user');
+    const updated = await purchaseOrderService.cancelPurchaseOrder(po.value.id, cancelReason.value.trim());
     po.value = updated;
-    showToast('Purchase order cancelled.', 'info');
+    showCancelModal.value = false;
+    showToast('Purchase order cancelled successfully.', 'info');
   } catch (err: any) {
     showToast(err.message || 'Failed to cancel purchase order', 'error');
   } finally {
@@ -1022,14 +1190,19 @@ const handleCancelPo = async () => {
   }
 };
 
-const handleDeleteDraft = async () => {
+const handleDeleteDraft = () => {
   if (!po.value) return;
-  if (!confirm('Are you sure you want to delete this draft purchase order? This action cannot be undone.')) return;
+  showDeleteModal.value = true;
+};
+
+const handleConfirmDelete = async () => {
+  if (!po.value) return;
 
   isProcessingAction.value = true;
   try {
     await purchaseOrderService.deleteDraft(po.value.id);
-    showToast('Draft purchase order deleted.', 'success');
+    showDeleteModal.value = false;
+    showToast('Draft purchase order deleted successfully.', 'success');
     router.push('/purchases');
   } catch (err: any) {
     showToast(err.message || 'Failed to delete draft', 'error');

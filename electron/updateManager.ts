@@ -33,8 +33,9 @@ let updateCheckTimer: NodeJS.Timeout | null = null
 // Check for updates every 30 minutes (standard production cadence)
 const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000
 
-// Default download URL pointing to the web app's existing installer download button
-const DEFAULT_DOWNLOAD_URL = process.env.VITE_UPDATE_URL || 'https://jenga.sintax.tz/Jenga-Setup-Latest.exe'
+// Default download URLs for Windows (.exe) and macOS (.dmg)
+const DEFAULT_WINDOWS_DOWNLOAD_URL = process.env.VITE_UPDATE_WINDOWS_URL || process.env.VITE_UPDATE_URL || 'https://jenga.sintax.tz/Jenga-Setup-Latest.exe'
+const DEFAULT_MAC_DOWNLOAD_URL = process.env.VITE_UPDATE_MAC_URL || 'https://jenga.sintax.tz/Jenga-Latest.dmg'
 
 export function initUpdateManager(windowsGetter: () => BrowserWindow[], apiBaseUrlGetter?: () => string) {
   windowsGetterRef = windowsGetter
@@ -217,7 +218,15 @@ export function handleHealthPingResponse(payload: any, windowsGetter?: () => Bro
     ''
   ).toString().trim()
 
-  let downloadUrl = (payload.downloadUrl || payload.url || DEFAULT_DOWNLOAD_URL).toString().trim()
+  const isMac = process.platform === 'darwin'
+  const defaultUrl = isMac ? DEFAULT_MAC_DOWNLOAD_URL : DEFAULT_WINDOWS_DOWNLOAD_URL
+  let downloadUrl = (
+    (isMac ? (payload.macDownloadUrl || payload.macUrl) : (payload.windowsDownloadUrl || payload.windowsUrl)) ||
+    payload.downloadUrl ||
+    payload.url ||
+    defaultUrl
+  ).toString().trim()
+
   if (downloadUrl.startsWith('/')) {
     const webOrigin = process.env.VITE_UPDATE_URL 
       ? new URL(process.env.VITE_UPDATE_URL).origin 
@@ -236,7 +245,7 @@ export function handleHealthPingResponse(payload: any, windowsGetter?: () => Bro
   }
 
   // A newer version is detected!
-  console.log(`[UpdateManager] Newer version detected: ${remoteVersion} (current: ${currentState.currentVersion})`)
+  console.log(`[UpdateManager] Newer version detected: ${remoteVersion} for ${isMac ? 'macOS' : 'Windows'} (current: ${currentState.currentVersion})`)
 
   // Cooldown check in case of consecutive failures
   const now = Date.now()
@@ -245,7 +254,8 @@ export function handleHealthPingResponse(payload: any, windowsGetter?: () => Bro
   }
 
   const tempDir = app.getPath('temp')
-  const finalInstallerPath = join(tempDir, `jenga-update-${remoteVersion}.exe`)
+  const ext = isMac ? 'dmg' : 'exe'
+  const finalInstallerPath = join(tempDir, `jenga-update-${remoteVersion}.${ext}`)
 
   // Check if this installer was already downloaded and valid
   if (existsSync(finalInstallerPath)) {
@@ -283,7 +293,9 @@ export function triggerDownload(downloadUrl: string, targetVersion: string, rele
     return
   }
 
-  console.log(`[UpdateManager] Initiating background download for v${targetVersion} from: ${downloadUrl}`)
+  const isMac = process.platform === 'darwin'
+  const ext = isMac ? 'dmg' : 'exe'
+  console.log(`[UpdateManager] Initiating background download for v${targetVersion} (${ext}) from: ${downloadUrl}`)
 
   currentState = {
     status: 'downloading',
@@ -298,7 +310,7 @@ export function triggerDownload(downloadUrl: string, targetVersion: string, rele
   broadcastStatus()
 
   const tempDir = app.getPath('temp')
-  const finalInstallerPath = join(tempDir, `jenga-update-${targetVersion}.exe`)
+  const finalInstallerPath = join(tempDir, `jenga-update-${targetVersion}.${ext}`)
   const partialPath = `${finalInstallerPath}.downloading`
 
   // Remove existing partial file if present
@@ -314,12 +326,13 @@ export function triggerDownload(downloadUrl: string, targetVersion: string, rele
         try { unlinkSync(partialPath) } catch (_) {}
       }
 
-      // If in dev mode (!app.isPackaged), fall back directly to local public/Jenga-Setup-Latest.exe
-      const localExe = join(process.env.APP_ROOT || process.cwd(), 'public', 'Jenga-Setup-Latest.exe')
-      if (!app.isPackaged && existsSync(localExe)) {
+      // If in dev mode (!app.isPackaged), fall back directly to local public binary
+      const localFileName = isMac ? 'Jenga-Latest.dmg' : 'Jenga-Setup-Latest.exe'
+      const localFile = join(process.env.APP_ROOT || process.cwd(), 'public', localFileName)
+      if (!app.isPackaged && existsSync(localFile)) {
         console.log('[UpdateManager] Falling back to local public installer binary for dev testing...')
         try {
-          copyFileSync(localExe, finalInstallerPath)
+          copyFileSync(localFile, finalInstallerPath)
           currentState = {
             ...currentState,
             status: 'downloaded',
@@ -408,7 +421,7 @@ function downloadFileWithRedirects(
     port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
     path: parsedUrl.pathname + parsedUrl.search,
     headers: {
-      'User-Agent': `Jenga-Desktop/${currentState.currentVersion} (Electron; Windows NT)`,
+      'User-Agent': `Jenga-Desktop/${currentState.currentVersion} (Electron; ${process.platform === 'darwin' ? 'Macintosh; Intel Mac OS X' : 'Windows NT'})`,
       'Accept': '*/*',
     },
   }

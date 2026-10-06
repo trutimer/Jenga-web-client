@@ -176,14 +176,13 @@
             @change="handleDatePresetChange"
             class="bg-transparent text-xs font-bold text-on-surface outline-none cursor-pointer border-0"
           >
-            <option value="all">{{ $t('purchases.allTime') }}</option>
             <option value="today">{{ $t('purchases.today') }}</option>
             <option value="yesterday">{{ $t('purchases.yesterday') }}</option>
             <option value="7days">{{ $t('purchases.last7Days') }}</option>
             <option value="month">{{ $t('purchases.thisMonth') }}</option>
             <option value="custom">{{ $t('purchases.customRange') }}</option>
           </select>
-          <span v-if="datePreset !== 'all' && datePreset !== 'custom' && startDate" class="text-[10px] font-mono text-primary font-bold hidden sm:inline-block border-l border-outline-variant/60 pl-1.5">
+          <span v-if="datePreset !== 'custom' && startDate" class="text-[10px] font-mono text-primary font-bold hidden sm:inline-block border-l border-outline-variant/60 pl-1.5">
             {{ startDate === endDate ? startDate : $t('purchases.dateRangeTo', { start: startDate, end: endDate }) }}
           </span>
         </div>
@@ -195,7 +194,9 @@
             <input 
               type="date" 
               v-model="startDate" 
-              @change="() => { currentPage = 1; fetchPurchases(); }"
+              :min="monthStartStr"
+              :max="todayStr"
+              @change="handleCustomDateChange"
               class="bg-transparent text-xs font-mono font-semibold text-on-surface outline-none border-0 cursor-pointer"
             />
           </div>
@@ -204,7 +205,9 @@
             <input 
               type="date" 
               v-model="endDate" 
-              @change="() => { currentPage = 1; fetchPurchases(); }"
+              :min="startDate || monthStartStr"
+              :max="todayStr"
+              @change="handleCustomDateChange"
               class="bg-transparent text-xs font-mono font-semibold text-on-surface outline-none border-0 cursor-pointer"
             />
           </div>
@@ -242,7 +245,7 @@
 
         <!-- Reset Button -->
         <button 
-          v-if="searchQuery || statusFilter !== 'ALL' || supplierFilter || datePreset !== 'all' || startDate || endDate"
+          v-if="searchQuery || statusFilter !== 'ALL' || supplierFilter || datePreset !== 'today' || startDate !== todayStr || endDate !== todayStr"
           @click="resetFilters"
           class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors cursor-pointer border-0 bg-transparent flex items-center gap-1"
         >
@@ -562,12 +565,58 @@
 
         <!-- Filter Controls -->
         <div class="flex flex-wrap items-center gap-2.5">
+          <!-- PO Date Preset Filter -->
+          <div class="flex items-center gap-1.5 bg-surface-container-low px-3 py-1 rounded-lg border border-outline-variant">
+            <Calendar class="w-3.5 h-3.5 text-outline shrink-0" />
+            <span class="text-[11px] font-bold uppercase text-outline">{{ $t('purchases.dateLabel') }}</span>
+            <select 
+              v-model="poDatePreset" 
+              @change="handlePoDatePresetChange"
+              class="bg-transparent text-xs font-bold text-on-surface outline-none cursor-pointer border-0"
+            >
+              <option value="today">{{ $t('purchases.today') }}</option>
+              <option value="yesterday">{{ $t('purchases.yesterday') }}</option>
+              <option value="7days">{{ $t('purchases.last7Days') }}</option>
+              <option value="month">{{ $t('purchases.thisMonth') }}</option>
+              <option value="custom">{{ $t('purchases.customRange') }}</option>
+            </select>
+            <span v-if="poDatePreset !== 'custom' && poStartDate" class="text-[10px] font-mono text-primary font-bold hidden sm:inline-block border-l border-outline-variant/60 pl-1.5">
+              {{ poStartDate === poEndDate ? poStartDate : $t('purchases.dateRangeTo', { start: poStartDate, end: poEndDate }) }}
+            </span>
+          </div>
+
+          <!-- Custom Start & End Date Inputs for PO -->
+          <div v-if="poDatePreset === 'custom'" class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 bg-surface-container-low px-2.5 py-1 rounded-lg border border-outline-variant">
+              <span class="text-[10px] font-bold uppercase text-outline">{{ $t('purchases.fromLabel') }}</span>
+              <input 
+                type="date" 
+                v-model="poStartDate" 
+                :min="monthStartStr"
+                :max="todayStr"
+                @change="handlePoCustomDateChange"
+                class="bg-transparent text-xs font-mono font-semibold text-on-surface outline-none border-0 cursor-pointer"
+              />
+            </div>
+            <div class="flex items-center gap-1.5 bg-surface-container-low px-2.5 py-1 rounded-lg border border-outline-variant">
+              <span class="text-[10px] font-bold uppercase text-outline">{{ $t('purchases.toLabel') }}</span>
+              <input 
+                type="date" 
+                v-model="poEndDate" 
+                :min="poStartDate || monthStartStr"
+                :max="todayStr"
+                @change="handlePoCustomDateChange"
+                class="bg-transparent text-xs font-mono font-semibold text-on-surface outline-none border-0 cursor-pointer"
+              />
+            </div>
+          </div>
+
           <!-- Status Filter -->
           <div class="flex items-center gap-1.5 bg-surface-container-low px-3 py-1 rounded-lg border border-outline-variant">
             <span class="text-[11px] font-bold uppercase text-outline">Status:</span>
             <select 
               v-model="poStatusFilter" 
-              @change="poCurrentPage = 1"
+              @change="() => { poCurrentPage = 1; fetchPurchaseOrders(); }"
               class="bg-transparent text-xs font-bold text-on-surface outline-none cursor-pointer border-0"
             >
               <option value="ALL">All Statuses</option>
@@ -586,7 +635,7 @@
             <span class="text-[11px] font-bold uppercase text-outline">Supplier:</span>
             <select 
               v-model="poSupplierFilter" 
-              @change="poCurrentPage = 1"
+              @change="() => { poCurrentPage = 1; fetchPurchaseOrders(); }"
               class="bg-transparent text-xs font-bold text-on-surface outline-none cursor-pointer border-0 max-w-[140px] truncate"
             >
               <option value="">All Suppliers</option>
@@ -598,7 +647,7 @@
 
           <!-- Reset Button -->
           <button 
-            v-if="poSearchQuery || poStatusFilter !== 'ALL' || poSupplierFilter"
+            v-if="poSearchQuery || poStatusFilter !== 'ALL' || poSupplierFilter || poDatePreset !== 'today' || poStartDate !== todayStr || poEndDate !== todayStr"
             @click="resetPoFilters"
             class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors cursor-pointer border-0 bg-transparent flex items-center gap-1"
           >
@@ -1238,6 +1287,20 @@ watch([() => route.query.tab, canViewPo, canCreatePo], ([tab]) => {
   }
 });
 
+// Date Range Constraints (Default: Today, Maximum: This Month)
+const getTodayStr = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+};
+
+const getMonthStartStr = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+};
+
+const todayStr = computed(() => getTodayStr());
+const monthStartStr = computed(() => getMonthStartStr());
+
 // State (Invoices)
 const purchases = ref<Purchase[]>([]);
 const suppliers = ref<Supplier[]>([]);
@@ -1249,49 +1312,110 @@ const isLoadingOrders = ref(false);
 const poSearchQuery = ref('');
 const poStatusFilter = ref('ALL');
 const poSupplierFilter = ref('');
+const poDatePreset = ref<string>('today');
+const poStartDate = ref<string>(getTodayStr());
+const poEndDate = ref<string>(getTodayStr());
 const poCurrentPage = ref(1);
 const poItemsPerPage = 15;
 
-// Filters
+// Filters (Invoices)
 const searchQuery = ref('');
 const statusFilter = ref('ALL');
 const supplierFilter = ref('');
-const datePreset = ref<string>('all');
-const startDate = ref<string>('');
-const endDate = ref<string>('');
+const datePreset = ref<string>('today');
+const startDate = ref<string>(getTodayStr());
+const endDate = ref<string>(getTodayStr());
 const currentPage = ref(1);
 const itemsPerPage = 15;
 
 const handleDatePresetChange = () => {
+  const today = getTodayStr();
+  const monthStart = getMonthStartStr();
   const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   
-  if (datePreset.value === 'all') {
-    startDate.value = '';
-    endDate.value = '';
-  } else if (datePreset.value === 'today') {
-    startDate.value = todayStr;
-    endDate.value = todayStr;
+  if (datePreset.value === 'today') {
+    startDate.value = today;
+    endDate.value = today;
   } else if (datePreset.value === 'yesterday') {
     const yest = new Date(now);
     yest.setDate(yest.getDate() - 1);
     const yestStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`;
-    startDate.value = yestStr;
-    endDate.value = yestStr;
+    startDate.value = yestStr < monthStart ? monthStart : yestStr;
+    endDate.value = yestStr < monthStart ? monthStart : yestStr;
   } else if (datePreset.value === '7days') {
     const d7 = new Date(now);
-    d7.setDate(d7.getDate() - 7);
+    d7.setDate(d7.getDate() - 6);
     const d7Str = `${d7.getFullYear()}-${String(d7.getMonth() + 1).padStart(2, '0')}-${String(d7.getDate()).padStart(2, '0')}`;
-    startDate.value = d7Str;
-    endDate.value = todayStr;
+    startDate.value = d7Str < monthStart ? monthStart : d7Str;
+    endDate.value = today;
   } else if (datePreset.value === 'month') {
-    const monthStartStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    startDate.value = monthStartStr;
-    endDate.value = todayStr;
+    startDate.value = monthStart;
+    endDate.value = today;
   }
   
   currentPage.value = 1;
   fetchPurchases();
+};
+
+const handleCustomDateChange = () => {
+  const monthStart = getMonthStartStr();
+  const today = getTodayStr();
+  if (startDate.value && startDate.value < monthStart) {
+    startDate.value = monthStart;
+  }
+  if (endDate.value && endDate.value > today) {
+    endDate.value = today;
+  }
+  if (startDate.value && endDate.value && startDate.value > endDate.value) {
+    endDate.value = startDate.value;
+  }
+  currentPage.value = 1;
+  fetchPurchases();
+};
+
+const handlePoDatePresetChange = () => {
+  const today = getTodayStr();
+  const monthStart = getMonthStartStr();
+  const now = new Date();
+  
+  if (poDatePreset.value === 'today') {
+    poStartDate.value = today;
+    poEndDate.value = today;
+  } else if (poDatePreset.value === 'yesterday') {
+    const yest = new Date(now);
+    yest.setDate(yest.getDate() - 1);
+    const yestStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`;
+    poStartDate.value = yestStr < monthStart ? monthStart : yestStr;
+    poEndDate.value = yestStr < monthStart ? monthStart : yestStr;
+  } else if (poDatePreset.value === '7days') {
+    const d7 = new Date(now);
+    d7.setDate(d7.getDate() - 6);
+    const d7Str = `${d7.getFullYear()}-${String(d7.getMonth() + 1).padStart(2, '0')}-${String(d7.getDate()).padStart(2, '0')}`;
+    poStartDate.value = d7Str < monthStart ? monthStart : d7Str;
+    poEndDate.value = today;
+  } else if (poDatePreset.value === 'month') {
+    poStartDate.value = monthStart;
+    poEndDate.value = today;
+  }
+  
+  poCurrentPage.value = 1;
+  fetchPurchaseOrders();
+};
+
+const handlePoCustomDateChange = () => {
+  const monthStart = getMonthStartStr();
+  const today = getTodayStr();
+  if (poStartDate.value && poStartDate.value < monthStart) {
+    poStartDate.value = monthStart;
+  }
+  if (poEndDate.value && poEndDate.value > today) {
+    poEndDate.value = today;
+  }
+  if (poStartDate.value && poEndDate.value && poStartDate.value > poEndDate.value) {
+    poEndDate.value = poStartDate.value;
+  }
+  poCurrentPage.value = 1;
+  fetchPurchaseOrders();
 };
 
 // Details Modal
@@ -1497,9 +1621,9 @@ const resetFilters = () => {
   searchQuery.value = '';
   statusFilter.value = 'ALL';
   supplierFilter.value = '';
-  datePreset.value = 'all';
-  startDate.value = '';
-  endDate.value = '';
+  datePreset.value = 'today';
+  startDate.value = getTodayStr();
+  endDate.value = getTodayStr();
   currentPage.value = 1;
   fetchPurchases();
 };
@@ -1668,7 +1792,11 @@ const resetPoFilters = () => {
   poSearchQuery.value = '';
   poStatusFilter.value = 'ALL';
   poSupplierFilter.value = '';
+  poDatePreset.value = 'today';
+  poStartDate.value = getTodayStr();
+  poEndDate.value = getTodayStr();
   poCurrentPage.value = 1;
+  fetchPurchaseOrders();
 };
 
 const poSummaryTotalCost = computed(() => {
@@ -1714,6 +1842,21 @@ const filteredPurchaseOrders = computed(() => {
     if (poSupplierFilter.value && po.supplierId !== poSupplierFilter.value) {
       return false;
     }
+    // Date Range Filter (defense-in-depth & instant local filtering)
+    if (poStartDate.value || poEndDate.value) {
+      const dateToCheck = po.createdAt || po.expectedDeliveryDate;
+      if (dateToCheck) {
+        const itemDate = new Date(dateToCheck);
+        if (poStartDate.value) {
+          const start = new Date(poStartDate.value + 'T00:00:00');
+          if (itemDate < start) return false;
+        }
+        if (poEndDate.value) {
+          const end = new Date(poEndDate.value + 'T23:59:59.999');
+          if (itemDate > end) return false;
+        }
+      }
+    }
     if (query) {
       const matchPoNumber = (po.poNumber || '').toLowerCase().includes(query);
       const matchSupplier = (po.supplierName || '').toLowerCase().includes(query);
@@ -1740,10 +1883,24 @@ const fetchPurchaseOrders = async () => {
 
   isLoadingOrders.value = true;
   try {
-    const res = await purchaseOrderService.searchPurchaseOrders({
+    const params: any = {
       branchId,
       size: 100
-    });
+    };
+    if (poStatusFilter.value && poStatusFilter.value !== 'ALL') {
+      params.status = poStatusFilter.value;
+    }
+    if (poSupplierFilter.value) {
+      params.supplierId = poSupplierFilter.value;
+    }
+    if (poStartDate.value && poEndDate.value && poStartDate.value === poEndDate.value) {
+      params.date = poStartDate.value;
+    } else {
+      if (poStartDate.value) params.startDate = poStartDate.value;
+      if (poEndDate.value) params.endDate = poEndDate.value;
+    }
+
+    const res = await purchaseOrderService.searchPurchaseOrders(params);
     purchaseOrders.value = res.content || [];
   } catch (err: any) {
     showToast(err.message || 'Failed to load purchase orders', 'error');

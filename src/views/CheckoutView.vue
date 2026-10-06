@@ -373,7 +373,7 @@
       <div class="flex flex-col gap-2.5 w-full">
         <button 
           @click="handleOpenShift" 
-          :disabled="isOpeningShift || !openingCashInput"
+          :disabled="isOpeningShift || openingCashInput === '' || openingCashInput === null || isNaN(Number(openingCashInput)) || Number(openingCashInput) < 0"
           class="w-full py-3.5 bg-primary text-on-primary hover:bg-opacity-95 active:scale-95 rounded-xl transition-all font-bold text-sm cursor-pointer border-0 shadow-lg shadow-primary/20 text-white disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ isOpeningShift ? $t('common.loading') : $t('checkout.openingShiftBtn') }}
@@ -576,7 +576,11 @@ const openingCashInput = ref('');
 const isOpeningShift = ref(false);
 
 const handleOpenShift = async () => {
-  const amount = parseFloat(openingCashInput.value);
+  if (openingCashInput.value === '' || openingCashInput.value === null || openingCashInput.value === undefined) {
+    showToast(t('checkout.enterValidOpeningCash'), 'error');
+    return;
+  }
+  const amount = Number(openingCashInput.value);
   if (isNaN(amount) || amount < 0) {
     showToast(t('checkout.enterValidOpeningCash'), 'error');
     return;
