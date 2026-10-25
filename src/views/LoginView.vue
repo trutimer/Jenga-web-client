@@ -92,8 +92,9 @@
 
           <!-- Actions -->
           <button 
+            ref="twoFactorButtonRef"
             type="submit"
-            :disabled="isLoggingIn || totpCode.length < 6"
+            :disabled="isLoggingIn || totpCode.length < 6 || isZoomActive"
             class="w-full h-14 bg-primary text-on-primary rounded-xl font-bold hover:bg-opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-2 shadow-md shadow-primary/20 cursor-pointer disabled:opacity-50"
           >
             <RotateCw v-if="isLoggingIn" class="w-5 h-5 animate-spin text-white" />
@@ -199,8 +200,9 @@
 
           <!-- Submit Action -->
           <button 
+            ref="loginButtonRef"
             type="submit"
-            :disabled="isLoggingIn"
+            :disabled="isLoggingIn || isZoomActive"
             class="w-full h-14 bg-primary text-on-primary rounded-xl font-bold hover:bg-opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-2 shadow-md shadow-primary/20 cursor-pointer disabled:opacity-50"
           >
             <RotateCw v-if="isLoggingIn" class="w-5 h-5 animate-spin text-white" />
@@ -527,14 +529,16 @@ import {
   Globe,
   Clock,
   ArrowRightLeft,
-  Download
+  Download,
+  CheckCircle2
 } from 'lucide-vue-next';
 import { getDesktopDeviceMetadata, clearAuthStorage } from '../services/deviceService';
 import { parseJwtPayload } from '../services/authSession';
+import { isZoomActive, triggerLoginZoom } from '../services/loginAnimation';
 
 const vm = useAppViewModel();
 
-const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v3.0.1';
+const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v3.0.2';
 const isElectronApp = ref(isElectron());
 const showDownloadModal = ref(false);
 
@@ -544,6 +548,10 @@ const showPassword = ref(false);
 const remember = ref(true);
 const error = ref('');
 const isLoggingIn = ref(false);
+
+// Submit Button Zoom Animation State
+const loginButtonRef = ref<HTMLButtonElement | null>(null);
+const twoFactorButtonRef = ref<HTMLButtonElement | null>(null);
 
 // Single Device Conflict State
 const isTransferring = ref(false);
@@ -705,8 +713,15 @@ const processSuccessfulLogin = async (res: any) => {
       sessionStorage.removeItem('forgetPhoneOnLogout');
     }
 
-    isLoggingIn.value = false;
-    vm.handleLogin(res.user.fullName, null);
+    const activeBtn = showTwoFactorStep.value ? twoFactorButtonRef.value : loginButtonRef.value;
+    await triggerLoginZoom(activeBtn, {
+      label: 'JENGA',
+      sublabel: 'Redirecting to Branch Selection...',
+      onMidpoint: () => {
+        isLoggingIn.value = false;
+        vm.handleLogin(res.user.fullName, null);
+      }
+    });
     return;
   }
 
@@ -750,8 +765,16 @@ const processSuccessfulLogin = async (res: any) => {
   } else {
     sessionStorage.removeItem('forgetPhoneOnLogout');
   }
-  isLoggingIn.value = false;
-  vm.handleLogin(res.user.fullName, branchId || '');
+
+  const activeBtn = showTwoFactorStep.value ? twoFactorButtonRef.value : loginButtonRef.value;
+  await triggerLoginZoom(activeBtn, {
+    label: 'JENGA',
+    sublabel: 'Welcome to DukaPro',
+    onMidpoint: () => {
+      isLoggingIn.value = false;
+      vm.handleLogin(res.user.fullName, branchId || '');
+    }
+  });
 };
 
 const handleSubmit = async (confirmTransfer: boolean = false) => {
@@ -811,10 +834,18 @@ const handleSubmit = async (confirmTransfer: boolean = false) => {
     if (res.twoFactorRequired) {
       isLoggingIn.value = false;
       isTransferring.value = false;
-      showTwoFactorStep.value = true;
-      pendingTwoFactorToken.value = res.twoFactorToken || '';
-      totpCode.value = '';
-      error.value = '';
+
+      await triggerLoginZoom(loginButtonRef.value, {
+        label: 'Two-Factor Required',
+        sublabel: 'Enter Authenticator code to continue',
+        isTwoFactor: true,
+        onMidpoint: () => {
+          showTwoFactorStep.value = true;
+          pendingTwoFactorToken.value = res.twoFactorToken || '';
+          totpCode.value = '';
+          error.value = '';
+        }
+      });
       return;
     }
     

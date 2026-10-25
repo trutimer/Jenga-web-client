@@ -175,7 +175,11 @@ import {
   ShieldCheck,
   QrCode,
   User,
-  RefreshCw
+  RefreshCw,
+  Warehouse,
+  ArrowLeftRight,
+  ScrollText,
+  UtensilsCrossed
 } from 'lucide-vue-next';
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
 import { t } from '../../i18n';
@@ -214,11 +218,17 @@ interface MenuItem {
 
 const expandedMenus = ref<Record<string, boolean>>({
   inventory_group: false,
+  warehouses: false,
   finance: false,
   settings: false
 });
 
 watch(() => route.path, (newPath) => {
+  if (newPath.startsWith('/warehouses')) {
+    expandedMenus.value.warehouses = true;
+  } else {
+    expandedMenus.value.warehouses = false;
+  }
   if (newPath.startsWith('/finance')) {
     expandedMenus.value.finance = true;
   } else {
@@ -244,6 +254,11 @@ const canAccessPurchases = computed(() =>
   userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN' || vm.hasPermission('purchase_order:view') || vm.hasPermission('purchase_order:create')
 );
 
+const canAccessWarehouses = computed(() => 
+  userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN' || 
+  vm.hasPermission('location:view') || vm.hasPermission('stock_transfer:view')
+);
+
 const canAccessMakerChecker = computed(() => 
   userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN' || 
   vm.hasPermission('maker_checker:view') || 
@@ -259,6 +274,13 @@ const menuItems = computed<MenuItem[]>(() => {
   if (canAccessPurchases.value) {
     inventoryChildren.push({ path: '/purchases', label: t('sidebar.purchases'), icon: ShoppingBag });
   }
+
+  const warehouseChildren: SubMenuItem[] = [
+    { tab: 'locations', label: t('sidebar.warehousesLocations'), icon: Warehouse },
+    { tab: 'transfers', label: t('sidebar.stockTransfers'), icon: ArrowLeftRight },
+    { tab: 'ledger', label: t('sidebar.movementLedger'), icon: ScrollText },
+    { tab: 'consumption', label: t('sidebar.internalConsumption'), icon: UtensilsCrossed },
+  ];
 
   const settingsChildren: SubMenuItem[] = [
     { section: 'profile', label: t('settings.storeProfile'), icon: Store },
@@ -276,6 +298,12 @@ const menuItems = computed<MenuItem[]>(() => {
       label: t('sidebar.inventoryPurchases'), 
       icon: Package, 
       children: inventoryChildren
+    },
+    { 
+      id: 'warehouses', 
+      label: t('sidebar.warehouses'), 
+      icon: Warehouse, 
+      children: warehouseChildren
     },
     { id: 'suppliers', label: t('sidebar.suppliers'), icon: Truck },
     { id: 'customers', label: t('sidebar.customers'), icon: Users },
@@ -304,6 +332,9 @@ const menuItems = computed<MenuItem[]>(() => {
   return raw.filter(item => {
     if (item.id === 'inventory_group') {
       return (canAccessInventory.value || canAccessPurchases.value) && inventoryChildren.length > 0;
+    }
+    if (item.id === 'warehouses') {
+      return userRole.value !== 'CASHIER' && canAccessWarehouses.value;
     }
     if (item.id === 'finance') {
       return userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN' || vm.hasPermission('finance:view');
@@ -338,7 +369,8 @@ const isSubmenuActive = (item: MenuItem, sub: SubMenuItem) => {
     const currentSection = (route.query.section as string) || 'profile';
     return currentSection === (sub.section || 'profile');
   }
-  const currentTab = (route.query.tab as string) || 'statements';
+  const defaultTab = item.id === 'warehouses' ? 'locations' : 'statements';
+  const currentTab = (route.query.tab as string) || defaultTab;
   return currentTab === sub.tab;
 };
 

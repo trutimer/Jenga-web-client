@@ -1,3 +1,6 @@
+export type ProductPurpose = 'FOR_SALE' | 'INTERNAL_USE' | 'BOTH';
+export type ProductCatalogScope = 'STORE_SHARED' | 'BRANCH_EXCLUSIVE';
+
 export interface Product {
   id: string;
   name: string;
@@ -19,6 +22,13 @@ export interface Product {
   isActive?: boolean;
   categoryName?: string;
   supplierName?: string;
+  purpose?: ProductPurpose;
+  catalogScope?: ProductCatalogScope;
+  totalStoreStock?: number;
+  locationStock?: number;
+  initialLocationId?: string;
+  storeBranchId?: string;
+  storeId?: string;
 }
 
 export interface CartItem {
@@ -373,22 +383,224 @@ export interface ShiftDetail {
   cashMovements: CashMovement[];
 }
 
-export type StockMovementType = 'PURCHASE' | 'ADJUSTMENT' | 'SALE' | 'TRANSFER' | 'RETURN' | 'DAMAGED' | string;
+export type StockMovementType =
+  | 'PURCHASE'
+  | 'ADJUSTMENT'
+  | 'ADJUSTMENT_IN'
+  | 'SALE'
+  | 'TRANSFER'
+  | 'TRANSFER_OUT'
+  | 'TRANSFER_IN'
+  | 'INTERNAL_USE'
+  | 'RETURN'
+  | 'PURCHASE_RETURN'
+  | 'DAMAGED'
+  | string;
 
 export interface StockMovement {
   id: string;
+  storeId?: string;
   branchId?: string;
   branchName?: string;
+  locationId?: string;
+  locationName?: string;
+  counterpartLocationId?: string;
+  counterpartLocationName?: string;
+  transferId?: string;
+  transferNumber?: string;
   productId?: string;
   productName?: string;
+  barcode?: string;
+  sku?: string;
   costPrice?: number;
   sellingPrice?: number;
+  unitCost?: number;
   type: StockMovementType;
   quantity: number;
+  balanceBefore?: number;
+  balanceAfter?: number;
   referenceId?: string;
+  actorId?: string;
   createdById?: string;
   createdByName?: string;
   createdAt?: string;
+}
+
+// ==========================================
+// WAREHOUSE & MULTI-LOCATION MODULE TYPES
+// ==========================================
+
+export type LocationType = 'BRANCH_DEFAULT' | 'BRANCH_WAREHOUSE' | 'WAREHOUSE';
+
+export interface InventoryLocation {
+  id: string;
+  storeId: string;
+  storeBranchId?: string | null;
+  storeBranchName?: string | null;
+  name: string;
+  code?: string | null;
+  locationType: LocationType;
+  servesAllBranches: boolean;
+  address?: string | null;
+  isActive: boolean;
+  createdAt?: string;
+  servedBranchIds?: string[];
+}
+
+export interface LocationStock {
+  id: string;
+  locationId: string;
+  locationName: string;
+  locationType: LocationType;
+  storeBranchId?: string | null;
+  storeBranchName?: string | null;
+  productId: string;
+  productName: string;
+  barcode?: string | null;
+  sku?: string | null;
+  quantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  reorderLevel?: number | null;
+  effectiveReorderLevel?: number | null;
+  costPrice: number;
+  totalValuation: number;
+}
+
+export interface InventoryLocationCreateRequest {
+  name: string;
+  code?: string;
+  locationType: LocationType;
+  storeBranchId?: string;
+  servesAllBranches?: boolean;
+  address?: string;
+  servedBranchIds?: string[];
+}
+
+export interface InventoryLocationUpdateRequest {
+  name: string;
+  code?: string;
+  servesAllBranches?: boolean;
+  address?: string;
+  isActive?: boolean;
+}
+
+export type StockTransferStatus =
+  | 'INITIATED'
+  | 'PENDING_APPROVAL'
+  | 'IN_TRANSIT'
+  | 'COMPLETED'
+  | 'REJECTED'
+  | 'CANCELLED';
+
+export interface StockTransferItem {
+  id?: string;
+  productId: string;
+  productName?: string;
+  barcode?: string;
+  sku?: string;
+  requestedQuantity: number;
+  dispatchedQuantity?: number;
+  receivedQuantity?: number;
+  unitCost: number;
+  notes?: string;
+}
+
+export interface StockTransfer {
+  id: string;
+  storeId: string;
+  transferNumber: string;
+  sourceLocationId: string;
+  sourceLocationName: string;
+  sourceBranchId?: string | null;
+  sourceBranchName?: string | null;
+  destinationLocationId: string;
+  destinationLocationName: string;
+  destinationBranchId?: string | null;
+  destinationBranchName?: string | null;
+  status: StockTransferStatus;
+  totalCostValue: number;
+  autoConfirm: boolean;
+  notes?: string;
+  initiatedById: string;
+  initiatedByName: string;
+  approvedById?: string;
+  approvedByName?: string;
+  dispatchedById?: string;
+  dispatchedByName?: string;
+  receivedById?: string;
+  receivedByName?: string;
+  cancelledById?: string;
+  cancelledByName?: string;
+  makerCheckerRequestId?: string;
+  dispatchedAt?: string;
+  completedAt?: string;
+  cancelledAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  items: StockTransferItem[];
+}
+
+export interface StockTransferItemRequest {
+  productId: string;
+  quantity: number;
+  notes?: string;
+}
+
+export interface StockTransferCreateRequest {
+  sourceLocationId?: string;
+  sourceBranchId?: string;
+  destinationLocationId?: string;
+  destinationBranchId?: string;
+  autoConfirm?: boolean;
+  notes?: string;
+  items: StockTransferItemRequest[];
+}
+
+export interface StockTransferConfirmRequest {
+  notes?: string;
+  receivedItems?: {
+    productId: string;
+    receivedQuantity: number;
+    notes?: string;
+  }[];
+}
+
+export interface InternalConsumptionRequest {
+  locationId?: string;
+  storeBranchId?: string;
+  productId: string;
+  quantity: number;
+  reason?: string;
+  notes?: string;
+}
+
+export interface InternalConsumptionResponse {
+  movementId: string;
+  productId: string;
+  productName: string;
+  locationId: string;
+  locationName: string;
+  consumedQuantity: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  unitCost: number;
+  totalCostValuation: number;
+  reason?: string;
+  recordedByName: string;
+  createdAt: string;
+}
+
+export interface StoreBranchInfo {
+  id: string;
+  storeId: string;
+  name: string;
+  code?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  isMain?: boolean;
+  status?: string;
 }
 
 export interface TopSellingProduct {
@@ -911,6 +1123,8 @@ export interface PurchaseOrder {
   storeName?: string;
   branchId: string;
   branchName?: string;
+  destinationLocationId?: string;
+  destinationLocationName?: string;
   supplierId?: string;
   supplierName?: string;
   status: PurchaseOrderStatus;
@@ -934,11 +1148,13 @@ export interface PurchaseOrderItemInputRequest {
   quantity: number;
   unitCost: number;
   isWholesale?: boolean;
+  wholesale?: boolean;
   notes?: string;
 }
 
 export interface PurchaseOrderCreateRequest {
-  storeBranchId: string;
+  storeBranchId?: string;
+  destinationLocationId?: string;
   supplierId?: string;
   paymentType?: PurchasePaymentType;
   expectedDeliveryDate?: string;

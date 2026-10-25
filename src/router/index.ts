@@ -57,6 +57,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/warehouses',
+    name: 'warehouses',
+    component: () => import('../views/WarehousesView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/top-selling-products',
     name: 'top-selling-products',
     component: () => import('../views/TopSellingProductsView.vue'),
@@ -259,6 +265,11 @@ router.beforeEach((to, from, next) => {
       }
       if (to.name === 'purchases') {
         if (!hasAnyUserPermission(userPermissions, 'inventory:view', 'purchase_order:view', 'purchase_order:create')) {
+          return next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
+        }
+      }
+      if (to.name === 'warehouses') {
+        if (!hasAnyUserPermission(userPermissions, 'location:view', 'stock_transfer:view', 'inventory:view')) {
           return next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
         }
       }

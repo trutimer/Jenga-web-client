@@ -182,6 +182,12 @@
                       />
                       <span class="text-[10px] font-sans font-semibold text-outline">{{ $t('poCart.wholesaleMode') }}</span>
                     </label>
+                    <span 
+                      v-if="item.product.conversionFactor && item.product.conversionFactor > 1"
+                      class="text-[9px] font-mono font-medium text-primary block mt-0.5"
+                    >
+                      1 box = {{ item.product.conversionFactor }} pcs
+                    </span>
                   </td>
 
                   <!-- Line Total -->
@@ -217,14 +223,42 @@
             <span>{{ $t('poCart.supplierDetails') }}</span>
           </h3>
 
-          <!-- Receiving Branch (Readonly/Context) -->
-          <div class="space-y-1 text-xs">
-            <label class="text-[11px] font-mono font-bold uppercase text-outline block">
-              {{ $t('poCart.storeBranch') }}
-            </label>
-            <div class="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant font-bold text-on-surface flex items-center justify-between">
-              <span>{{ currentBranchName }}</span>
-              <span class="text-[10px] font-mono font-normal text-outline">Active Branch</span>
+          <!-- Receiving Branch & Destination Location -->
+          <div class="space-y-3">
+            <div class="space-y-1 text-xs">
+              <label class="text-[11px] font-mono font-bold uppercase text-outline block">
+                {{ $t('poCart.storeBranch') }}
+              </label>
+              <div class="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant font-bold text-on-surface flex items-center justify-between">
+                <span>{{ currentBranchName }}</span>
+                <span class="text-[10px] font-mono font-normal text-outline">Active Branch</span>
+              </div>
+            </div>
+
+            <!-- Inbound Destination Location -->
+            <div class="space-y-1 text-xs">
+              <label class="text-[11px] font-mono font-bold uppercase text-outline flex items-center justify-between">
+                <span>Receiving Destination / Warehouse</span>
+                <span v-if="selectedDestinationLocation" class="text-[10px] font-mono font-normal text-primary">
+                  {{ selectedDestinationLocation.locationType === 'BRANCH_DEFAULT' ? 'Front Store' : selectedDestinationLocation.locationType === 'BRANCH_WAREHOUSE' ? 'Backroom' : 'Warehouse' }}
+                </span>
+              </label>
+              <div v-if="isLoadingLocations" class="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant text-xs text-outline flex items-center gap-2">
+                <RotateCw class="w-3.5 h-3.5 animate-spin text-primary" />
+                <span>Loading receiving locations...</span>
+              </div>
+              <select 
+                v-else-if="locations.length > 0"
+                v-model="selectedDestinationLocationId"
+                class="w-full bg-surface-container-low p-2.5 rounded-xl border border-outline-variant text-xs font-semibold text-on-surface outline-none focus:border-primary cursor-pointer transition-colors"
+              >
+                <option v-for="loc in locations" :key="loc.id" :value="loc.id">
+                  {{ loc.name }} ({{ loc.code }}) — {{ loc.locationType === 'BRANCH_DEFAULT' ? 'Front Store / Counter' : loc.locationType === 'BRANCH_WAREHOUSE' ? 'Branch Backroom' : 'Warehouse' }}
+                </option>
+              </select>
+              <div v-else class="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant text-xs text-outline">
+                <span>Default Branch Store</span>
+              </div>
             </div>
           </div>
 
@@ -452,10 +486,11 @@ import { useRouter } from 'vue-router';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { usePurchaseOrderCart } from '../composables/usePurchaseOrderCart';
 import { purchaseOrderService } from '../services/purchaseOrderService';
+import { warehouseService } from '../services/warehouseService';
 import { api } from '../services/api';
 import { showToast } from '../services/toastService';
 import { formatCurrency, formatCurrencyWithoutSymbol } from '../models/mockData';
-import type { PurchasePaymentType, PurchaseOrderCreateRequest, CashierShift } from '../models/types';
+import type { PurchasePaymentType, PurchaseOrderCreateRequest, CashierShift, InventoryLocation } from '../models/types';
 import { 
   ArrowLeft, 
   ShoppingCart, 
@@ -585,6 +620,34 @@ const paymentType = ref<PurchasePaymentType>('CASH');
 const orderNotes = ref<string>('');
 const isSubmitting = ref<boolean>(false);
 
+// Receiving Destination Location state
+const locations = ref<InventoryLocation[]>([]);
+const isLoadingLocations = ref<boolean>(false);
+const selectedDestinationLocationId = ref<string>('');
+
+const selectedDestinationLocation = computed(() => {
+  return locations.value.find(l => l.id === selectedDestinationLocationId.value) || null;
+});
+
+const fetchLocations = async () => {
+  const branchId = localStorage.getItem('branchId') || (vm.activeBranchId.value ?? '');
+  isLoadingLocations.value = true;
+  try {
+    const list = await warehouseService.getLocations(branchId || undefined);
+    locations.value = list.filter(l => l.isActive);
+    if (locations.value.length > 0) {
+      const defaultLoc = locations.value.find(l => l.locationType === 'BRANCH_DEFAULT');
+      selectedDestinationLocationId.value = defaultLoc ? defaultLoc.id : (locations.value[0]?.id || '');
+    } else {
+      selectedDestinationLocationId.value = '';
+    }
+  } catch (err) {
+    console.error('Failed to load locations for PO destination:', err);
+  } finally {
+    isLoadingLocations.value = false;
+  }
+};
+
 const today = new Date();
 const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 const expectedDeliveryDate = ref<string>(todayDateStr);
@@ -632,6 +695,7 @@ const fetchOpenShifts = async () => {
 
 watch(() => vm.activeBranchId.value, () => {
   fetchOpenShifts();
+  fetchLocations();
 });
 
 watch(paymentType, (newVal) => {
@@ -710,6 +774,7 @@ const handleSubmitOrder = async (submitForApproval: boolean) => {
   try {
     const payload: PurchaseOrderCreateRequest = {
       storeBranchId: branchId,
+      destinationLocationId: selectedDestinationLocationId.value || undefined,
       supplierId: selectedSupplierId.value || undefined,
       paymentType: paymentType.value,
       expectedDeliveryDate: expectedDeliveryDate.value || undefined,
@@ -719,7 +784,8 @@ const handleSubmitOrder = async (submitForApproval: boolean) => {
         productId: item.product.id,
         quantity: item.quantity,
         unitCost: item.unitCost,
-        isWholesale: item.isWholesale,
+        isWholesale: !!item.isWholesale,
+        wholesale: !!item.isWholesale,
         notes: item.notes || undefined
       }))
     };
@@ -761,6 +827,9 @@ onMounted(async () => {
   if (suppliers.value.length === 0) {
     vm.fetchSuppliers();
   }
-  await fetchOpenShifts();
+  await Promise.all([
+    fetchOpenShifts(),
+    fetchLocations()
+  ]);
 });
 </script>

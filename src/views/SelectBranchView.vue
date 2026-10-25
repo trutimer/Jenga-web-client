@@ -7,13 +7,17 @@
 
     <!-- Top Navigation / Header -->
     <header class="relative z-10 w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-primary-container text-primary rounded-xl flex items-center justify-center shadow-sm">
-          <Store class="w-6 h-6 stroke-[2px]" />
+      <div class="flex items-center gap-3.5">
+        <div class="w-11 h-11 bg-white rounded-xl shadow-xs border border-outline-variant/60 flex items-center justify-center p-2 shrink-0">
+          <img src="/logo.svg" alt="Jenga Logo" class="w-full h-full object-contain" />
         </div>
         <div>
-          <h1 class="text-xl font-black text-primary tracking-tight">Jenga POS</h1>
-          <p class="text-xs font-semibold text-on-surface-variant font-mono uppercase tracking-wider">{{ $t('selectBranch.storeAdmin') }}</p>
+          <h1 class="text-lg md:text-xl font-black text-on-surface tracking-tight leading-tight">
+            {{ timeGreeting }}, {{ adminName }}
+          </h1>
+          <p class="text-xs font-semibold text-on-surface-variant font-mono uppercase tracking-wider">
+            {{ $t('selectBranch.title') }}
+          </p>
         </div>
       </div>
 
@@ -32,28 +36,22 @@
 
     <!-- Main Content Container -->
     <main class="relative z-10 w-full max-w-6xl mx-auto px-6 py-8 flex-1 flex flex-col justify-center">
-      <!-- Title & Greeting Section -->
-      <div class="text-center max-w-2xl mx-auto space-y-3 mb-10 animate-fade-down">
-        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary-container/30 border border-primary/20 text-primary text-xs font-bold font-mono uppercase tracking-widest mb-1">
+      <!-- Title & Search Section -->
+      <div class="text-center max-w-2xl mx-auto space-y-4 mb-10 animate-fade-down flex flex-col items-center w-full">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary-container/30 border border-primary/20 text-primary text-xs font-bold font-mono uppercase tracking-widest">
           <Building2 class="w-3.5 h-3.5" />
           <span>{{ $t('selectBranch.title') }}</span>
         </div>
-        <h2 class="text-3xl md:text-4xl font-black text-on-surface tracking-tight leading-tight">
-          {{ $t('selectBranch.welcomeAdmin', { name: adminName || 'Admin' }) }}
-        </h2>
-        <p class="text-sm text-on-surface-variant leading-relaxed">
-          {{ $t('selectBranch.chooseBranchDesc') }}
-        </p>
 
-        <!-- Branch Search Bar (shown if multiple branches) -->
-        <div v-if="branches.length > 2" class="pt-4 max-w-md mx-auto">
-          <div class="relative flex items-center">
-            <Search class="w-4 h-4 text-on-surface-variant absolute left-4 pointer-events-none" />
+        <!-- Branch Search Bar (shown if multiple branches) of reasonable width -->
+        <div v-if="branches.length > 1" class="w-full max-w-lg pt-2">
+          <div class="relative flex items-center shadow-xs">
+            <Search class="w-4.5 h-4.5 text-on-surface-variant absolute left-4 pointer-events-none" />
             <input 
               v-model="searchQuery"
               type="text" 
               :placeholder="$t('selectBranch.searchPlaceholder')" 
-              class="w-full h-11 pl-11 pr-4 bg-surface-container-lowest border border-outline-variant rounded-xl text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-medium"
+              class="w-full h-12 pl-12 pr-4 bg-surface-container-lowest border border-outline-variant rounded-xl text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all font-medium placeholder:text-outline shadow-xs"
             />
           </div>
         </div>
@@ -71,73 +69,102 @@
         </div>
       </div>
 
-      <!-- Branch List Grid -->
+      <!-- Branch List Grid: Simple Modern Storefront Cards -->
       <div v-else-if="filteredBranches.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto w-full animate-fade-up">
         <div 
           v-for="b in filteredBranches" 
           :key="b.id"
           @click="selectBranch(b)"
-          class="group bg-surface-container-lowest hover:bg-surface-container-lowest border border-outline-variant hover:border-primary/50 rounded-2xl p-6 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer relative overflow-hidden"
+          class="group bg-surface-container-lowest hover:bg-surface-container-lowest border border-outline-variant hover:border-primary/60 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer relative overflow-hidden"
           :class="activeBranchId === b.id ? 'ring-2 ring-primary border-primary bg-primary-container/10' : ''"
         >
-          <!-- Active Indicator Badge -->
-          <div v-if="activeBranchId === b.id" class="absolute top-4 right-4 bg-primary text-on-primary text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
-            <CheckCircle2 class="w-3 h-3" />
-            <span>{{ $t('selectBranch.currentBadge') }}</span>
+          <!-- Top Clean 2D Shop Canopy / Awning -->
+          <div class="relative w-full">
+            <div class="h-3.5 w-full flex">
+              <div v-for="s in 8" :key="s" class="flex-1" :class="s % 2 === 0 ? 'bg-primary' : 'bg-primary/20'"></div>
+            </div>
+            <div class="flex w-full -mt-0.5">
+              <div 
+                v-for="s in 8" 
+                :key="s" 
+                class="flex-1 h-2 rounded-b-full shadow-xs" 
+                :class="s % 2 === 0 ? 'bg-primary' : 'bg-primary/20'"
+              ></div>
+            </div>
           </div>
 
-          <div>
-            <!-- Branch Icon & Status Header -->
-            <div class="flex items-center justify-between mb-5">
-              <div class="w-12 h-12 rounded-xl bg-primary-container/20 text-primary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary group-hover:text-on-primary transition-all duration-300 shadow-inner">
-                <Building2 class="w-6 h-6 stroke-[2px]" />
+          <!-- Card Content Body -->
+          <div class="p-6 flex-1 flex flex-col justify-between">
+            <div>
+              <!-- Store Icon & Badges Header -->
+              <div class="flex items-start justify-between gap-3 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-300 shadow-xs shrink-0">
+                  <Store class="w-6 h-6 stroke-[2px]" />
+                </div>
+
+                <div class="flex items-center gap-1.5 flex-wrap justify-end">
+                  <!-- Active Indicator Badge -->
+                  <span 
+                    v-if="activeBranchId === b.id" 
+                    class="bg-primary text-on-primary text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1 shadow-xs"
+                  >
+                    <CheckCircle2 class="w-3 h-3" />
+                    <span>{{ $t('selectBranch.currentBadge') }}</span>
+                  </span>
+
+                  <!-- Status Badge -->
+                  <span 
+                    v-else
+                    class="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
+                    :class="b.status === 'Active' || !b.status ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20' : 'bg-surface-container-high text-on-surface-variant'"
+                  >
+                    {{ b.status || $t('common.active') }}
+                  </span>
+                </div>
               </div>
-              <span 
-                v-if="activeBranchId !== b.id"
-                class="text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
-                :class="b.status === 'Active' || !b.status ? 'bg-success-container/30 text-success' : 'bg-surface-container-high text-on-surface-variant'"
-              >
-                {{ b.status || $t('common.active') }}
+
+              <!-- Branch Name -->
+              <h3 class="text-xl font-black text-on-surface group-hover:text-primary transition-colors leading-tight mb-3">
+                {{ b.name }}
+              </h3>
+
+              <!-- Branch Details -->
+              <div class="space-y-2 text-xs text-on-surface-variant font-medium">
+                <div class="flex items-start gap-2">
+                  <MapPin class="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <span class="leading-relaxed">{{ b.location || $t('selectBranch.mainPremises') }}</span>
+                </div>
+                <div v-if="b.phone" class="flex items-center gap-2">
+                  <Phone class="w-4 h-4 text-outline shrink-0" />
+                  <span>{{ b.phone }}</span>
+                </div>
+                <div v-if="b.email" class="flex items-center gap-2">
+                  <Mail class="w-4 h-4 text-outline shrink-0" />
+                  <span class="truncate">{{ b.email }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Select Button Footer -->
+            <div class="mt-6 pt-4 border-t border-outline-variant/50 flex items-center justify-between">
+              <span class="text-xs font-bold text-primary group-hover:underline">
+                <template v-if="selectingBranchId === b.id">
+                  {{ $t('selectBranch.verifyingLicense') }}
+                </template>
+                <template v-else-if="activeBranchId === b.id">
+                  {{ $t('selectBranch.alreadySelected') }}
+                </template>
+                <template v-else>
+                  {{ $t('selectBranch.selectThisBranch') }}
+                </template>
               </span>
-            </div>
-
-            <!-- Branch Main Info -->
-            <h3 class="text-xl font-extrabold text-on-surface group-hover:text-primary transition-colors leading-tight mb-2">
-              {{ b.name }}
-            </h3>
-
-            <div class="space-y-1.5 text-xs text-on-surface-variant font-medium">
-              <div class="flex items-center gap-2">
-                <MapPin class="w-3.5 h-3.5 text-primary shrink-0" />
-                <span class="truncate">{{ b.location || $t('selectBranch.mainPremises') }}</span>
+              <div 
+                class="w-8 h-8 rounded-full flex items-center justify-center transition-all group-hover:translate-x-1"
+                :class="activeBranchId === b.id ? 'bg-primary text-white' : 'bg-surface-container text-on-surface-variant group-hover:bg-primary group-hover:text-white'"
+              >
+                <Loader2 v-if="selectingBranchId === b.id" class="w-4 h-4 animate-spin" />
+                <ArrowRight v-else class="w-4 h-4" />
               </div>
-              <div v-if="b.phone" class="flex items-center gap-2">
-                <Phone class="w-3.5 h-3.5 text-on-surface-variant/70 shrink-0" />
-                <span>{{ b.phone }}</span>
-              </div>
-              <div v-if="b.email" class="flex items-center gap-2">
-                <Mail class="w-3.5 h-3.5 text-on-surface-variant/70 shrink-0" />
-                <span class="truncate">{{ b.email }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Select Button Footer -->
-          <div class="mt-6 pt-4 border-t border-outline-variant/40 flex items-center justify-between">
-            <span class="text-xs font-bold text-primary group-hover:underline">
-              <template v-if="selectingBranchId === b.id">
-                {{ $t('selectBranch.verifyingLicense') }}
-              </template>
-              <template v-else-if="activeBranchId === b.id">
-                {{ $t('selectBranch.alreadySelected') }}
-              </template>
-              <template v-else>
-                {{ $t('selectBranch.selectThisBranch') }}
-              </template>
-            </span>
-            <div class="w-8 h-8 rounded-full bg-surface-container group-hover:bg-primary group-hover:text-on-primary flex items-center justify-center text-on-surface-variant transition-all group-hover:translate-x-1">
-              <Loader2 v-if="selectingBranchId === b.id" class="w-4 h-4 animate-spin text-primary" />
-              <ArrowRight v-else class="w-4 h-4" />
             </div>
           </div>
         </div>
@@ -186,7 +213,7 @@ import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import LicenseModal from '../components/common/LicenseModal.vue';
 import LanguageSelector from '../components/common/LanguageSelector.vue';
 import type { StoreBranch } from '../models/types';
-import { t } from '../i18n';
+import { t, currentLocale } from '../i18n';
 import { 
   Store, 
   Building2, 
@@ -204,6 +231,19 @@ const router = useRouter();
 const { activeBranchId, setActiveBranch, handleLogout: performLogout } = useAppViewModel();
 
 const adminName = ref(localStorage.getItem('cashierName') || 'Admin');
+
+const timeGreeting = computed(() => {
+  // Access currentLocale.value to trigger reactivity on language change
+  const _ = currentLocale.value;
+  const hour = new Date().getHours();
+  if (hour < 12) {
+    return t('selectBranch.goodMorning');
+  } else if (hour < 17) {
+    return t('selectBranch.goodAfternoon');
+  } else {
+    return t('selectBranch.goodEvening');
+  }
+});
 const branches = ref<StoreBranch[]>([]);
 const isLoading = ref(true);
 const selectingBranchId = ref<string | null>(null);

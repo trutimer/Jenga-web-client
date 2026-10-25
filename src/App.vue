@@ -251,6 +251,53 @@
     :type="toastType"
     :onClose="clearToast"
   />
+
+  <!-- Jenga Orange Login Button Zoom & Outro Reveal Overlay -->
+  <div 
+    v-if="isZoomActive"
+    class="fixed inset-0 z-[99999] pointer-events-none flex items-center justify-center overflow-hidden will-change-transform"
+    :style="{
+      clipPath: zoomClipPath,
+      transform: zoomTransform,
+      opacity: zoomOpacity,
+      transition: zoomStage === 'expanded' 
+        ? 'clip-path 380ms cubic-bezier(0.16, 1, 0.3, 1)' 
+        : (zoomStage === 'outro' ? 'transform 400ms cubic-bezier(0.16, 1, 0.3, 1), opacity 380ms ease-out' : 'none'),
+      background: 'linear-gradient(135deg, #F4511E 0%, #FF7A1A 100%)'
+    }"
+  >
+    <!-- Subtle warm glow radial highlight -->
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.22),transparent_70%)] pointer-events-none"></div>
+
+    <!-- Center Content (Scales in as the orange expands) -->
+    <div 
+      class="relative z-10 flex flex-col items-center justify-center gap-4 text-center px-6 transition-all duration-300"
+      :class="zoomStage === 'expanded' ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-75 translate-y-3'"
+    >
+      <!-- Jenga Logo / 2FA Icon Tile -->
+      <div 
+        v-if="!isTwoFactorPrompt" 
+        class="w-24 h-24 md:w-28 md:h-28 rounded-3xl bg-white shadow-2xl flex items-center justify-center p-4.5 ring-4 ring-white/30 drop-shadow-xl"
+      >
+        <img src="/logo.svg" alt="Jenga Logo" class="w-full h-full object-contain" />
+      </div>
+      <div 
+        v-else 
+        class="w-24 h-24 rounded-3xl bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center text-white shadow-2xl"
+      >
+        <ShieldCheck class="w-12 h-12 stroke-[2.5] text-white" />
+      </div>
+
+      <div class="space-y-1.5 text-center">
+        <h2 class="text-4xl md:text-5xl font-black tracking-widest text-white drop-shadow-md uppercase">
+          {{ isTwoFactorPrompt ? zoomLabel : 'JENGA' }}
+        </h2>
+        <p class="text-sm md:text-base text-white/90 font-medium tracking-wide">
+          {{ zoomSublabel }}
+        </p>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -267,7 +314,30 @@ import TopNav from './components/layout/TopNav.vue';
 import Modal from './components/common/Modal.vue';
 import TwoFactorPromptModal from './components/common/TwoFactorPromptModal.vue';
 import { t } from './i18n';
-import { Store, LogOut, Lock, LayoutDashboard, CreditCard, Package, BarChart3, Settings as SettingsIcon, Truck, UserCog } from 'lucide-vue-next';
+import { 
+  Store, 
+  LogOut, 
+  Lock, 
+  LayoutDashboard, 
+  CreditCard, 
+  Package, 
+  BarChart3, 
+  Settings as SettingsIcon, 
+  Truck, 
+  UserCog,
+  CheckCircle2,
+  ShieldCheck
+} from 'lucide-vue-next';
+import { 
+  isZoomActive, 
+  zoomStage, 
+  zoomLabel, 
+  zoomSublabel, 
+  zoomClipPath, 
+  zoomTransform, 
+  zoomOpacity, 
+  isTwoFactorPrompt 
+} from './services/loginAnimation';
 
 const {
   user,

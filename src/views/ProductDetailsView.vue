@@ -442,9 +442,18 @@
                 <Layers class="w-4.5 h-4.5 text-primary" />
                 <span>{{ $t('productDetail.stockHealthTitle') }}</span>
               </h3>
-              <span class="text-xs font-mono font-bold text-on-surface-variant">
-                {{ product.stock }} / {{ product.minStock }} min
-              </span>
+              <div class="flex items-center gap-1.5">
+                <span 
+                  v-if="product.purpose" 
+                  class="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider"
+                  :class="product.purpose === 'INTERNAL_USE' ? 'bg-amber-100 text-amber-800' : (product.purpose === 'BOTH' ? 'bg-indigo-100 text-indigo-800' : 'bg-surface-container text-on-surface-variant')"
+                >
+                  {{ product.purpose === 'INTERNAL_USE' ? 'Kitchen/Supplies' : (product.purpose === 'BOTH' ? 'Hybrid' : 'For Sale') }}
+                </span>
+                <span class="text-xs font-mono font-bold text-on-surface-variant">
+                  {{ product.stock }} / {{ product.minStock }} min
+                </span>
+              </div>
             </div>
 
             <!-- Current Stock Big Numbers -->
@@ -468,6 +477,23 @@
                   {{ product.minStock }}
                 </span>
               </div>
+            </div>
+
+            <!-- Consolidated Multi-Location Stock Pill -->
+            <div v-if="product.totalStoreStock !== undefined && product.totalStoreStock !== product.stock" class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/60 flex items-center justify-between text-xs mb-4">
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">Consolidated Store Total</span>
+                <span class="font-bold text-on-surface font-mono mt-0.5 block">
+                  {{ product.totalStoreStock }} {{ product.unitOfMeasure || 'PCS' }} (All Locations)
+                </span>
+              </div>
+              <button
+                @click="router.push({ path: '/warehouses', query: { tab: 'transfers' } })"
+                class="px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer border border-primary/20"
+              >
+                <ArrowLeftRight class="w-3.5 h-3.5" />
+                <span>Transfer</span>
+              </button>
             </div>
 
             <!-- Health Meter & Progress -->
@@ -501,14 +527,21 @@
             </div>
           </div>
 
-          <!-- POS Quick Action Link -->
-          <div class="mt-4 pt-3.5 border-t border-outline-variant/60 flex items-center justify-between">
+          <!-- POS Quick Action & Transfer Links -->
+          <div class="mt-4 pt-3.5 border-t border-outline-variant/60 grid grid-cols-2 gap-2">
             <button 
               @click="router.push('/checkout')"
-              class="w-full py-2.5 px-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer border border-outline-variant/60"
+              class="py-2.5 px-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-outline-variant/60"
             >
               <CreditCard class="w-4 h-4" />
               <span>{{ $t('productDetail.viewInPos') }}</span>
+            </button>
+            <button 
+              @click="router.push({ path: '/warehouses', query: { tab: 'transfers' } })"
+              class="py-2.5 px-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-outline-variant/60"
+            >
+              <ArrowLeftRight class="w-4 h-4 text-primary" />
+              <span>Transfer Stock</span>
             </button>
           </div>
         </div>
@@ -1148,7 +1181,8 @@ import {
   SlidersHorizontal, 
   RotateCcw, 
   ArrowDownRight, 
-  ArrowUpRight 
+  ArrowUpRight,
+  ArrowLeftRight 
 } from 'lucide-vue-next';
 
 const route = useRoute();

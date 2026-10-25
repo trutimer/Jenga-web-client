@@ -298,6 +298,10 @@
             </div>
             <div class="min-w-0">
               <p class="font-bold text-sm text-on-surface truncate">{{ po.branchName || 'Main Branch' }}</p>
+              <p v-if="po.destinationLocationName" class="text-xs font-semibold text-primary flex items-center gap-1 mt-0.5">
+                <MapPin class="w-3.5 h-3.5 shrink-0" />
+                <span>{{ po.destinationLocationName }}</span>
+              </p>
               <p class="text-xs text-on-surface-variant mt-0.5">
                 Expected: <strong class="font-mono text-on-surface">{{ po.expectedDeliveryDate || 'Not specified' }}</strong>
               </p>
@@ -955,7 +959,8 @@ import {
   AlertCircle,
   AlertTriangle,
   Truck,
-  Building2
+  Building2,
+  MapPin
 } from 'lucide-vue-next';
 
 const route = useRoute();

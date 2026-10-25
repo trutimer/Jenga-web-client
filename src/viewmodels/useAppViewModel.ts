@@ -251,13 +251,14 @@ export function useAppViewModel() {
     }
   };
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (locationId?: string) => {
     const branchId = localStorage.getItem('branchId');
     if (!branchId || branchId === 'null' || branchId === 'undefined') return;
 
     isFetchingProducts.value = true;
     try {
-      const productsData = await api.get<any>(`/api/products?storeBranchId=${branchId}`);
+      const locQuery = locationId ? `&locationId=${encodeURIComponent(locationId)}` : '';
+      const productsData = await api.get<any>(`/api/products?storeBranchId=${branchId}${locQuery}`);
       const productsList: any[] = Array.isArray(productsData) ? productsData : (productsData?.content || []);
 
       if (productsList && Array.isArray(productsList)) {
@@ -305,6 +306,13 @@ export function useAppViewModel() {
             conversionFactor: p.conversionFactor ? Number(p.conversionFactor) : undefined,
             categoryName: p.categoryName || p.category || 'General',
             supplierName: p.supplierName || p.supplier || '',
+            isActive: p.isActive,
+            purpose: p.purpose,
+            catalogScope: p.catalogScope,
+            totalStoreStock: p.totalStoreStock !== undefined ? Number(p.totalStoreStock) : stockNum,
+            locationStock: p.locationStock !== undefined ? Number(p.locationStock) : undefined,
+            storeBranchId: p.storeBranchId,
+            storeId: p.storeId
           };
         });
         products.value = mappedProducts;

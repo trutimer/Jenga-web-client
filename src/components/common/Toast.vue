@@ -1,7 +1,7 @@
 <template>
   <div 
     v-if="message" 
-    class="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg transition-all duration-300 transform translate-y-0" 
+    class="fixed top-4 right-4 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg transition-all duration-300 transform translate-y-0" 
     :class="type === 'success' 
       ? 'bg-emerald-50 text-emerald-800 border-emerald-200 animate-slide-in' 
       : type === 'info'

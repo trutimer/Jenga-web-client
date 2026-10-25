@@ -67,25 +67,41 @@
           </button>
         </div>
 
-        <!-- "Filters" Button opening side panel -->
-        <button 
-          type="button"
-          @click="showFilterDrawer = true"
-          class="h-9 px-4 rounded-xl border text-xs font-bold font-sans flex items-center gap-2 transition-all cursor-pointer shadow-xs shrink-0"
-          :class="activePanelFiltersCount > 0 
-            ? 'bg-primary text-white border-primary shadow-sm hover:opacity-95' 
-            : 'bg-surface-container-low border-outline-variant/60 text-on-surface hover:bg-surface-container hover:border-outline'"
-          title="Open filters"
-        >
-          <SlidersHorizontal class="w-3.5 h-3.5" />
-          <span>{{ $t('inventory.filters') }}</span>
-          <span 
-            v-if="activePanelFiltersCount > 0" 
-            class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-black bg-white text-primary"
+        <!-- Actions: Location Filter & Side Panel Filters -->
+        <div class="flex items-center gap-2 shrink-0">
+          <!-- Location Filter Dropdown -->
+          <select 
+            v-if="sortedLocations.length > 0"
+            v-model="selectedLocationFilter"
+            @change="handleLocationFilterChange"
+            class="h-9 px-3 rounded-xl border border-outline-variant/60 bg-surface-container-low text-xs font-bold text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all cursor-pointer"
           >
-            {{ activePanelFiltersCount }}
-          </span>
-        </button>
+            <option v-for="loc in sortedLocations" :key="loc.id" :value="loc.id">
+              {{ loc.locationType === 'WAREHOUSE' ? '🏭' : '🏪' }} {{ loc.name }}{{ isCurrentBranchLocation(loc) ? ' (Active Branch)' : '' }}
+            </option>
+            <option value="">🌐 All Locations (Consolidated)</option>
+          </select>
+
+          <!-- "Filters" Button opening side panel -->
+          <button 
+            type="button"
+            @click="showFilterDrawer = true"
+            class="h-9 px-4 rounded-xl border text-xs font-bold font-sans flex items-center gap-2 transition-all cursor-pointer shadow-xs shrink-0"
+            :class="activePanelFiltersCount > 0 
+              ? 'bg-primary text-white border-primary shadow-sm hover:opacity-95' 
+              : 'bg-surface-container-low border-outline-variant/60 text-on-surface hover:bg-surface-container hover:border-outline'"
+            title="Open filters"
+          >
+            <SlidersHorizontal class="w-3.5 h-3.5" />
+            <span>{{ $t('inventory.filters') }}</span>
+            <span 
+              v-if="activePanelFiltersCount > 0" 
+              class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-black bg-white text-primary"
+            >
+              {{ activePanelFiltersCount }}
+            </span>
+          </button>
+        </div>
       </div>
 
       <!-- 2. ACTIVE FILTER BADGES ROW (WHEN ACTIVE) -->
@@ -745,6 +761,37 @@
               />
             </div>
 
+            <!-- Product Purpose Selector -->
+            <div class="flex flex-col gap-1.5 col-span-2">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Product Purpose</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  @click="newProdPurpose = 'FOR_SALE'"
+                  class="py-2 px-2.5 rounded-lg border text-xs font-bold transition-all text-center cursor-pointer"
+                  :class="newProdPurpose === 'FOR_SALE' ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant bg-surface-container-low text-on-surface'"
+                >
+                  🛒 For Sale (POS)
+                </button>
+                <button
+                  type="button"
+                  @click="newProdPurpose = 'INTERNAL_USE'"
+                  class="py-2 px-2.5 rounded-lg border text-xs font-bold transition-all text-center cursor-pointer"
+                  :class="newProdPurpose === 'INTERNAL_USE' ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant bg-surface-container-low text-on-surface'"
+                >
+                  📦 Kitchen / Supplies
+                </button>
+                <button
+                  type="button"
+                  @click="newProdPurpose = 'BOTH'"
+                  class="py-2 px-2.5 rounded-lg border text-xs font-bold transition-all text-center cursor-pointer"
+                  :class="newProdPurpose === 'BOTH' ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant bg-surface-container-low text-on-surface'"
+                >
+                  🔄 Hybrid (Both)
+                </button>
+              </div>
+            </div>
+
             <!-- Barcode SKU Code (Left) & Wholesale Barcode (Right) -->
             <div class="flex flex-col gap-1.5">
               <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.barcodeSkuCode') }}</label>
@@ -842,21 +889,24 @@
               />
             </div>
 
-            <!-- Payment Method & Unit of Measure on the SAME row -->
-            <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.paymentMethod') }}</label>
+            <!-- Initial Stock Receiving Location (When standalone warehouses exist) -->
+            <div v-if="hasStandaloneWarehouse && Number(newProdStock) > 0" class="flex flex-col gap-1.5 col-span-2">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
+                Receive Initial Stock Into <span class="text-error">*</span>
+              </label>
               <select 
-                v-model="newProdPaymentMethod"
+                v-model="newProdInitialLocationId"
                 required
-                class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
+                class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary"
               >
-                <option value="CASH">{{ $t('inventory.cashPayout') }}</option>
-                <option value="ONCREDIT">{{ $t('inventory.onCreditPayment') }}</option>
-                <option value="BANK_TRANSFER">{{ $t('inventory.bankTransfer') }}</option>
-                <option value="MOBILE_TRANSFER">{{ $t('inventory.mobileTransfer') }}</option>
+                <option value="" disabled>-- Select Storage Location --</option>
+                <option v-for="l in availableLocations" :key="l.id" :value="l.id">
+                  {{ l.locationType === 'WAREHOUSE' ? '🏭' : '🏪' }} {{ l.name }}
+                </option>
               </select>
             </div>
 
+            <!-- Unit of Measure (Left) & Expiry Date (Right) -->
             <div class="flex flex-col gap-1.5">
               <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.unitOfMeasure') }}</label>
               <select 
@@ -870,8 +920,7 @@
               </select>
             </div>
 
-            <!-- Expiry Date -->
-            <div class="flex flex-col gap-1.5 col-span-2 sm:col-span-1">
+            <div class="flex flex-col gap-1.5">
               <label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{{ $t('inventory.expiryDate') }}</label>
               <input 
                 type="date"
@@ -1330,7 +1379,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { showToast } from '../services/toastService';
 import { useBarcodeScanner } from '../composables/useBarcodeScanner';
-import type { Product } from '../models/types';
+import type { Product, InventoryLocation, ProductPurpose } from '../models/types';
+import { warehouseService } from '../services/warehouseService';
 import { formatCurrency, formatCurrencyWithoutSymbol } from '../models/mockData';
 import { api } from '../services/api';
 import Modal from '../components/common/Modal.vue';
@@ -1406,6 +1456,61 @@ const categorySearch = ref('');
 const currentPage = ref(1);
 const itemsPerPage = 15;
 
+// Location Filter States
+const availableLocations = ref<InventoryLocation[]>([]);
+const selectedLocationFilter = ref('');
+
+const isCurrentBranchLocation = (loc: InventoryLocation): boolean => {
+  const currentBranchId = localStorage.getItem('branchId') || vm.activeBranchId.value;
+  return !!currentBranchId && loc.storeBranchId === currentBranchId;
+};
+
+const resolveActiveBranchLocation = (locs: InventoryLocation[]): InventoryLocation | undefined => {
+  const currentBranchId = localStorage.getItem('branchId') || vm.activeBranchId.value;
+  if (!currentBranchId) return locs[0];
+  const branchDefault = locs.find(l => l.storeBranchId === currentBranchId && l.locationType === 'BRANCH_DEFAULT');
+  if (branchDefault) return branchDefault;
+  const anyBranchLoc = locs.find(l => l.storeBranchId === currentBranchId);
+  if (anyBranchLoc) return anyBranchLoc;
+  return locs[0];
+};
+
+const sortedLocations = computed(() => {
+  const currentBranchId = localStorage.getItem('branchId') || vm.activeBranchId.value;
+  return [...availableLocations.value].sort((a, b) => {
+    const aIsCurrent = a.storeBranchId === currentBranchId;
+    const bIsCurrent = b.storeBranchId === currentBranchId;
+    if (aIsCurrent && !bIsCurrent) return -1;
+    if (!aIsCurrent && bIsCurrent) return 1;
+    if (a.locationType === 'BRANCH_DEFAULT' && b.locationType !== 'BRANCH_DEFAULT') return -1;
+    if (a.locationType !== 'BRANCH_DEFAULT' && b.locationType === 'BRANCH_DEFAULT') return 1;
+    return a.name.localeCompare(b.name);
+  });
+});
+
+const hasStandaloneWarehouse = computed(() => 
+  availableLocations.value.some(l => l.locationType === 'WAREHOUSE')
+);
+
+const handleLocationFilterChange = async () => {
+  currentPage.value = 1;
+  await vm.fetchProducts(selectedLocationFilter.value || undefined);
+};
+
+watch(() => vm.activeBranchId.value, async () => {
+  if (availableLocations.value.length > 0) {
+    const defaultBranchLoc = resolveActiveBranchLocation(availableLocations.value);
+    if (defaultBranchLoc) {
+      selectedLocationFilter.value = defaultBranchLoc.id;
+      newProdInitialLocationId.value = defaultBranchLoc.id;
+      currentPage.value = 1;
+      await vm.fetchProducts(selectedLocationFilter.value);
+      return;
+    }
+  }
+  await vm.fetchProducts();
+});
+
 // Add Modal States
 const showAddModal = ref(false);
 const newProdName = ref('');
@@ -1421,7 +1526,8 @@ const newProdStock = ref('');
 const newProdMinStock = ref('');
 const newProdSupplier = ref('');
 const newProdExpiryDate = ref('');
-const newProdPaymentMethod = ref<'CASH' | 'ONCREDIT' | 'BANK_TRANSFER' | 'MOBILE_TRANSFER'>('CASH');
+const newProdPurpose = ref<ProductPurpose>('FOR_SALE');
+const newProdInitialLocationId = ref('');
 
 // Import Modal States
 const showImportModal = ref(false);
@@ -1548,7 +1654,20 @@ onMounted(async () => {
   } catch (err) {
     console.error('Failed to load categories:', err);
   }
-  vm.fetchProducts();
+  try {
+    availableLocations.value = await warehouseService.getLocations();
+    const defaultBranchLoc = resolveActiveBranchLocation(availableLocations.value);
+    if (defaultBranchLoc) {
+      selectedLocationFilter.value = defaultBranchLoc.id;
+      newProdInitialLocationId.value = defaultBranchLoc.id;
+    } else if (availableLocations.value.length > 0 && availableLocations.value[0]) {
+      selectedLocationFilter.value = availableLocations.value[0].id;
+      newProdInitialLocationId.value = availableLocations.value[0].id;
+    }
+  } catch (err) {
+    console.error('Failed to load locations in inventory view:', err);
+  }
+  await vm.fetchProducts(selectedLocationFilter.value || undefined);
   vm.fetchSuppliers().catch(err => console.error('Failed to fetch suppliers in background:', err));
 });
 
@@ -1776,18 +1895,23 @@ const paginatedProducts = computed(() => {
 });
 
 const handleAddProduct = async () => {
-  if (!newProdName.value || !newProdCost.value || !newProdPrice.value || !newProdStock.value || !newProdMinStock.value) {
+  if (!newProdName.value || !newProdCost.value || (newProdPurpose.value !== 'INTERNAL_USE' && !newProdPrice.value) || !newProdStock.value || !newProdMinStock.value) {
     showToast('Please fill out all required fields', 'error');
     return;
   }
 
-  const priceNum = parseFloat(newProdPrice.value);
+  const priceNum = newProdPurpose.value === 'INTERNAL_USE' ? parseFloat(newProdPrice.value || '0') : parseFloat(newProdPrice.value);
   const costNum = parseFloat(newProdCost.value);
   const stockNum = parseInt(newProdStock.value);
   const minStockNum = parseInt(newProdMinStock.value);
 
   if (isNaN(stockNum) || stockNum <= 0) {
     showToast('Initial Stock Units must be a valid number greater than zero', 'error');
+    return;
+  }
+
+  if (hasStandaloneWarehouse.value && stockNum > 0 && !newProdInitialLocationId.value) {
+    showToast('Please select a storage location for the initial stock', 'error');
     return;
   }
 
@@ -1831,7 +1955,8 @@ const handleAddProduct = async () => {
       isActive: true,
       UnitOfMeasure: newProdUnitOfMeasure.value,
       expiryDate: newProdExpiryDate.value || undefined,
-      paymentType: newProdPaymentMethod.value
+      purpose: newProdPurpose.value,
+      initialLocationId: newProdInitialLocationId.value || undefined
     };
 
     if (newProdSupplier.value) {
@@ -1891,7 +2016,6 @@ const handleAddProduct = async () => {
     newProdMinStock.value = '10';
     newProdSupplier.value = '';
     newProdExpiryDate.value = '';
-    newProdPaymentMethod.value = 'CASH';
   } catch (err: any) {
     showToast('Failed to add product: ' + (err.message || err), 'error');
   }
