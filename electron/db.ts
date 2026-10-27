@@ -304,14 +304,39 @@ export function getBranchCustomers(branchId: string): any[] {
 
 // ----------------- Auth Caching & Verification ----------------- //
 
+function getIdentifierVariants(identifier: string): string[] {
+  const clean = (identifier || '').trim()
+  if (!clean) return []
+  const variants = new Set<string>([clean, clean.toLowerCase()])
+  const digits = clean.replace(/\D/g, '')
+  if (digits) {
+    variants.add(digits)
+    if (digits.startsWith('255') && digits.length === 12) {
+      variants.add('0' + digits.slice(3))
+      variants.add('+' + digits)
+      variants.add(digits.slice(3))
+    } else if (digits.startsWith('0') && digits.length === 10) {
+      variants.add(digits.slice(1))
+      variants.add('255' + digits.slice(1))
+      variants.add('+255' + digits.slice(1))
+    } else if (digits.length === 9) {
+      variants.add('0' + digits)
+      variants.add('255' + digits)
+      variants.add('+255' + digits)
+    }
+  }
+  return Array.from(variants)
+}
+
 export function cacheUserAuth(user: any, token: string, branchId: string, passwordHash?: string | null, passwordSalt?: string | null) {
   const db = getDB()
+  const effectiveBranchId = branchId || user.branchId || user.storeBranchId || ''
   db.prepare(`
     INSERT OR REPLACE INTO cached_auth (user_id, branch_id, email, phone, token, user_json, password_hash, password_salt, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     user.id,
-    branchId,
+    effectiveBranchId,
     user.email || '',
     user.phone || '',
     token,
@@ -322,17 +347,35 @@ export function cacheUserAuth(user: any, token: string, branchId: string, passwo
   )
 }
 
-export function getCachedUserAuth(identifier: string, branchId: string): { user: any; token: string; passwordHash: string | null; passwordSalt: string | null } | null {
+export function getCachedUserAuth(identifier: string, branchId?: string | null): { user: any; token: string; branchId: string; passwordHash: string | null; passwordSalt: string | null } | null {
   const db = getDB()
-  const row = db.prepare(`
-    SELECT token, user_json, password_hash, password_salt FROM cached_auth
-    WHERE branch_id = ? AND (email = ? OR phone = ? OR user_id = ?)
-  `).get(branchId, identifier, identifier, identifier) as { token: string; user_json: string; password_hash: string | null; password_salt: string | null } | undefined
+  const variants = getIdentifierVariants(identifier)
+  if (variants.length === 0) return null
+
+  const placeholders = variants.map(() => '?').join(', ')
+  let row: { token: string; user_json: string; branch_id: string; password_hash: string | null; password_salt: string | null } | undefined
+
+  if (branchId) {
+    row = db.prepare(`
+      SELECT token, user_json, branch_id, password_hash, password_salt FROM cached_auth
+      WHERE branch_id = ? AND (email IN (${placeholders}) OR phone IN (${placeholders}) OR user_id IN (${placeholders}))
+      ORDER BY updated_at DESC LIMIT 1
+    `).get(branchId, ...variants, ...variants, ...variants) as any
+  }
+
+  if (!row) {
+    row = db.prepare(`
+      SELECT token, user_json, branch_id, password_hash, password_salt FROM cached_auth
+      WHERE email IN (${placeholders}) OR phone IN (${placeholders}) OR user_id IN (${placeholders})
+      ORDER BY updated_at DESC LIMIT 1
+    `).get(...variants, ...variants, ...variants) as any
+  }
 
   if (!row) return null
   return {
     user: JSON.parse(row.user_json),
     token: row.token,
+    branchId: row.branch_id,
     passwordHash: row.password_hash || null,
     passwordSalt: row.password_salt || null
   }
@@ -342,41 +385,87 @@ export function getCachedUserAuth(identifier: string, branchId: string): { user:
 
 export function saveActiveShift(shift: any) {
   const db = getDB()
+  const branchId = shift.branchId || shift.branch_id || shift.storeBranchId || ''
+  const cashierId = shift.cashierId || shift.cashier_id || shift.userId || shift.user?.id || ''
+  const shiftId = shift.id || `shift-${cashierId}-${Date.now()}`
+
   db.prepare(`
     INSERT OR REPLACE INTO active_shifts (id, branch_id, cashier_id, opening_cash, expected_cash, actual_cash, total_sales, status, opened_at, closed_at, raw_json, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    shift.id,
-    shift.branchId,
-    shift.cashierId,
-    shift.openingCash || 0,
-    shift.expectedCash || 0,
-    shift.actualCash || null,
-    shift.totalSales || 0,
+    shiftId,
+    branchId,
+    cashierId,
+    shift.openingCash || shift.opening_cash || 0,
+    shift.expectedCash || shift.expected_cash || 0,
+    shift.actualCash || shift.actual_cash || null,
+    shift.totalSales || shift.total_sales || 0,
     shift.status || 'OPEN',
-    shift.openedAt || new Date().toISOString(),
-    shift.closedAt || null,
+    shift.openedAt || shift.opened_at || new Date().toISOString(),
+    shift.closedAt || shift.closed_at || null,
     JSON.stringify(shift),
     Date.now()
   )
+
+  // Ensure cached_auth has the updated branch_id for this cashier
+  if (branchId && cashierId) {
+    try {
+      db.prepare(`
+        UPDATE cached_auth SET branch_id = ? WHERE user_id = ? AND (branch_id = '' OR branch_id IS NULL OR branch_id != ?)
+      `).run(branchId, cashierId, branchId)
+    } catch (e) {
+      console.warn('[SQLite DB] Failed to sync branch_id to cached_auth:', e)
+    }
+  }
 }
 
-export function clearActiveShifts(branchId: string, cashierId: string) {
+export function clearActiveShifts(branchId?: string | null, cashierId?: string | null) {
   const db = getDB()
-  db.prepare(`
-    DELETE FROM active_shifts
-    WHERE branch_id = ? AND cashier_id = ?
-  `).run(branchId, cashierId)
+  if (branchId && cashierId) {
+    db.prepare(`
+      DELETE FROM active_shifts
+      WHERE (branch_id = ? OR branch_id = '') AND cashier_id = ?
+    `).run(branchId, cashierId)
+  } else if (cashierId) {
+    db.prepare(`
+      DELETE FROM active_shifts
+      WHERE cashier_id = ?
+    `).run(cashierId)
+  }
 }
 
-export function getActiveShift(branchId: string, cashierId: string): any | null {
-
+export function getActiveShift(branchId?: string | null, cashierId?: string | null): any | null {
   const db = getDB()
-  const row = db.prepare(`
-    SELECT raw_json FROM active_shifts
-    WHERE branch_id = ? AND cashier_id = ? AND status = 'OPEN'
-    ORDER BY opened_at DESC LIMIT 1
-  `).get(branchId, cashierId) as { raw_json: string } | undefined
+  let row: { raw_json: string } | undefined
+
+  if (branchId && cashierId) {
+    row = db.prepare(`
+      SELECT raw_json FROM active_shifts
+      WHERE (branch_id = ? OR branch_id = '') AND cashier_id = ? AND status = 'OPEN'
+      ORDER BY opened_at DESC LIMIT 1
+    `).get(branchId, cashierId) as { raw_json: string } | undefined
+
+    if (!row) {
+      // Fallback: search by cashierId alone if branchId does not match exactly
+      row = db.prepare(`
+        SELECT raw_json FROM active_shifts
+        WHERE cashier_id = ? AND status = 'OPEN'
+        ORDER BY opened_at DESC LIMIT 1
+      `).get(cashierId) as { raw_json: string } | undefined
+    }
+  } else if (cashierId) {
+    row = db.prepare(`
+      SELECT raw_json FROM active_shifts
+      WHERE cashier_id = ? AND status = 'OPEN'
+      ORDER BY opened_at DESC LIMIT 1
+    `).get(cashierId) as { raw_json: string } | undefined
+  } else if (branchId) {
+    row = db.prepare(`
+      SELECT raw_json FROM active_shifts
+      WHERE branch_id = ? AND status = 'OPEN'
+      ORDER BY opened_at DESC LIMIT 1
+    `).get(branchId) as { raw_json: string } | undefined
+  }
 
   return row ? JSON.parse(row.raw_json) : null
 }

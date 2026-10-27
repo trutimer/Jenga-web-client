@@ -34,7 +34,13 @@
   <!-- Authenticated Layout -->
   <div v-else class="flex h-screen w-full bg-background text-on-background overflow-hidden relative font-sans antialiased">
     <!-- Desktop Sidebar -->
-    <Sidebar v-if="userRole !== 'CASHIER'" :onLogout="triggerLogoutConfirm" :onLock="handleLockScreen" :branchName="settings.name" />
+    <Sidebar 
+      v-if="userRole !== 'CASHIER'" 
+      :onLogout="triggerLogoutConfirm" 
+      :onLock="handleLockScreen" 
+      :storeName="settings.name"
+      :branchName="activeBranchName" 
+    />
 
     <!-- Mobile Drawer Overlay -->
     <div v-if="mobileMenuOpen && userRole !== 'CASHIER'" class="fixed inset-0 z-40 flex md:hidden font-sans">
@@ -45,8 +51,15 @@
       
       <div class="relative flex-1 flex flex-col max-w-xs w-full bg-surface-container-low border-r border-outline-variant p-5">
         <div class="flex items-center gap-3 pb-5 border-b border-outline-variant mb-4">
-          <Store class="text-primary w-6 h-6" />
-          <h2 class="text-lg font-black text-primary">{{ settings.name }}</h2>
+          <div class="w-10 h-10 rounded-xl bg-white border border-outline-variant/60 flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
+            <img src="/logo.svg" alt="Jenga Logo" class="w-full h-full object-contain" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <h2 class="text-sm font-black text-on-surface truncate leading-tight">{{ settings.name }}</h2>
+            <p class="text-xs font-semibold text-primary truncate leading-tight mt-0.5" :title="activeBranchName || 'Main Branch'">
+              {{ activeBranchName || 'Main Branch' }}
+            </p>
+          </div>
         </div>
 
         <div class="flex-1 flex flex-col gap-2">
@@ -84,7 +97,6 @@
     <!-- Core Workspace Frame (Right) -->
     <div class="flex-1 flex flex-col h-full overflow-hidden relative">
       <TopNav 
-        brandName="Jenga POS"
         :lowStockCount="lowStockCount"
         :searchQuery="searchQuery"
         :userRole="userRole"
@@ -343,6 +355,7 @@ const {
   user,
   userRole,
   activeBranchId,
+  activeBranchName,
   settings,
   mobileMenuOpen,
   sidebarCollapsed,

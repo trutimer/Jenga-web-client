@@ -505,7 +505,8 @@
 import { ref } from 'vue';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { api } from '../services/api';
-import { isElectron } from '../services/offlineSalesService';
+import { isElectron, cacheAuthCredentials } from '../services/offlineSalesService';
+import { generateSalt, hashPasswordWithSalt } from '../utils/cryptoAuth';
 import { t } from '../i18n';
 import LanguageSelector from '../components/common/LanguageSelector.vue';
 import JengaLoader from '../components/common/JengaLoader.vue';
@@ -725,10 +726,13 @@ const processSuccessfulLogin = async (res: any) => {
     return;
   }
 
-  let storeId = res.user.storeId;
-  let branchId = res.user.branchId;
+  let storeId = res.user?.storeId;
+  let branchId = res.branchId || res.user?.branchId;
 
-  if (!storeId) {
+  if (res.offline) {
+    branchId = branchId || localStorage.getItem('branchId') || '';
+    storeId = storeId || localStorage.getItem('storeId') || '';
+  } else if (!storeId) {
     try {
       const stores = await api.get('/api/stores');
       if (stores && stores.length > 0) {
@@ -758,6 +762,24 @@ const processSuccessfulLogin = async (res: any) => {
   localStorage.setItem('branchId', branchId || '');
   localStorage.setItem('cashierName', res.user.fullName);
   localStorage.setItem('cashierRole', res.user.role || '');
+
+  if (res.user?.permissions) {
+    const perms = Array.isArray(res.user.permissions)
+      ? res.user.permissions
+      : Array.from(res.user.permissions);
+    localStorage.setItem('userPermissions', JSON.stringify(perms));
+  }
+
+  // Cache credentials in SQLite for subsequent offline access (strictly Cashiers)
+  if (!res.offline && isElectron() && (res.user.role || '').toUpperCase() === 'CASHIER' && branchId && password.value) {
+    try {
+      const salt = generateSalt();
+      const hash = await hashPasswordWithSalt(password.value, salt);
+      await cacheAuthCredentials(res.user, res.accessToken, branchId, hash, salt);
+    } catch (err) {
+      console.error('Failed to cache auth credentials on login:', err);
+    }
+  }
 
   localStorage.setItem('lastPhone', phone.value);
   if (!remember.value) {

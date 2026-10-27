@@ -169,31 +169,32 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('db:cache-auth', (_, { user, token, branchId, passwordHash, passwordSalt }) => {
-    if (!user || !branchId) return
-    db.cacheUserAuth(user, token, branchId, passwordHash, passwordSalt)
-    setSyncAuthToken(token)
+    const effectiveBranchId = branchId || user?.branchId || user?.storeBranchId || ''
+    if (!user) return
+    db.cacheUserAuth(user, token, effectiveBranchId, passwordHash, passwordSalt)
+    if (token) setSyncAuthToken(token)
     return { success: true }
   })
 
   ipcMain.handle('db:get-cached-auth', (_, { identifier, branchId }) => {
-    if (!branchId || !identifier) return null
+    if (!identifier) return null
     return db.getCachedUserAuth(identifier, branchId)
   })
 
   ipcMain.handle('db:save-shift', (_, { shift }) => {
-    if (!shift || !shift.branchId) return
+    if (!shift) return
     db.saveActiveShift(shift)
     return { success: true }
   })
 
   ipcMain.handle('db:clear-active-shifts', (_, { branchId, cashierId }) => {
-    if (!branchId || !cashierId) return
+    if (!branchId && !cashierId) return
     db.clearActiveShifts(branchId, cashierId)
     return { success: true }
   })
 
   ipcMain.handle('db:get-active-shift', (_, { branchId, cashierId }) => {
-    if (!branchId || !cashierId) return null
+    if (!branchId && !cashierId) return null
     return db.getActiveShift(branchId, cashierId)
   })
 

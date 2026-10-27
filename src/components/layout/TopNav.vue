@@ -9,14 +9,6 @@
         <Menu class="w-5 h-5" />
       </button>
 
-      <!-- Brand/Logo -->
-      <div 
-        @click="userRole === 'CASHIER' ? router.push('/checkout') : router.push('/dashboard')"
-        class="flex items-center cursor-pointer select-none"
-      >
-        <h1 class="text-xl font-black text-primary tracking-tight">{{ brandName }}</h1>
-      </div>
-
       <!-- Modules & Access Menu for CASHIER -->
       <div v-if="userRole === 'CASHIER'" class="relative ml-2">
         <button 
@@ -374,7 +366,7 @@ import {
 } from 'lucide-vue-next';
 
 defineProps<{
-  brandName: string;
+  brandName?: string;
   lowStockCount: number;
   searchQuery: string;
   userRole?: string | null;

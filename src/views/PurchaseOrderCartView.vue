@@ -223,42 +223,40 @@
             <span>{{ $t('poCart.supplierDetails') }}</span>
           </h3>
 
-          <!-- Receiving Branch & Destination Location -->
-          <div class="space-y-3">
-            <div class="space-y-1 text-xs">
-              <label class="text-[11px] font-mono font-bold uppercase text-outline block">
-                {{ $t('poCart.storeBranch') }}
-              </label>
-              <div class="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant font-bold text-on-surface flex items-center justify-between">
-                <span>{{ currentBranchName }}</span>
-                <span class="text-[10px] font-mono font-normal text-outline">Active Branch</span>
-              </div>
+          <!-- Receiving Destination / Warehouse (Single unified dropdown input) -->
+          <div class="space-y-1 text-xs">
+            <label class="text-[11px] font-mono font-bold uppercase text-outline flex items-center justify-between">
+              <span>Receiving Destination / Warehouse</span>
+              <span v-if="selectedDestinationLocation" class="text-[10px] font-mono font-bold text-primary">
+                {{ selectedDestinationLocation.locationType === 'BRANCH_DEFAULT' ? 'Default Front Store' : selectedDestinationLocation.locationType === 'BRANCH_WAREHOUSE' ? 'Branch Storeroom' : 'Central Warehouse' }}
+              </span>
+            </label>
+            <div v-if="isLoadingLocations" class="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant text-xs text-outline flex items-center gap-2">
+              <RotateCw class="w-3.5 h-3.5 animate-spin text-primary" />
+              <span>Loading receiving locations...</span>
             </div>
-
-            <!-- Inbound Destination Location -->
-            <div class="space-y-1 text-xs">
-              <label class="text-[11px] font-mono font-bold uppercase text-outline flex items-center justify-between">
-                <span>Receiving Destination / Warehouse</span>
-                <span v-if="selectedDestinationLocation" class="text-[10px] font-mono font-normal text-primary">
-                  {{ selectedDestinationLocation.locationType === 'BRANCH_DEFAULT' ? 'Front Store' : selectedDestinationLocation.locationType === 'BRANCH_WAREHOUSE' ? 'Backroom' : 'Warehouse' }}
-                </span>
-              </label>
-              <div v-if="isLoadingLocations" class="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant text-xs text-outline flex items-center gap-2">
-                <RotateCw class="w-3.5 h-3.5 animate-spin text-primary" />
-                <span>Loading receiving locations...</span>
-              </div>
-              <select 
-                v-else-if="locations.length > 0"
-                v-model="selectedDestinationLocationId"
-                class="w-full bg-surface-container-low p-2.5 rounded-xl border border-outline-variant text-xs font-semibold text-on-surface outline-none focus:border-primary cursor-pointer transition-colors"
-              >
-                <option v-for="loc in locations" :key="loc.id" :value="loc.id">
-                  {{ loc.name }} ({{ loc.code }}) — {{ loc.locationType === 'BRANCH_DEFAULT' ? 'Front Store / Counter' : loc.locationType === 'BRANCH_WAREHOUSE' ? 'Branch Backroom' : 'Warehouse' }}
+            <select 
+              v-else-if="availableReceivingLocations.length > 0"
+              v-model="selectedDestinationLocationId"
+              class="w-full bg-surface-container-low p-2.5 rounded-xl border border-outline-variant text-xs font-semibold text-on-surface outline-none focus:border-primary cursor-pointer transition-colors shadow-2xs"
+            >
+              <!-- 1. Current Branch Locations (Default Front Store & Storerooms) -->
+              <optgroup v-if="currentBranchLocations.length > 0" :label="`${currentBranchName} (${$t('common.branch') || 'Current Branch'})`">
+                <option v-for="loc in currentBranchLocations" :key="loc.id" :value="loc.id">
+                  {{ formatLocationOption(loc) }}
                 </option>
-              </select>
-              <div v-else class="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant text-xs text-outline">
-                <span>Default Branch Store</span>
-              </div>
+              </optgroup>
+
+              <!-- 2. Central Warehouses -->
+              <optgroup v-if="warehouseLocations.length > 0" label="Central Warehouses">
+                <option v-for="loc in warehouseLocations" :key="loc.id" :value="loc.id">
+                  {{ formatLocationOption(loc) }}
+                </option>
+              </optgroup>
+            </select>
+            <div v-else class="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant text-xs text-outline flex items-center justify-between">
+              <span>{{ currentBranchName }} — Default Location</span>
+              <span class="text-[10px] font-mono text-outline">Default</span>
             </div>
           </div>
 
@@ -489,6 +487,7 @@ import { purchaseOrderService } from '../services/purchaseOrderService';
 import { warehouseService } from '../services/warehouseService';
 import { api } from '../services/api';
 import { showToast } from '../services/toastService';
+import { parseJwtPayload } from '../services/authSession';
 import { formatCurrency, formatCurrencyWithoutSymbol } from '../models/mockData';
 import type { PurchasePaymentType, PurchaseOrderCreateRequest, CashierShift, InventoryLocation } from '../models/types';
 import { 
@@ -533,7 +532,16 @@ const currentBranchName = computed(() => {
 });
 
 // Role & Permission Checks
-const userRole = computed(() => vm.userRole.value);
+const userRole = computed(() => {
+  const r = vm.userRole.value || localStorage.getItem('cashierRole') || localStorage.getItem('role') || '';
+  if (r) return r.toUpperCase();
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    const payload = parseJwtPayload(token);
+    if (payload?.role) return String(payload.role).toUpperCase();
+  }
+  return '';
+});
 const isNonCashier = computed(() => ['ADMIN', 'MANAGER', 'SUPER_ADMIN'].includes(userRole.value || ''));
 const isOwnerOrAdmin = computed(() => userRole.value === 'ADMIN' || userRole.value === 'SUPER_ADMIN');
 const canCreatePo = computed(() => isOwnerOrAdmin.value || vm.hasPermission('purchase_order:create'));
@@ -629,15 +637,77 @@ const selectedDestinationLocation = computed(() => {
   return locations.value.find(l => l.id === selectedDestinationLocationId.value) || null;
 });
 
+const isLocActive = (l: any) => l && l.isActive !== false && l.active !== false && !l.deletedAt;
+
+const formatLocationOption = (loc: any) => {
+  if (!loc) return '';
+  const codeStr = loc.code && String(loc.code).trim() ? ` (${String(loc.code).trim()})` : '';
+  const type = (loc.locationType || '').toUpperCase();
+
+  if (type === 'BRANCH_DEFAULT') {
+    let cleanName = loc.name || 'Default Location';
+    if (cleanName.toLowerCase().includes('default location')) {
+      cleanName = 'Default Location';
+    }
+    return `${cleanName}${codeStr}`;
+  }
+
+  if (type === 'BRANCH_WAREHOUSE') {
+    const hasStoreroom = (loc.name || '').toLowerCase().includes('storeroom') || (loc.name || '').toLowerCase().includes('backroom');
+    return `${loc.name || 'Storeroom'}${codeStr}${hasStoreroom ? '' : ' — Storeroom'}`;
+  }
+
+  // WAREHOUSE
+  const hasWarehouse = (loc.name || '').toLowerCase().includes('warehouse');
+  return `${loc.name || 'Warehouse'}${codeStr}${hasWarehouse ? '' : ' — Warehouse'}`;
+};
+
+const currentBranchLocations = computed(() => {
+  const branchId = localStorage.getItem('branchId') || (vm.activeBranchId.value ?? '');
+  return locations.value.filter(l => {
+    if (!isLocActive(l)) return false;
+    const type = (l.locationType || '').toUpperCase();
+    return type !== 'WAREHOUSE' && l.storeBranchId === branchId;
+  });
+});
+
+const warehouseLocations = computed(() => {
+  const branchId = localStorage.getItem('branchId') || (vm.activeBranchId.value ?? '');
+  return locations.value.filter(l => {
+    if (!isLocActive(l)) return false;
+    const type = (l.locationType || '').toUpperCase();
+    if (type !== 'WAREHOUSE' && l.storeBranchId) return false;
+
+    // Warehouse must either serve all branches or serve this specific branch
+    if (l.servesAllBranches) return true;
+    if (Array.isArray(l.servedBranchIds) && branchId) {
+      return l.servedBranchIds.includes(branchId);
+    }
+    return false;
+  });
+});
+
+const availableReceivingLocations = computed(() => {
+  return [...currentBranchLocations.value, ...warehouseLocations.value];
+});
+
 const fetchLocations = async () => {
+  const storeId = localStorage.getItem('storeId') || undefined;
   const branchId = localStorage.getItem('branchId') || (vm.activeBranchId.value ?? '');
   isLoadingLocations.value = true;
   try {
-    const list = await warehouseService.getLocations(branchId || undefined);
-    locations.value = list.filter(l => l.isActive);
+    const list = await warehouseService.getLocations(storeId);
+    locations.value = Array.isArray(list) ? list.filter(isLocActive) : [];
     if (locations.value.length > 0) {
-      const defaultLoc = locations.value.find(l => l.locationType === 'BRANCH_DEFAULT');
-      selectedDestinationLocationId.value = defaultLoc ? defaultLoc.id : (locations.value[0]?.id || '');
+      const branchDefault = locations.value.find(l => 
+        l.locationType === 'BRANCH_DEFAULT' && l.storeBranchId === branchId
+      );
+      const anyDefault = locations.value.find(l => l.locationType === 'BRANCH_DEFAULT');
+      const warehouse = locations.value.find(l => (l.locationType || '').toUpperCase() === 'WAREHOUSE');
+      const fallback = availableReceivingLocations.value[0] || locations.value[0];
+      if (!selectedDestinationLocationId.value || !locations.value.some(l => l.id === selectedDestinationLocationId.value)) {
+        selectedDestinationLocationId.value = branchDefault?.id || anyDefault?.id || warehouse?.id || fallback?.id || '';
+      }
     } else {
       selectedDestinationLocationId.value = '';
     }
@@ -773,7 +843,7 @@ const handleSubmitOrder = async (submitForApproval: boolean) => {
   isSubmitting.value = true;
   try {
     const payload: PurchaseOrderCreateRequest = {
-      storeBranchId: branchId,
+      storeBranchId: selectedDestinationLocation.value?.storeBranchId || branchId,
       destinationLocationId: selectedDestinationLocationId.value || undefined,
       supplierId: selectedSupplierId.value || undefined,
       paymentType: paymentType.value,
@@ -819,7 +889,11 @@ const handleSubmitOrder = async (submitForApproval: boolean) => {
 };
 
 onMounted(async () => {
-  if (!isOwnerOrAdmin.value && !vm.hasPermission('purchase_order:create') && !vm.hasPermission('purchase_order:view')) {
+  if (!vm.userRole.value && userRole.value) {
+    vm.userRole.value = userRole.value;
+  }
+
+  if (!isOwnerOrAdmin.value && !canCreatePo.value && !vm.hasPermission('purchase_order:create') && !vm.hasPermission('purchase_order:view')) {
     showToast('Permission denied: You cannot access Purchase Order creation.', 'error');
     router.replace('/inventory');
     return;

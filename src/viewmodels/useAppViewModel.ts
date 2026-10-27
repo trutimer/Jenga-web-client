@@ -30,7 +30,30 @@ if (initialToken && isJwtExpired(initialToken)) {
 
 const isInitialAuthValid = () => {
   const token = localStorage.getItem('accessToken');
-  return !!token && !isJwtExpired(token) && !!localStorage.getItem('storeId');
+  return !!token && !isJwtExpired(token);
+};
+
+const getInitialUserRole = (): string | null => {
+  if (!isInitialAuthValid()) return null;
+
+  // 1. Check stored cashierRole / role / userRole
+  const storedRole = localStorage.getItem('cashierRole') || localStorage.getItem('role') || localStorage.getItem('userRole');
+  if (storedRole && storedRole.trim()) {
+    return storedRole.trim().toUpperCase();
+  }
+
+  // 2. Decode from JWT token claims
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    const payload = parseJwtPayload(token);
+    if (payload && payload.role) {
+      const role = String(payload.role).trim().toUpperCase();
+      localStorage.setItem('cashierRole', role);
+      return role;
+    }
+  }
+
+  return 'CASHIER';
 };
 
 const getInitialUserPermissions = (): string[] => {
@@ -38,14 +61,14 @@ const getInitialUserPermissions = (): string[] => {
     const rawStored = localStorage.getItem('userPermissions');
     if (rawStored !== null) {
       const parsed = JSON.parse(rawStored);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed;
       }
     }
     const token = localStorage.getItem('accessToken');
-    if (token) {
+    if (token && !isJwtExpired(token)) {
       const payload = parseJwtPayload(token);
-      if (payload && Array.isArray(payload.permissions)) {
+      if (payload && Array.isArray(payload.permissions) && payload.permissions.length > 0) {
         localStorage.setItem('userPermissions', JSON.stringify(payload.permissions));
         return payload.permissions;
       }
@@ -62,13 +85,10 @@ const user = ref<string | null>(
     ? (localStorage.getItem('cashierName') || 'User')
     : null
 );
-const userRole = ref<string | null>(
-  isInitialAuthValid()
-    ? (localStorage.getItem('cashierRole') || 'CASHIER')
-    : null
-);
+const userRole = ref<string | null>(getInitialUserRole());
 const userId = ref<string | null>(localStorage.getItem('cashierId'));
 const activeBranchId = ref<string | null>(localStorage.getItem('branchId'));
+const activeBranchName = ref<string>(localStorage.getItem('branchName') || '');
 const mobileMenuOpen = ref(false);
 const sidebarCollapsed = ref(false);
 const products = ref<Product[]>(INITIAL_PRODUCTS);
@@ -245,6 +265,17 @@ export function useAppViewModel() {
           timezone: settingsData.timezone || 'Africa/Dar_es_Salaam',
           enablePerpetualCogs: true,
         };
+
+        if (settingsData.branches && Array.isArray(settingsData.branches)) {
+          const curBranchId = activeBranchId.value || localStorage.getItem('branchId');
+          if (curBranchId) {
+            const found = settingsData.branches.find((b: any) => b.id === curBranchId);
+            if (found && found.name) {
+              activeBranchName.value = found.name;
+              localStorage.setItem('branchName', found.name);
+            }
+          }
+        }
       }
     } catch (err) {
       console.error('Failed to fetch settings:', err);
@@ -450,16 +481,13 @@ export function useAppViewModel() {
         }
       } else {
         currentShift.value = null;
-        if (isElectron() && branchId && cashierId) {
+        if (isElectron() && branchId && cashierId && typeof navigator !== 'undefined' && navigator.onLine) {
           try { await (window as any).ipcRenderer.invoke('db:clear-active-shifts', { branchId, cashierId }); } catch (e) {}
         }
       }
     } catch (err: any) {
       console.log('No open shift found or error fetching shift:', err);
       currentShift.value = null;
-      if (isElectron() && branchId && cashierId) {
-        try { await (window as any).ipcRenderer.invoke('db:clear-active-shifts', { branchId, cashierId }); } catch (e) {}
-      }
     }
   };
 
@@ -582,26 +610,41 @@ export function useAppViewModel() {
     }
   };
 
-  const setActiveBranch = async (branchId: string) => {
+  const setActiveBranch = async (branchId: string, branchName?: string) => {
     localStorage.setItem('branchId', branchId);
     activeBranchId.value = branchId;
+    if (branchName) {
+      localStorage.setItem('branchName', branchName);
+      activeBranchName.value = branchName;
+    }
     await fetchSettings();
     await fetchProducts();
   };
 
   const hasPermission = (code: string): boolean => {
-    if (userRole.value === 'SUPER_ADMIN' || userRole.value === 'ADMIN') {
+    const currentRole = (userRole.value || getInitialUserRole() || '').toUpperCase();
+    if (currentRole === 'SUPER_ADMIN' || currentRole === 'ADMIN') {
       return true;
     }
-    if (userRole.value === 'CASHIER' && (code === 'pos:checkout' || code === 'POS_CHECKOUT')) {
+    if (currentRole === 'CASHIER' && (code === 'pos:checkout' || code === 'POS_CHECKOUT')) {
       return true;
     }
-    if (!code || userPermissions.value.length === 0) {
+    if (!code) {
+      return false;
+    }
+    let perms = userPermissions.value;
+    if (perms.length === 0) {
+      perms = getInitialUserPermissions();
+      if (perms.length > 0) {
+        userPermissions.value = perms;
+      }
+    }
+    if (perms.length === 0) {
       return false;
     }
     const target = code.toLowerCase().trim();
     const targetNormalized = target.replace(/_/g, ':');
-    return userPermissions.value.some((p) => {
+    return perms.some((p) => {
       const perm = p.toLowerCase().trim();
       const permNormalized = perm.replace(/_/g, ':');
       return (
@@ -615,14 +658,19 @@ export function useAppViewModel() {
   };
 
   const hasCategoryAccess = (category: string): boolean => {
-    if (userRole.value === 'SUPER_ADMIN' || userRole.value === 'ADMIN') {
+    const currentRole = (userRole.value || getInitialUserRole() || '').toUpperCase();
+    if (currentRole === 'SUPER_ADMIN' || currentRole === 'ADMIN') {
       return true;
     }
     const cat = category.toLowerCase();
     if (cat === 'pos' || cat === 'checkout') {
       return hasPermission('pos:checkout');
     }
-    return userPermissions.value.some((p) => p.toLowerCase().startsWith(cat + ':'));
+    let perms = userPermissions.value;
+    if (perms.length === 0) {
+      perms = getInitialUserPermissions();
+    }
+    return perms.some((p) => p.toLowerCase().startsWith(cat + ':'));
   };
 
   const handleLogin = (name: string, resolvedBranchId: string | null) => {
@@ -646,13 +694,7 @@ export function useAppViewModel() {
   };
 
   const handleLogout = () => {
-    const branchId = localStorage.getItem('branchId') || '';
-    const cashierId = localStorage.getItem('cashierId') || localStorage.getItem('userId') || '';
-    if (isElectron() && branchId && cashierId) {
-      try {
-        (window as any).ipcRenderer?.invoke('db:clear-active-shifts', { branchId, cashierId });
-      } catch (_) {}
-    }
+    // Note: Active shifts persist across sessions and are strictly closed only via closeShift.
     deregisterCurrentDevice().catch(() => {});
     websocketService.disconnect();
     if (isElectron()) {
@@ -664,6 +706,7 @@ export function useAppViewModel() {
     userRole.value = null;
     userId.value = null;
     activeBranchId.value = null;
+    activeBranchName.value = '';
     mobileMenuOpen.value = false;
     currentShift.value = null;
     userPermissions.value = [];
@@ -785,6 +828,7 @@ export function useAppViewModel() {
     userRole,
     userId,
     activeBranchId,
+    activeBranchName,
     mobileMenuOpen,
     sidebarCollapsed,
     products,

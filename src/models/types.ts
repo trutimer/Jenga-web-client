@@ -443,6 +443,7 @@ export interface InventoryLocation {
   servesAllBranches: boolean;
   address?: string | null;
   isActive: boolean;
+  active?: boolean;
   createdAt?: string;
   servedBranchIds?: string[];
 }

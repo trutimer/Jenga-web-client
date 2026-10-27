@@ -1,24 +1,50 @@
 <template>
   <nav class="hidden md:flex flex-col h-full bg-surface-container-low border-r border-outline-variant shrink-0 relative z-10 font-sans transition-all duration-300" :class="sidebarCollapsed ? 'w-20' : 'w-64'">
     <!-- Branch Header -->
-    <div class="p-5 border-b border-outline-variant flex items-center justify-between gap-3 relative">
-      <div class="flex items-center gap-3 w-full" :class="sidebarCollapsed ? 'justify-center' : ''">
-        <div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center shrink-0">
-          <Store class="text-on-primary-container w-5 h-5" />
+    <div 
+      class="h-16 px-3.5 border-b border-outline-variant flex items-center relative bg-surface-container-low shrink-0 transition-all duration-300"
+      :class="sidebarCollapsed ? 'justify-center' : 'justify-between gap-2.5'"
+    >
+      <!-- When Expanded -->
+      <template v-if="!sidebarCollapsed">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <!-- Jenga Logo replacing the shop icon -->
+          <div class="w-9 h-9 rounded-xl bg-white border border-outline-variant/60 flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
+            <img src="/logo.svg" alt="Jenga Logo" class="w-full h-full object-contain" />
+          </div>
+
+          <!-- Store name (line 1) & Branch name (line 2) -->
+          <div class="min-w-0 flex-1">
+            <h2 class="text-xs font-black text-on-surface truncate leading-tight uppercase tracking-wider" :title="displayStoreName">
+              {{ displayStoreName }}
+            </h2>
+            <p class="text-xs font-bold text-primary truncate leading-tight mt-0.5" :title="displayBranchName">
+              {{ displayBranchName }}
+            </p>
+          </div>
         </div>
-        <div class="min-w-0" v-if="!sidebarCollapsed">
-          <h2 class="text-base font-bold text-primary truncate leading-tight">{{ branchName }}</h2>
-          <p class="text-xs text-on-surface-variant font-mono truncate uppercase tracking-widest mt-0.5">{{ $t('sidebar.activeSession') }}</p>
-        </div>
-      </div>
-      <!-- Toggle button -->
-      <button 
-        @click="sidebarCollapsed = !sidebarCollapsed"
-        class="absolute -right-3 top-6 w-6 h-6 bg-surface-container-high border border-outline-variant rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface transition-colors z-20 cursor-pointer shadow-sm"
-      >
-        <ChevronRight v-if="sidebarCollapsed" class="w-4 h-4" />
-        <ChevronLeft v-else class="w-4 h-4" />
-      </button>
+
+        <!-- Breadcrumb / Collapse Button -->
+        <button 
+          @click="sidebarCollapsed = !sidebarCollapsed"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors cursor-pointer shrink-0"
+          :title="$t('sidebar.collapse') || 'Collapse sidebar'"
+        >
+          <Menu class="w-5 h-5 stroke-[2.2px]" />
+        </button>
+      </template>
+
+      <!-- When Collapsed -->
+      <template v-else>
+        <!-- Breadcrumb / Expand Button -->
+        <button 
+          @click="sidebarCollapsed = !sidebarCollapsed"
+          class="w-10 h-10 rounded-xl bg-surface-container-high hover:bg-primary/10 hover:text-primary text-on-surface-variant flex items-center justify-center transition-all cursor-pointer shadow-2xs group"
+          :title="`${displayBranchName} (${$t('sidebar.expand') || 'Expand sidebar'})`"
+        >
+          <Menu class="w-5 h-5 stroke-[2.2px] group-hover:scale-110 transition-transform" />
+        </button>
+      </template>
     </div>
 
     <!-- Main Nav Links -->
@@ -168,8 +194,7 @@ import {
   LogOut, 
   Lock,
   Store, 
-  ChevronLeft, 
-  ChevronRight, 
+  Menu,
   ChevronDown, 
   ShoppingBag,
   ShieldCheck,
@@ -184,14 +209,26 @@ import {
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
 import { t } from '../../i18n';
 
-defineProps<{
+const props = withDefaults(defineProps<{
   onLogout: () => void;
   onLock?: () => void;
-  branchName: string;
-}>();
+  branchName?: string;
+  storeName?: string;
+}>(), {
+  branchName: '',
+  storeName: ''
+});
 
 const vm = useAppViewModel();
 const { sidebarCollapsed, userRole } = vm;
+
+const displayStoreName = computed(() => {
+  return props.storeName || vm.settings.value?.name || 'Jenga Store';
+});
+
+const displayBranchName = computed(() => {
+  return props.branchName || vm.activeBranchName?.value || localStorage.getItem('branchName') || 'Main Branch';
+});
 
 const isElectronApp = ref(typeof window !== 'undefined' && (window as any).ipcRenderer !== undefined);
 

@@ -187,7 +187,7 @@ export async function apiRequest<T = any>(
         } else if (endpoint.includes('/shifts') || endpoint.includes('/cashier-shifts')) {
           if (data && data.status === 'OPEN') {
             (window as any).ipcRenderer.invoke('db:save-shift', { shift: data });
-          } else if (cashierId) {
+          } else if (cashierId && typeof navigator !== 'undefined' && navigator.onLine) {
             (window as any).ipcRenderer.invoke('db:clear-active-shifts', { branchId, cashierId });
           }
         }
@@ -200,19 +200,23 @@ export async function apiRequest<T = any>(
       }
     }
 
-    // Cache successful auth response with salted password hash
-    if (isElectron() && branchId && endpoint.includes('/auth/login') && data?.user && data?.accessToken) {
-      try {
-        const bodyObj = options.body ? JSON.parse(options.body as string) : {};
-        if (bodyObj.password) {
-          const salt = generateSalt();
-          hashPasswordWithSalt(bodyObj.password, salt).then((hash) => {
-            cacheAuthCredentials(data.user, data.accessToken, branchId, hash, salt);
-          }).catch((err) => {
-            console.error('Failed to hash password for offline caching:', err);
-          });
-        }
-      } catch (_) {}
+    // Cache successful auth response with salted password hash (Cashiers only)
+    if (isElectron() && endpoint.includes('/auth/login') && data?.user && data?.accessToken) {
+      const userRole = (data.user.role || '').toUpperCase();
+      if (userRole === 'CASHIER') {
+        const effectiveBranchId = branchId || data.user.branchId || data.user.storeBranchId || data.branchId || '';
+        try {
+          const bodyObj = options.body ? JSON.parse(options.body as string) : {};
+          if (bodyObj.password) {
+            const salt = generateSalt();
+            hashPasswordWithSalt(bodyObj.password, salt).then((hash) => {
+              cacheAuthCredentials(data.user, data.accessToken, effectiveBranchId, hash, salt);
+            }).catch((err) => {
+              console.error('Failed to hash password for offline caching:', err);
+            });
+          }
+        } catch (_) {}
+      }
     }
 
     return data as T;
@@ -236,12 +240,88 @@ async function handleOfflineFallback<T>(
 ): Promise<T> {
   const isGet = !options.method || options.method === 'GET';
   const isPost = options.method === 'POST';
+  const bodyObj = options.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : {};
 
-  if (!branchId) {
+  // =========================================================================
+  // 1. OFFLINE AUTHENTICATION FALLBACK (STRICTLY CASHIERS ONLY)
+  // Handled BEFORE any branchId requirement because offline login resolves branchId!
+  // =========================================================================
+  if (isPost && endpoint.includes('/auth/login') && (bodyObj.username || bodyObj.phone)) {
+    console.log('[Offline API] Attempting offline authentication fallback for cashier...');
+    const identifier = bodyObj.phone || bodyObj.username || '';
+    const inputPassword = bodyObj.password || '';
+
+    if (!inputPassword) {
+      showToast('Password is required for offline sign in', 'error');
+      throw new Error('Password is required for offline sign in');
+    }
+
+    // Query cached auth credentials from local SQLite
+    const cached = await getCachedAuth(identifier, branchId);
+    if (!cached || !cached.user || !cached.passwordHash || !cached.passwordSalt) {
+      showToast('No cached credentials found on this device. Please connect to the internet to sign in first.', 'error');
+      throw new Error('No cached credentials found for offline login');
+    }
+
+    // Strict Role Restriction: Cashiers Only!
+    const role = (cached.user.role || '').toUpperCase();
+    if (role !== 'CASHIER') {
+      showToast('Offline login is only permitted for Cashiers. Store Admins and Managers must connect to the internet.', 'error');
+      throw new Error('Offline login is only permitted for Cashiers. Store Admins and Managers must connect to the internet.');
+    }
+
+    // Verify salted password hash
+    const computedHash = await hashPasswordWithSalt(inputPassword, cached.passwordSalt);
+    if (computedHash !== cached.passwordHash) {
+      showToast('Invalid phone number or password', 'error');
+      throw new Error('Invalid phone number or password');
+    }
+
+    // Resolve branch ID from cached auth or user model
+    const resolvedBranchId = branchId || cached.branchId || cached.user.branchId || cached.user.storeBranchId || '';
+
+    // Check if cashier has an open shift cached in local SQLite
+    const cachedShift = await (window as any).ipcRenderer.invoke('db:get-active-shift', {
+      branchId: resolvedBranchId,
+      cashierId: cached.user.id
+    });
+
+    if (!cachedShift || cachedShift.status !== 'OPEN') {
+      showToast('Internet connection is required to open a register shift. Offline login requires an existing open shift.', 'error');
+      throw new Error('No active open shift found for this cashier. Internet connection is required to open a register shift.');
+    }
+
+    // Ensure effective branchId is persisted in localStorage for subsequent offline requests
+    const effectiveBranchId = resolvedBranchId || cachedShift.branchId || '';
+    if (effectiveBranchId) {
+      localStorage.setItem('branchId', effectiveBranchId);
+      if (cached.user) {
+        cached.user.branchId = effectiveBranchId;
+      }
+    }
+    if (cached.user && !cached.user.storeId && cachedShift.storeId) {
+      cached.user.storeId = cachedShift.storeId;
+    }
+
+    showToast('Offline Mode: Cashier authenticated successfully', 'success');
+    return {
+      user: cached.user,
+      accessToken: cached.token,
+      tokenType: 'Bearer',
+      offline: true,
+      branchId: effectiveBranchId
+    } as any;
+  }
+
+  // =========================================================================
+  // For all subsequent offline operations (sales, catalog, shifts), branchId IS required
+  // =========================================================================
+  const activeBranchId = branchId || localStorage.getItem('branchId') || localStorage.getItem('storeId');
+  if (!activeBranchId) {
     throw new Error('No active store branch ID selected for offline operation');
   }
 
-  // 1. Offline GET Fallbacks
+  // 2. Offline GET Fallbacks
   if (isGet) {
     if (endpoint.includes('/products')) {
       console.log('[Offline API] Querying products from local SQLite...');
@@ -250,7 +330,7 @@ async function handleOfflineFallback<T>(
       const size = parseInt(urlObj.searchParams.get('size') || '50', 10);
       const search = urlObj.searchParams.get('search') || urlObj.searchParams.get('query') || '';
 
-      const paginatedRes = await getCachedPaginatedProducts(branchId, page, size, search);
+      const paginatedRes = await getCachedPaginatedProducts(activeBranchId, page, size, search);
       return (endpoint.includes('page=') || endpoint.includes('size='))
         ? paginatedRes as any
         : paginatedRes.content as any;
@@ -258,19 +338,22 @@ async function handleOfflineFallback<T>(
 
     if (endpoint.includes('/customers')) {
       console.log('[Offline API] Fetching customers from local SQLite...');
-      const cachedCusts = await getCachedBranchCustomers(branchId);
+      const cachedCusts = await getCachedBranchCustomers(activeBranchId);
       if (cachedCusts.length > 0) {
         return (endpoint.includes('page=') || endpoint.includes('size='))
           ? { content: cachedCusts, totalElements: cachedCusts.length, totalPages: 1 } as any
           : cachedCusts as any;
       }
+      return (endpoint.includes('page=') || endpoint.includes('size='))
+        ? { content: [], totalElements: 0, totalPages: 0 } as any
+        : [] as any;
     }
 
     // Active Cashier Shift GET Fallback (Prevents forcing cashier to re-open open shift)
     if (endpoint.includes('/shifts') || endpoint.includes('/cashier-shifts')) {
       console.log('[Offline API] Fetching active cashier shift from local SQLite...');
       const cashierId = localStorage.getItem('userId') || localStorage.getItem('cashierId') || '';
-      const cachedShift = await (window as any).ipcRenderer.invoke('db:get-active-shift', { branchId, cashierId });
+      const cachedShift = await (window as any).ipcRenderer.invoke('db:get-active-shift', { branchId: activeBranchId, cashierId });
       if (cachedShift) {
         return cachedShift as T;
       }
@@ -285,16 +368,13 @@ async function handleOfflineFallback<T>(
     }
   }
 
-  // 2. Offline Sales / Shifts / Money Movements POST Handlers
+  // 3. Offline Sales / Shifts / Money Movements POST Handlers
   if (isPost) {
-    const bodyObj = options.body ? JSON.parse(options.body as string) : {};
-
     if ((endpoint === '/api/sales' || endpoint === '/api/v1/sales') && !endpoint.includes('/reverse')) {
       console.log('[Offline API] Saving sale to local SQLite outbox...');
-      const offlineRes = await processOfflineSale(bodyObj, branchId, token || '');
+      const offlineRes = await processOfflineSale(bodyObj, activeBranchId, token || '');
       return offlineRes as any;
     }
-
 
     if (endpoint.includes('/shifts/open') || endpoint.includes('/cashier-shifts/open')) {
       showToast('Internet connection is required to open a new register shift. Please connect to the internet.', 'error');
@@ -308,52 +388,13 @@ async function handleOfflineFallback<T>(
 
     if (endpoint.includes('/cash-movements')) {
       console.log('[Offline API] Recording money movement in SQLite outbox...');
-      const res = await processOfflineMoneyMovement(bodyObj, branchId, token || '');
+      const res = await processOfflineMoneyMovement(bodyObj, activeBranchId, token || '');
       showToast('Offline Mode: Cash movement saved locally and queued for sync', 'success');
       return res as any;
     }
-
-    if (endpoint.includes('/auth/login') && (bodyObj.username || bodyObj.phone)) {
-      console.log('[Offline API] Attempting offline authentication fallback...');
-      const identifier = bodyObj.phone || bodyObj.username || '';
-      const inputPassword = bodyObj.password || '';
-
-      if (!inputPassword) {
-        showToast('Password is required for offline sign in', 'error');
-        throw new Error('Password is required for offline sign in');
-      }
-
-      const cached = await getCachedAuth(identifier, branchId);
-      if (!cached || !cached.passwordHash || !cached.passwordSalt) {
-        showToast('Offline credentials not found. Please connect to the internet to sign in first.', 'error');
-        throw new Error('Offline credentials not found');
-      }
-
-      const computedHash = await hashPasswordWithSalt(inputPassword, cached.passwordSalt);
-      if (computedHash !== cached.passwordHash) {
-        showToast('Invalid phone number or password', 'error');
-        throw new Error('Invalid phone number or password');
-      }
-
-      // Check if cashier has an open shift cached in local SQLite
-      const cachedShift = await (window as any).ipcRenderer.invoke('db:get-active-shift', { branchId, cashierId: cached.user.id });
-      if (!cachedShift || cachedShift.status !== 'OPEN') {
-        showToast('Internet connection is required to open a register shift before selling.', 'error');
-        throw new Error('Internet connection is required to open a register shift before selling.');
-      }
-
-      showToast('Offline Mode: Authenticated using cached credentials', 'success');
-      return {
-        user: cached.user,
-        accessToken: cached.token,
-        tokenType: 'Bearer',
-        offline: true
-      } as any;
-    }
-
   }
 
-  // 3. Online-Only Admin Actions (Product adding/editing, user management)
+  // 4. Online-Only Admin Actions (Product adding/editing, user management)
   if (!isGet) {
     showToast('Internet connection is required to create or modify products, users, or store settings.', 'error');
   }

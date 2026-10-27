@@ -95,32 +95,27 @@
           </select>
         </div>
 
-        <!-- Name & Code -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div class="sm:col-span-2 space-y-1.5">
+        <!-- Location Name & System Code -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
             <label class="text-xs font-bold text-on-surface uppercase tracking-wider block">
               Location Name <span class="text-error">*</span>
             </label>
-            <input 
-              type="text"
-              v-model="formData.name"
-              required
-              placeholder="e.g. Central Distribution Warehouse"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-            />
+            <span v-if="isEditing && formData.code" class="text-[11px] font-mono font-bold text-outline bg-surface-container-high px-2 py-0.5 rounded-md">
+              Code: {{ formData.code }}
+            </span>
+            <span v-else class="text-[11px] font-mono text-outline flex items-center gap-1">
+              <span>System Code:</span>
+              <span class="text-primary font-semibold">Auto-generated</span>
+            </span>
           </div>
-
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-on-surface uppercase tracking-wider block">
-              Location Code
-            </label>
-            <input 
-              type="text"
-              v-model="formData.code"
-              placeholder="e.g. WH-01"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface text-xs font-mono font-semibold focus:border-primary focus:ring-1 focus:ring-primary outline-none uppercase"
-            />
-          </div>
+          <input 
+            type="text"
+            v-model="formData.name"
+            required
+            :placeholder="formData.locationType === 'WAREHOUSE' ? 'e.g. Central Distribution Hub' : 'e.g. Backroom Storeroom'"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface text-xs font-semibold focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+          />
         </div>
 
         <!-- Physical Address -->
