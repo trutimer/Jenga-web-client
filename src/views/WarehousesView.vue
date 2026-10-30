@@ -352,6 +352,12 @@
                 </td>
                 <td class="py-3 px-3 text-right font-mono font-bold text-primary">
                   TZS {{ tr.totalCostValue?.toLocaleString() || 0 }}
+                  <span
+                    v-if="tr.status === 'PARTIALLY_RECEIVED' && tr.remainingCostValue !== undefined"
+                    class="text-[10px] font-mono text-purple-600 block"
+                  >
+                    TZS {{ tr.remainingCostValue.toLocaleString() }} left
+                  </span>
                 </td>
                 <td class="py-3 px-3 text-on-surface-variant">
                   <span class="block truncate max-w-[120px]">{{ tr.initiatedByName }}</span>
@@ -366,11 +372,11 @@
                       Details
                     </button>
                     <button
-                      v-if="tr.status === 'IN_TRANSIT'"
+                      v-if="tr.status === 'IN_TRANSIT' || tr.status === 'PARTIALLY_RECEIVED'"
                       @click="openTransferDetails(tr)"
                       class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700 transition-colors cursor-pointer border-0"
                     >
-                      Receive
+                      {{ tr.status === 'PARTIALLY_RECEIVED' ? 'Receive Rest' : 'Receive' }}
                     </button>
                   </div>
                 </td>
@@ -858,12 +864,12 @@ const totalStockValuation = computed(() => {
 
 const inTransitValuation = computed(() => 
   transfers.value
-    .filter(t => t.status === 'IN_TRANSIT')
-    .reduce((sum, t) => sum + (t.totalCostValue || 0), 0)
+    .filter(t => t.status === 'IN_TRANSIT' || t.status === 'PARTIALLY_RECEIVED')
+    .reduce((sum, t) => sum + (t.remainingCostValue ?? t.totalCostValue ?? 0), 0)
 );
 
 const inTransitTransfersCount = computed(() => 
-  transfers.value.filter(t => t.status === 'IN_TRANSIT').length
+  transfers.value.filter(t => t.status === 'IN_TRANSIT' || t.status === 'PARTIALLY_RECEIVED').length
 );
 
 // Location Filtered List
@@ -881,6 +887,7 @@ const filteredLocations = computed(() => {
 const transferStatuses = [
   { id: 'ALL', label: 'All Transfers' },
   { id: 'IN_TRANSIT', label: 'In Transit' },
+  { id: 'PARTIALLY_RECEIVED', label: 'Partially Received' },
   { id: 'PENDING_APPROVAL', label: 'Pending Approval' },
   { id: 'COMPLETED', label: 'Completed' },
   { id: 'CANCELLED', label: 'Cancelled' }
@@ -949,6 +956,7 @@ const onLocationSaved = (saved: InventoryLocation) => {
 const onTransferCreated = (created: StockTransfer) => {
   transfers.value.unshift(created);
   fetchLedger();
+  vm.fetchProducts().catch(() => {});
   // Open Delivery Bus Animation in Dispatch Mode
   successModalTransfer.value = created;
   successModalMode.value = 'dispatch';
@@ -964,9 +972,10 @@ const onTransferUpdated = (updated: StockTransfer) => {
   selectedTransfer.value = null;
   fetchLedger();
   warehouseService.getLocations().then(locs => { locations.value = locs; }).catch(() => {});
+  vm.fetchProducts().catch(() => {});
 
-  if (updated.status === 'COMPLETED') {
-    // Open Delivery Bus Animation in Receive Mode (Arrived / Came to Stop)
+  if (updated.status === 'COMPLETED' || updated.status === 'PARTIALLY_RECEIVED') {
+    // Open Delivery Bus Animation in Receive Mode (Arrived / Partial or Full)
     successModalTransfer.value = updated;
     successModalMode.value = 'receive';
     showSuccessModal.value = true;
@@ -1036,9 +1045,11 @@ const getLocationTypeBadgeClass = (type?: LocationType) => {
 const formatTransferStatus = (st: StockTransferStatus) => {
   switch (st) {
     case 'IN_TRANSIT': return 'In Transit';
+    case 'PARTIALLY_RECEIVED': return 'Partially Received';
     case 'PENDING_APPROVAL': return 'Pending Approval';
     case 'COMPLETED': return 'Completed';
     case 'CANCELLED': return 'Cancelled';
+    case 'REJECTED': return 'Rejected';
     default: return st;
   }
 };
@@ -1046,9 +1057,11 @@ const formatTransferStatus = (st: StockTransferStatus) => {
 const getStatusBadgeClass = (st: StockTransferStatus) => {
   switch (st) {
     case 'IN_TRANSIT': return 'bg-amber-500/10 text-amber-700 border-amber-500/30';
+    case 'PARTIALLY_RECEIVED': return 'bg-purple-500/10 text-purple-700 border-purple-500/30';
     case 'PENDING_APPROVAL': return 'bg-blue-500/10 text-blue-700 border-blue-500/30';
     case 'COMPLETED': return 'bg-emerald-500/10 text-emerald-700 border-emerald-500/30';
     case 'CANCELLED': return 'bg-error/10 text-error border-error/30';
+    case 'REJECTED': return 'bg-error/10 text-error border-error/30';
     default: return 'bg-surface-container text-on-surface-variant border-outline-variant';
   }
 };

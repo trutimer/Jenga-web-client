@@ -298,22 +298,29 @@
             class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider shadow-xs"
             :class="mode === 'dispatch' 
               ? 'bg-amber-500/10 text-amber-700 border border-amber-500/30' 
-              : 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30'"
+              : isPartialReceive
+                ? 'bg-purple-500/10 text-purple-700 border border-purple-500/30'
+                : 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30'"
           >
             <Clock v-if="mode === 'dispatch'" class="w-3.5 h-3.5 animate-spin" />
-            <CheckCircle2 v-else class="w-3.5 h-3.5 text-emerald-600" />
-            <span>{{ mode === 'dispatch' ? 'Dispatched • In-Transit' : 'Delivered & Confirmed' }}</span>
+            <CheckCircle2 v-else class="w-3.5 h-3.5" :class="isPartialReceive ? 'text-purple-600' : 'text-emerald-600'" />
+            <span>
+              {{ mode === 'dispatch' ? 'Dispatched • In-Transit' : isPartialReceive ? 'Partially Received • Remainder In-Transit' : 'Delivered & Confirmed' }}
+            </span>
           </span>
 
           <!-- Title -->
           <h3 class="text-2xl font-black text-on-surface tracking-tight leading-tight">
-            {{ mode === 'dispatch' ? 'Stock Dispatched Successfully!' : 'Stock Received & Confirmed!' }}
+            {{ mode === 'dispatch' ? 'Stock Dispatched Successfully!' : isPartialReceive ? 'Partial Stock Received!' : 'Stock Received & Confirmed!' }}
           </h3>
 
           <!-- Subtitle / Context -->
           <p class="text-xs sm:text-sm text-on-surface-variant max-w-sm leading-relaxed">
             <template v-if="mode === 'dispatch'">
               Transfer <strong class="text-on-surface">{{ transfer?.transferNumber || 'ST-LOG' }}</strong> has departed and is currently in transit.
+            </template>
+            <template v-else-if="isPartialReceive">
+              Confirmed items from transfer <strong class="text-on-surface">{{ transfer?.transferNumber || 'ST-LOG' }}</strong> have been added to destination stock. Unreceived items remain in transit.
             </template>
             <template v-else>
               Transfer <strong class="text-on-surface">{{ transfer?.transferNumber || 'ST-LOG' }}</strong> has arrived safely and is now recorded in destination inventory.
@@ -342,8 +349,15 @@
               {{ transfer.items?.length || 1 }} line item(s) transferred
             </span>
             <span class="font-bold text-primary">
-              TZS {{ (transfer.totalCostValue || 0).toLocaleString() }}
+              TZS {{ (isPartialReceive ? (transfer.receivedCostValue ?? transfer.totalCostValue ?? 0) : (transfer.totalCostValue || 0)).toLocaleString() }}
             </span>
+          </div>
+          <div
+            v-if="isPartialReceive && transfer.remainingCostValue !== undefined"
+            class="flex items-center justify-between text-[11px] font-mono text-purple-700"
+          >
+            <span>Remaining in transit:</span>
+            <span class="font-bold">TZS {{ transfer.remainingCostValue.toLocaleString() }}</span>
           </div>
         </div>
 
@@ -366,6 +380,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { 
   X, 
   Check, 
@@ -386,6 +401,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void;
 }>();
+
+const isPartialReceive = computed(
+  () => props.mode === 'receive' && props.transfer?.status === 'PARTIALLY_RECEIVED'
+);
 
 const handleClose = () => {
   emit('close');

@@ -51,11 +51,23 @@
           <span class="font-mono font-black text-primary text-sm">
             TZS {{ transfer.totalCostValue?.toLocaleString() || 0 }}
           </span>
+          <span
+            v-if="transfer.status === 'PARTIALLY_RECEIVED' && transfer.remainingCostValue !== undefined"
+            class="text-[10px] font-mono font-bold text-purple-600 block mt-0.5"
+          >
+            TZS {{ transfer.remainingCostValue.toLocaleString() }} still in transit
+          </span>
         </div>
       </div>
 
       <!-- Modal Body -->
       <div class="flex-1 overflow-y-auto p-6 space-y-5">
+        <!-- Inline Action Error Banner -->
+        <div v-if="errorMessage" class="p-3 rounded-xl bg-error/10 border border-error/20 text-error text-xs flex items-center gap-2">
+          <AlertCircle class="w-4 h-4 shrink-0" />
+          <span>{{ errorMessage }}</span>
+        </div>
+
         <!-- Discrepancy or Rejection Notice -->
         <div v-if="transfer.rejectionReason" class="p-3 rounded-xl bg-error/10 border border-error/20 text-error text-xs flex items-center gap-2">
           <AlertCircle class="w-4 h-4 shrink-0" />
@@ -83,7 +95,7 @@
                 <tr v-for="it in transfer.items" :key="it.productId" class="hover:bg-surface-container-low/40">
                   <td class="py-2.5 px-3">
                     <span class="font-bold text-on-surface block truncate max-w-[200px]">{{ it.productName }}</span>
-                    <span class="text-[10px] font-mono text-outline block">{{ it.sku || it.barcode || '' }}</span>
+                    <span class="text-[10px] font-mono text-outline block">{{ it.productSku || it.sku || it.productBarcode || it.barcode || '' }}</span>
                   </td>
                   <td class="py-2.5 px-2 text-right font-mono font-bold text-on-surface">
                     {{ it.requestedQuantity }}
@@ -91,8 +103,28 @@
                   <td class="py-2.5 px-2 text-right font-mono text-amber-600 font-bold">
                     {{ it.dispatchedQuantity ?? it.requestedQuantity }}
                   </td>
-                  <td class="py-2.5 px-2 text-right font-mono font-bold" :class="it.receivedQuantity !== undefined ? 'text-emerald-600' : 'text-outline'">
-                    {{ it.receivedQuantity !== undefined && it.receivedQuantity !== null ? it.receivedQuantity : '-' }}
+                  <td class="py-2.5 px-2 text-right font-mono font-bold">
+                    <span :class="(it.receivedQuantity ?? 0) > 0 || transfer.status === 'COMPLETED' ? 'text-emerald-600' : 'text-outline'">
+                      {{ it.receivedQuantity !== undefined && it.receivedQuantity !== null ? it.receivedQuantity : '-' }}
+                    </span>
+                    <span
+                      v-if="transfer.status === 'PARTIALLY_RECEIVED' && getItemRemaining(it) > 0"
+                      class="text-[10px] font-mono text-purple-600 block"
+                    >
+                      {{ getItemRemaining(it) }} in transit
+                    </span>
+                    <span
+                      v-if="(it.returnedQuantity ?? 0) > 0"
+                      class="text-[10px] font-mono text-blue-600 block"
+                    >
+                      {{ it.returnedQuantity }} returned
+                    </span>
+                    <span
+                      v-if="(it.damagedQuantity ?? 0) > 0"
+                      class="text-[10px] font-mono text-error block"
+                    >
+                      {{ it.damagedQuantity }} shrinkage
+                    </span>
                   </td>
                   <td class="py-2.5 px-3 text-right font-mono text-on-surface-variant">
                     TZS {{ it.unitCost?.toLocaleString() || 0 }}
@@ -111,7 +143,7 @@
           <!-- Notes -->
           <div class="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/60 text-xs space-y-1">
             <span class="font-bold text-on-surface block uppercase tracking-wider text-[10px]">Dispatch & Transport Notes</span>
-            <p class="text-on-surface-variant font-medium">
+            <p class="text-on-surface-variant font-medium whitespace-pre-line">
               {{ transfer.notes || 'No special transport instructions provided.' }}
             </p>
           </div>
@@ -125,8 +157,8 @@
                 <span class="font-bold text-on-surface">{{ transfer.dispatchedByName }} ({{ formatDate(transfer.dispatchedAt) }})</span>
               </div>
               <div v-if="transfer.receivedByName" class="flex justify-between">
-                <span>Received:</span>
-                <span class="font-bold text-emerald-600">{{ transfer.receivedByName }} ({{ formatDate(transfer.completedAt) }})</span>
+                <span>{{ transfer.status === 'PARTIALLY_RECEIVED' ? 'Last Received:' : 'Received:' }}</span>
+                <span class="font-bold text-emerald-600">{{ transfer.receivedByName }}<template v-if="transfer.completedAt"> ({{ formatDate(transfer.completedAt) }})</template></span>
               </div>
               <div v-if="transfer.cancelledByName" class="flex justify-between">
                 <span>Cancelled:</span>
@@ -137,43 +169,121 @@
         </div>
 
         <!-- Confirm Receipt Form (When Action Active) -->
-        <div v-if="isConfirming" class="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3 animate-fade-in">
+        <div v-if="isConfirming" class="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3.5 animate-fade-in">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
               <CheckCircle2 class="w-4 h-4" />
-              Confirm Receipt of Stock
+              {{ transfer.status === 'PARTIALLY_RECEIVED' ? 'Receive Remaining In-Transit Stock' : 'Confirm Receipt of Stock' }}
             </span>
-            <span class="text-[11px] text-on-surface-variant">Verify quantities received</span>
+            <span class="text-[11px] text-on-surface-variant">Enter actual quantities received now</span>
           </div>
 
           <div class="space-y-2">
             <div 
               v-for="it in receiptForm.items" 
               :key="it.productId"
-              class="flex items-center justify-between gap-3 p-2 bg-surface rounded-lg border border-outline-variant text-xs"
+              class="flex items-center justify-between gap-3 p-2.5 bg-surface rounded-lg border border-outline-variant text-xs"
             >
-              <span class="font-bold text-on-surface truncate flex-1">{{ it.productName }}</span>
-              <div class="flex items-center gap-2">
-                <span class="text-[11px] text-outline">Received:</span>
+              <div class="min-w-0 flex-1">
+                <span class="font-bold text-on-surface truncate block">{{ it.productName }}</span>
+                <span class="text-[10px] font-mono text-on-surface-variant">
+                  In transit: <strong>{{ it.maxReceivable }}</strong>
+                  <template v-if="it.alreadyReceived > 0"> • Already received: {{ it.alreadyReceived }}</template>
+                </span>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="text-[11px] text-outline">Receive now:</span>
                 <input 
                   type="number"
                   min="0"
+                  :max="it.maxReceivable"
                   step="any"
                   v-model.number="it.receivedQuantity"
                   class="w-20 px-2 py-1 rounded border border-outline-variant text-center font-mono font-bold text-xs outline-none focus:border-primary"
                 />
+                <span class="text-[11px] font-mono text-on-surface-variant">/ {{ it.maxReceivable }}</span>
               </div>
+            </div>
+          </div>
+
+          <!-- Partial Receive / Shortfall Resolution Selector -->
+          <div
+            v-if="hasShortfall"
+            class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2.5 animate-fade-in"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] font-bold text-amber-800 uppercase tracking-wider">
+                Partial Receipt Detected ({{ totalShortfallUnits }} unreceived) — How should the remainder be handled?
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-2">
+              <label
+                class="flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors bg-surface text-xs"
+                :class="receiptForm.discrepancyAction === 'KEEP_IN_TRANSIT' ? 'border-primary ring-1 ring-primary/30' : 'border-outline-variant'"
+              >
+                <input
+                  type="radio"
+                  value="KEEP_IN_TRANSIT"
+                  v-model="receiptForm.discrepancyAction"
+                  class="mt-0.5 accent-primary"
+                />
+                <div>
+                  <span class="font-bold text-on-surface block">Still In Transit (Partial Receive)</span>
+                  <span class="text-[11px] text-on-surface-variant">
+                    Credit received items now and keep the remaining {{ totalShortfallUnits }} unit(s) in transit to receive later.
+                  </span>
+                </div>
+              </label>
+
+              <label
+                class="flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors bg-surface text-xs"
+                :class="receiptForm.discrepancyAction === 'RETURN_TO_SOURCE' ? 'border-primary ring-1 ring-primary/30' : 'border-outline-variant'"
+              >
+                <input
+                  type="radio"
+                  value="RETURN_TO_SOURCE"
+                  v-model="receiptForm.discrepancyAction"
+                  class="mt-0.5 accent-primary"
+                />
+                <div>
+                  <span class="font-bold text-on-surface block">Return Remainder to {{ transfer.sourceLocationName }}</span>
+                  <span class="text-[11px] text-on-surface-variant">
+                    Credit received items here, restore unreceived {{ totalShortfallUnits }} unit(s) back to origin stock, and close transfer.
+                  </span>
+                </div>
+              </label>
+
+              <label
+                class="flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors bg-surface text-xs"
+                :class="receiptForm.discrepancyAction === 'WRITE_OFF_SHRINKAGE' ? 'border-error ring-1 ring-error/30' : 'border-outline-variant'"
+              >
+                <input
+                  type="radio"
+                  value="WRITE_OFF_SHRINKAGE"
+                  v-model="receiptForm.discrepancyAction"
+                  class="mt-0.5 accent-red-600"
+                />
+                <div>
+                  <span class="font-bold text-error block">Lost / Damaged in Transit (Write Off Shrinkage)</span>
+                  <span class="text-[11px] text-on-surface-variant">
+                    Credit received items here, expense {{ totalShortfallUnits }} unit(s) to Stock Wastage &amp; Shrinkage, and close transfer.
+                  </span>
+                </div>
+              </label>
             </div>
           </div>
 
           <div class="space-y-1">
             <label class="text-[11px] font-bold text-on-surface uppercase tracking-wider block">
-              Discrepancy Notes (optional)
+              Receipt / Discrepancy Notes
+              <span v-if="hasShortfall && receiptForm.discrepancyAction === 'WRITE_OFF_SHRINKAGE'" class="text-error">*</span>
+              <span v-else class="text-outline font-normal lowercase">(optional)</span>
             </label>
             <input 
               type="text"
               v-model="receiptForm.notes"
-              placeholder="e.g. All 30 cartons received intact without damage"
+              :placeholder="hasShortfall ? 'Explain partial delivery, returned units, or transit damage...' : 'e.g. All items received intact without damage'"
               class="w-full px-3 py-1.5 rounded-lg border border-outline-variant bg-surface text-xs outline-none focus:border-primary"
             />
           </div>
@@ -181,7 +291,7 @@
           <div class="flex items-center justify-end gap-2 pt-2">
             <button
               type="button"
-              @click="isConfirming = false"
+              @click="isConfirming = false; errorMessage = ''"
               class="px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-bold text-on-surface hover:bg-surface-container bg-transparent cursor-pointer"
             >
               Cancel
@@ -190,11 +300,11 @@
               type="button"
               :disabled="isSubmitting"
               @click="handleExecuteConfirm"
-              class="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors flex items-center gap-1.5 cursor-pointer border-0"
+              class="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors flex items-center gap-1.5 cursor-pointer border-0 disabled:opacity-50"
             >
               <Loader2 v-if="isSubmitting" class="w-3.5 h-3.5 animate-spin" />
               <CheckCircle2 v-else class="w-3.5 h-3.5" />
-              <span>Submit Receipt Confirmation</span>
+              <span>{{ hasShortfall && receiptForm.discrepancyAction === 'KEEP_IN_TRANSIT' ? 'Confirm Partial Receipt' : 'Submit Receipt Confirmation' }}</span>
             </button>
           </div>
         </div>
@@ -213,7 +323,7 @@
           <div class="flex items-center justify-end gap-2">
             <button
               type="button"
-              @click="isCancelling = false"
+              @click="isCancelling = false; errorMessage = ''"
               class="px-3 py-1.5 rounded-lg border border-outline-variant text-xs font-bold text-on-surface hover:bg-surface-container bg-transparent cursor-pointer"
             >
               Dismiss
@@ -247,7 +357,7 @@
           <button
             v-if="(transfer.status === 'IN_TRANSIT' || transfer.status === 'PENDING_APPROVAL') && !isConfirming && !isCancelling"
             type="button"
-            @click="isCancelling = true"
+            @click="isCancelling = true; errorMessage = ''"
             class="h-9 px-3.5 rounded-xl border border-error/30 text-error hover:bg-error/10 font-bold flex items-center gap-1.5 cursor-pointer transition-all bg-transparent"
           >
             <Ban class="w-4 h-4" />
@@ -256,13 +366,13 @@
 
           <!-- Confirm Receipt Button -->
           <button
-            v-if="transfer.status === 'IN_TRANSIT' && !isConfirming && !isCancelling"
+            v-if="(transfer.status === 'IN_TRANSIT' || transfer.status === 'PARTIALLY_RECEIVED') && !isConfirming && !isCancelling"
             type="button"
             @click="initiateReceiptConfirmation"
             class="h-9 px-4 rounded-xl bg-emerald-600 text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-xs hover:bg-emerald-700 transition-colors border-0"
           >
             <CheckCircle2 class="w-4 h-4" />
-            <span>Confirm Receipt</span>
+            <span>{{ transfer.status === 'PARTIALLY_RECEIVED' ? 'Receive Remaining' : 'Confirm Receipt' }}</span>
           </button>
 
           <button
@@ -279,7 +389,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import { 
   Truck, 
   Warehouse, 
@@ -292,7 +402,12 @@ import {
   AlertCircle, 
   Loader2 
 } from 'lucide-vue-next';
-import type { StockTransfer, StockTransferStatus } from '../../models/types';
+import type {
+  StockTransfer,
+  StockTransferItem,
+  StockTransferStatus,
+  StockTransferDiscrepancyAction
+} from '../../models/types';
 import { warehouseService } from '../../services/warehouseService';
 
 const props = defineProps<{
@@ -309,42 +424,115 @@ const isConfirming = ref(false);
 const isCancelling = ref(false);
 const isSubmitting = ref(false);
 const cancelReason = ref('');
+const errorMessage = ref('');
 
 interface ReceiptItemInput {
   productId: string;
   productName: string;
+  maxReceivable: number;
+  alreadyReceived: number;
   receivedQuantity: number;
 }
 
 const receiptForm = reactive<{
   notes: string;
+  discrepancyAction: StockTransferDiscrepancyAction;
   items: ReceiptItemInput[];
 }>({
   notes: '',
+  discrepancyAction: 'KEEP_IN_TRANSIT',
   items: []
 });
 
+watch(
+  () => [props.isOpen, props.transfer?.id],
+  () => {
+    isConfirming.value = false;
+    isCancelling.value = false;
+    errorMessage.value = '';
+    cancelReason.value = '';
+  }
+);
+
+const getItemRemaining = (it: StockTransferItem): number => {
+  if (it.remainingQuantity !== undefined && it.remainingQuantity !== null) {
+    return Math.max(0, Number(it.remainingQuantity));
+  }
+  const dispatched = Number(it.dispatchedQuantity ?? it.requestedQuantity ?? 0);
+  const received = Number(it.receivedQuantity ?? 0);
+  const returned = Number(it.returnedQuantity ?? 0);
+  const damaged = Number(it.damagedQuantity ?? 0);
+  return Math.max(0, Number((dispatched - received - returned - damaged).toFixed(2)));
+};
+
+const hasShortfall = computed(() =>
+  receiptForm.items.some(it => Number(it.receivedQuantity ?? 0) < it.maxReceivable)
+);
+
+const totalShortfallUnits = computed(() =>
+  Number(
+    receiptForm.items
+      .reduce((sum, it) => sum + Math.max(0, it.maxReceivable - Number(it.receivedQuantity ?? 0)), 0)
+      .toFixed(2)
+  )
+);
+
 const initiateReceiptConfirmation = () => {
   if (!props.transfer) return;
+  errorMessage.value = '';
   isConfirming.value = true;
   isCancelling.value = false;
   receiptForm.notes = '';
-  receiptForm.items = (props.transfer.items || []).map(it => ({
-    productId: it.productId,
-    productName: it.productName || 'Product',
-    receivedQuantity: it.dispatchedQuantity ?? it.requestedQuantity
-  }));
+  receiptForm.discrepancyAction = 'KEEP_IN_TRANSIT';
+  receiptForm.items = (props.transfer.items || [])
+    .map(it => {
+      const maxReceivable = getItemRemaining(it);
+      return {
+        productId: it.productId,
+        productName: it.productName || 'Product',
+        maxReceivable,
+        alreadyReceived: Number(it.receivedQuantity ?? 0),
+        receivedQuantity: maxReceivable
+      };
+    })
+    .filter(it => it.maxReceivable > 0);
 };
 
 const handleExecuteConfirm = async () => {
   if (!props.transfer) return;
+  errorMessage.value = '';
+
+  for (const it of receiptForm.items) {
+    const qty = Number(it.receivedQuantity);
+    if (!Number.isFinite(qty) || qty < 0) {
+      errorMessage.value = `Invalid received quantity for ${it.productName}. Quantity cannot be negative.`;
+      return;
+    }
+    if (qty > it.maxReceivable) {
+      errorMessage.value = `Received quantity (${qty}) for ${it.productName} cannot exceed remaining in-transit stock (${it.maxReceivable}).`;
+      return;
+    }
+  }
+
+  const totalReceivingNow = receiptForm.items.reduce((sum, it) => sum + Number(it.receivedQuantity || 0), 0);
+  if (hasShortfall.value && receiptForm.discrepancyAction === 'KEEP_IN_TRANSIT' && totalReceivingNow <= 0) {
+    errorMessage.value = 'Enter at least 1 received item for a partial receipt, or choose Return / Write Off to resolve unreceived stock.';
+    return;
+  }
+
+  if (hasShortfall.value && receiptForm.discrepancyAction === 'WRITE_OFF_SHRINKAGE' && !receiptForm.notes.trim()) {
+    errorMessage.value = 'Please provide discrepancy notes explaining the transit loss or damage before writing off shrinkage.';
+    return;
+  }
+
   isSubmitting.value = true;
   try {
     const payload = {
       notes: receiptForm.notes.trim() || undefined,
+      discrepancyAction: hasShortfall.value ? receiptForm.discrepancyAction : undefined,
       receivedItems: receiptForm.items.map(it => ({
         productId: it.productId,
-        receivedQuantity: it.receivedQuantity
+        receivedQuantity: Number(it.receivedQuantity)
       }))
     };
     const updated = await warehouseService.confirmTransfer(props.transfer.id, payload);
@@ -352,7 +540,7 @@ const handleExecuteConfirm = async () => {
     emit('close');
     isConfirming.value = false;
   } catch (err: any) {
-    alert(err.message || 'Failed to confirm receipt');
+    errorMessage.value = err.message || 'Failed to confirm receipt';
   } finally {
     isSubmitting.value = false;
   }
@@ -360,6 +548,7 @@ const handleExecuteConfirm = async () => {
 
 const handleExecuteCancel = async () => {
   if (!props.transfer) return;
+  errorMessage.value = '';
   isSubmitting.value = true;
   try {
     const updated = await warehouseService.cancelTransfer(props.transfer.id, cancelReason.value);
@@ -367,7 +556,7 @@ const handleExecuteCancel = async () => {
     isCancelling.value = false;
     emit('close');
   } catch (err: any) {
-    alert(err.message || 'Failed to cancel transfer');
+    errorMessage.value = err.message || 'Failed to cancel transfer';
   } finally {
     isSubmitting.value = false;
   }
@@ -380,6 +569,7 @@ const handlePrintGatePass = () => {
 const formatStatus = (status: StockTransferStatus) => {
   switch (status) {
     case 'IN_TRANSIT': return 'In Transit';
+    case 'PARTIALLY_RECEIVED': return 'Partially Received';
     case 'PENDING_APPROVAL': return 'Pending Approval';
     case 'COMPLETED': return 'Completed';
     case 'CANCELLED': return 'Cancelled';
@@ -391,6 +581,7 @@ const formatStatus = (status: StockTransferStatus) => {
 const getStatusBadgeClass = (status: StockTransferStatus) => {
   switch (status) {
     case 'IN_TRANSIT': return 'bg-amber-500/10 text-amber-700 border-amber-500/30';
+    case 'PARTIALLY_RECEIVED': return 'bg-purple-500/10 text-purple-700 border-purple-500/30';
     case 'PENDING_APPROVAL': return 'bg-blue-500/10 text-blue-700 border-blue-500/30';
     case 'COMPLETED': return 'bg-emerald-500/10 text-emerald-700 border-emerald-500/30';
     case 'CANCELLED': return 'bg-error/10 text-error border-error/30';

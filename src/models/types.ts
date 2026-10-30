@@ -490,19 +490,30 @@ export type StockTransferStatus =
   | 'INITIATED'
   | 'PENDING_APPROVAL'
   | 'IN_TRANSIT'
+  | 'PARTIALLY_RECEIVED'
   | 'COMPLETED'
   | 'REJECTED'
   | 'CANCELLED';
+
+export type StockTransferDiscrepancyAction =
+  | 'KEEP_IN_TRANSIT'
+  | 'RETURN_TO_SOURCE'
+  | 'WRITE_OFF_SHRINKAGE';
 
 export interface StockTransferItem {
   id?: string;
   productId: string;
   productName?: string;
+  productBarcode?: string;
+  productSku?: string;
   barcode?: string;
   sku?: string;
   requestedQuantity: number;
   dispatchedQuantity?: number;
   receivedQuantity?: number;
+  returnedQuantity?: number;
+  damagedQuantity?: number;
+  remainingQuantity?: number;
   unitCost: number;
   notes?: string;
 }
@@ -521,6 +532,8 @@ export interface StockTransfer {
   destinationBranchName?: string | null;
   status: StockTransferStatus;
   totalCostValue: number;
+  receivedCostValue?: number;
+  remainingCostValue?: number;
   autoConfirm: boolean;
   notes?: string;
   initiatedById: string;
@@ -560,9 +573,11 @@ export interface StockTransferCreateRequest {
 
 export interface StockTransferConfirmRequest {
   notes?: string;
+  discrepancyAction?: StockTransferDiscrepancyAction;
   receivedItems?: {
     productId: string;
     receivedQuantity: number;
+    discrepancyAction?: StockTransferDiscrepancyAction;
     notes?: string;
   }[];
 }
