@@ -1,23 +1,10 @@
 <template>
   <div class="min-h-screen w-full flex bg-surface-container-lowest antialiased font-sans">
     
-    <!-- Left Section: Image Showcase (Hidden on smaller screens) -->
-    <div class="hidden lg:flex lg:w-1/2 xl:w-[55%] relative overflow-hidden bg-primary-container">
-      <img src="/login-bg.jpg" alt="Store Atmosphere" class="absolute inset-0 w-full h-full object-cover animate-fade-in" />
-      
-      <!-- Gradient Overlay for text legibility -->
-      <div class="absolute inset-0 bg-gradient-to-t from-[#122131]/90 via-[#122131]/40 to-transparent pointer-events-none"></div>
-      
-      <!-- Content Overlay -->
-      <div class="absolute bottom-0 left-0 p-12 xl:p-16 text-white max-w-xl animate-slide-up">
-        <h2 class="text-4xl xl:text-5xl font-bold leading-tight mb-4 text-on-primary">
-          {{ $t('auth.heroTitle') }}
-        </h2>
-        <p class="text-lg text-white/80 font-medium">
-          {{ $t('auth.heroDescription') }}
-        </p>
-      </div>
-    </div>
+    <!-- Left Section: Animated Feature Showcase (Hidden on smaller screens) -->
+    <LoginFeatureShowcase 
+      :paused="isLoggingIn || isZoomActive || showForgotModal || showConflictModal || showLicenseModal || showDownloadModal" 
+    />
 
     <!-- Right Section: Login Form -->
     <div class="w-full lg:w-1/2 xl:w-[45%] flex flex-col justify-center items-center p-8 lg:p-16 relative bg-surface-container-lowest overflow-y-auto">
@@ -512,6 +499,7 @@ import LanguageSelector from '../components/common/LanguageSelector.vue';
 import JengaLoader from '../components/common/JengaLoader.vue';
 import TurnstileWidget from '../components/common/TurnstileWidget.vue';
 import DownloadDesktopModal from '../components/common/DownloadDesktopModal.vue';
+import LoginFeatureShowcase from '../components/auth/LoginFeatureShowcase.vue';
 import { 
   Phone, 
   Lock, 
@@ -539,7 +527,7 @@ import { isZoomActive, triggerLoginZoom } from '../services/loginAnimation';
 
 const vm = useAppViewModel();
 
-const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v3.0.2';
+const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v4.0.0';
 const isElectronApp = ref(isElectron());
 const showDownloadModal = ref(false);
 
