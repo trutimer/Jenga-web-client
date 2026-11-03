@@ -171,7 +171,7 @@ const routes = [
     redirect: () => {
       const role = localStorage.getItem('cashierRole');
       const branchId = localStorage.getItem('branchId');
-      if (role === 'ADMIN' && (!branchId || branchId === 'null' || branchId === 'undefined')) {
+      if (!branchId || branchId === 'null' || branchId === 'undefined') {
         return '/select-branch';
       }
       return role === 'CASHIER' ? '/checkout' : '/dashboard';
@@ -182,7 +182,7 @@ const routes = [
     redirect: () => {
       const role = localStorage.getItem('cashierRole');
       const branchId = localStorage.getItem('branchId');
-      if (role === 'ADMIN' && (!branchId || branchId === 'null' || branchId === 'undefined')) {
+      if (!branchId || branchId === 'null' || branchId === 'undefined') {
         return '/select-branch';
       }
       return role === 'CASHIER' ? '/checkout' : '/dashboard';
@@ -236,16 +236,13 @@ router.beforeEach((to, from, next) => {
   } else if (to.meta.adminOnly && role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
     // Strictly restrict adminOnly modules (Finance & Accounting) to Store Owner / Admin
     next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
-  } else if (to.name === 'select-branch' && role !== 'ADMIN') {
-    // Branch selection is strictly restricted to ADMIN role only
-    next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
   } else if (to.meta.guestOnly && isAuthenticated) {
-    if (role === 'ADMIN' && (!branchId || branchId === 'null' || branchId === 'undefined')) {
+    if (!branchId || branchId === 'null' || branchId === 'undefined') {
       next({ name: 'select-branch' });
     } else {
       next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
     }
-  } else if (isAuthenticated && role === 'ADMIN' && (!branchId || branchId === 'null' || branchId === 'undefined') && to.name !== 'select-branch') {
+  } else if (isAuthenticated && (!branchId || branchId === 'null' || branchId === 'undefined') && to.name !== 'select-branch') {
     next({ name: 'select-branch' });
   } else {
     const isOwnerOrAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';

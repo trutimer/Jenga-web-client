@@ -260,6 +260,40 @@ export interface StoreBranch {
   status: string;
   phone: string;
   email: string;
+  latitude?: number;
+  longitude?: number;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type StoreBranchResponse = StoreBranch;
+
+export interface StoreResponse {
+  id: string;
+  name: string;
+  tin?: string;
+  currency?: string;
+  timezone?: string;
+  enablePerpetualCogs?: boolean;
+  createdAt?: string;
+  branches?: StoreBranchResponse[];
+  role?: UserRole;
+}
+
+export interface ContextSwitchRequest {
+  storeId?: string;
+  branchId?: string;
+  deviceId?: string;
+}
+
+export interface ContextSwitchResponse {
+  accessToken: string;
+  tokenType?: string;
+  user: AppUser;
+  twoFactorRequired?: boolean;
+  twoFactorToken?: string;
+  message?: string;
 }
 
 export interface Permission {
@@ -277,8 +311,10 @@ export interface UserPermissionsResponse {
 
 export interface AppUser {
   id: string;
-  storeId: string;
-  branchId: string;
+  storeId?: string;
+  branchId?: string;
+  assignedLocationId?: string;
+  assignedLocationName?: string;
   fullName: string;
   phone: string;
   role: UserRole;
@@ -288,6 +324,8 @@ export interface AppUser {
   createdAt: string;
   shifts?: CashierShift[];
   permissions?: string[];
+  stores?: StoreResponse[];
+  branches?: StoreBranchResponse[];
   twoFactorEnabled?: boolean;
   twoFactorRemindAt?: string;
   twoFactorPrompt?: boolean;

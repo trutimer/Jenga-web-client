@@ -687,13 +687,86 @@ const processSuccessfulLogin = async (res: any) => {
     sessionStorage.removeItem('jenga_tour_pending_poc');
   }
 
+  // 1. Resolve store and branch identifiers
+  let storeId = res.user?.storeId || '';
+  let branchId = res.branchId || res.user?.branchId || '';
+
+  // 2. Persist user stores immediately for multi-store support
+  if (res.user?.stores && Array.isArray(res.user.stores)) {
+    localStorage.setItem('userStores', JSON.stringify(res.user.stores));
+    vm.userStores.value = res.user.stores;
+    if (!storeId && res.user.stores.length > 0) {
+      storeId = res.user.stores[0].id;
+    }
+    const activeStore = res.user.stores.find((s: any) => s.id === storeId);
+    if (activeStore?.name) {
+      localStorage.setItem('storeName', activeStore.name);
+      vm.activeStoreName.value = activeStore.name;
+    }
+  }
+
+  // 3. Persist user branches immediately
+  if (res.user?.branches && Array.isArray(res.user.branches)) {
+    localStorage.setItem('userBranches', JSON.stringify(res.user.branches));
+    vm.userBranches.value = res.user.branches;
+    const activeBranch = res.user.branches.find((b: any) => b.id === branchId);
+    if (activeBranch?.name) {
+      localStorage.setItem('branchName', activeBranch.name);
+      vm.activeBranchName.value = activeBranch.name;
+    }
+  }
+  if (!localStorage.getItem('branchName') && res.user?.stores) {
+    const allBranches = res.user.stores.flatMap((s: any) => s.branches || []);
+    const activeBranch = allBranches.find((b: any) => b.id === branchId);
+    if (activeBranch?.name) {
+      localStorage.setItem('branchName', activeBranch.name);
+      vm.activeBranchName.value = activeBranch.name;
+    }
+  }
+
+  // 4. Fallback lookup for store/branch if still missing
+  if (res.offline) {
+    branchId = branchId || localStorage.getItem('branchId') || '';
+    storeId = storeId || localStorage.getItem('storeId') || '';
+  } else if (!storeId) {
+    try {
+      const stores = await api.get('/api/stores');
+      if (stores && stores.length > 0) {
+        const firstStore = stores[0];
+        storeId = firstStore.id;
+        if (firstStore.branches && firstStore.branches.length > 0) {
+          branchId = firstStore.branches[0].id;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to resolve store/branch:', err);
+    }
+  } else if (!branchId && res.user?.role !== 'ADMIN') {
+    try {
+      const storeData = await api.get(`/api/stores/${storeId}`);
+      if (storeData && storeData.branches && storeData.branches.length > 0) {
+        branchId = storeData.branches[0].id;
+      }
+    } catch (err) {
+      console.error('Failed to resolve branch:', err);
+    }
+  }
+
+  // 5. Store authentication session details
+  localStorage.setItem('userId', res.user.id);
+  localStorage.setItem('cashierId', res.user.id);
+  localStorage.setItem('storeId', storeId || '');
+  localStorage.setItem('cashierName', res.user.fullName);
+  localStorage.setItem('cashierRole', res.user.role || '');
+  vm.userId.value = res.user.id;
+  vm.activeStoreId.value = storeId || null;
+  vm.userRole.value = res.user.role || null;
+  vm.user.value = res.user.fullName;
+
+  // 6. If ADMIN, clear branchId so branch/store selection is always required on initial login
   if (res.user.role === 'ADMIN') {
-    localStorage.setItem('userId', res.user.id);
-    localStorage.setItem('cashierId', res.user.id);
-    localStorage.setItem('storeId', res.user.storeId || '');
-    localStorage.setItem('cashierName', res.user.fullName);
-    localStorage.setItem('cashierRole', res.user.role || 'ADMIN');
     localStorage.removeItem('branchId');
+    vm.activeBranchId.value = null;
 
     localStorage.setItem('lastPhone', phone.value);
     if (!remember.value) {
@@ -714,49 +787,9 @@ const processSuccessfulLogin = async (res: any) => {
     return;
   }
 
-  let storeId = res.user?.storeId;
-  let branchId = res.branchId || res.user?.branchId;
-
-  if (res.offline) {
-    branchId = branchId || localStorage.getItem('branchId') || '';
-    storeId = storeId || localStorage.getItem('storeId') || '';
-  } else if (!storeId) {
-    try {
-      const stores = await api.get('/api/stores');
-      if (stores && stores.length > 0) {
-        const firstStore = stores[0];
-        storeId = firstStore.id;
-        if (firstStore.branches && firstStore.branches.length > 0) {
-          branchId = firstStore.branches[0].id;
-        }
-      }
-    } catch (err) {
-      console.error('Failed to resolve store/branch:', err);
-    }
-  } else if (!branchId) {
-    try {
-      const storeData = await api.get(`/api/stores/${storeId}`);
-      if (storeData && storeData.branches && storeData.branches.length > 0) {
-        branchId = storeData.branches[0].id;
-      }
-    } catch (err) {
-      console.error('Failed to resolve branch:', err);
-    }
-  }
-
-  localStorage.setItem('userId', res.user.id);
-  localStorage.setItem('cashierId', res.user.id);
-  localStorage.setItem('storeId', storeId || '');
+  // 7. Non-ADMIN: persist branchId and offline credentials if applicable
   localStorage.setItem('branchId', branchId || '');
-  localStorage.setItem('cashierName', res.user.fullName);
-  localStorage.setItem('cashierRole', res.user.role || '');
-
-  if (res.user?.permissions) {
-    const perms = Array.isArray(res.user.permissions)
-      ? res.user.permissions
-      : Array.from(res.user.permissions);
-    localStorage.setItem('userPermissions', JSON.stringify(perms));
-  }
+  vm.activeBranchId.value = branchId || null;
 
   // Cache credentials in SQLite for subsequent offline access (strictly Cashiers)
   if (!res.offline && isElectron() && (res.user.role || '').toUpperCase() === 'CASHIER' && branchId && password.value) {

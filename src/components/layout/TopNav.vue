@@ -245,16 +245,132 @@
         <span>{{ $t('topNav.shiftSales') }}</span>
       </button>
 
-      <!-- Switch Branch Button (ADMIN only) -->
-      <button 
-        v-if="isAdmin"
-        @click="router.push('/select-branch')"
-        class="hidden sm:flex items-center px-4 h-10 rounded-full bg-primary-container/30 border border-primary/30 text-primary font-bold text-xs hover:bg-primary-container/50 active:scale-95 transition-all cursor-pointer gap-2 shadow-sm"
-        :title="$t('topNav.switchBranchTooltip')"
-      >
-        <Building2 class="w-4 h-4" />
-        <span>{{ $t('topNav.switchBranch') }}</span>
-      </button>
+      <!-- Store & Branch Context Switcher (Dynamic for multi-store or multi-branch users) -->
+      <div v-if="canSwitchContext" class="relative">
+        <button 
+          @click="contextMenuOpen = !contextMenuOpen"
+          class="flex items-center gap-2 px-3 sm:px-3.5 h-10 rounded-full bg-primary-container/25 border border-primary/30 text-primary font-bold text-xs hover:bg-primary-container/45 active:scale-95 transition-all cursor-pointer shadow-xs max-w-[220px] sm:max-w-[280px]"
+          :title="$t('topNav.switchBranchTooltip')"
+        >
+          <Building2 class="w-4 h-4 shrink-0 text-primary" />
+          <div class="flex items-center gap-1.5 truncate text-left">
+            <span v-if="vm.userStores.value.length > 1 && currentStoreName" class="font-extrabold text-on-surface truncate hidden sm:inline">
+              {{ currentStoreName }}
+            </span>
+            <span v-if="vm.userStores.value.length > 1 && currentStoreName" class="text-outline shrink-0 hidden sm:inline">•</span>
+            <span class="truncate text-primary">
+              {{ currentBranchName }}
+            </span>
+          </div>
+          <ChevronDown class="w-3.5 h-3.5 shrink-0 transition-transform duration-200" :class="contextMenuOpen ? 'rotate-180' : ''" />
+        </button>
+
+        <!-- Dropdown Backdrop -->
+        <div v-if="contextMenuOpen" @click="contextMenuOpen = false" class="fixed inset-0 z-40"></div>
+
+        <!-- Expanded Context Dropdown Panel -->
+        <div 
+          v-if="contextMenuOpen"
+          class="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-surface rounded-2xl border border-outline-variant shadow-2xl p-4 z-50 flex flex-col gap-3 animate-fade-down"
+        >
+          <!-- Header -->
+          <div class="flex items-center justify-between border-b border-outline-variant/60 pb-2.5">
+            <div class="flex items-center gap-2">
+              <Building2 class="w-4 h-4 text-primary" />
+              <span class="text-xs font-black uppercase tracking-wider text-on-surface font-mono">
+                {{ vm.userStores.value.length > 1 ? $t('selectBranch.title') : $t('topNav.switchBranch') }}
+              </span>
+            </div>
+            <button 
+              @click="openFullScreenBranchSelector"
+              class="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>{{ $t('common.viewAll') || 'Full View' }}</span>
+              <ArrowRight class="w-3 h-3" />
+            </button>
+          </div>
+
+          <!-- Multi-Store Selector (Chips) -->
+          <div v-if="vm.userStores.value.length > 1" class="flex flex-col gap-1.5 pb-2 border-b border-outline-variant/60">
+            <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-outline">
+              {{ $t('selectBranch.selectStore') }}
+            </span>
+            <div class="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              <button
+                v-for="st in vm.userStores.value"
+                :key="st.id"
+                type="button"
+                @click="onNavSelectStore(st.id)"
+                class="px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 border"
+                :class="dropdownSelectedStoreId === st.id 
+                  ? 'bg-primary text-on-primary border-primary shadow-xs' 
+                  : 'bg-surface-container border-outline-variant text-on-surface-variant hover:text-on-surface'"
+              >
+                {{ st.name }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Branches List for current/selected store -->
+          <div class="flex flex-col gap-1 max-h-60 overflow-y-auto pr-1">
+            <button
+              v-for="b in dropdownBranches"
+              :key="b.id"
+              type="button"
+              @click="onSwitchBranch(b)"
+              class="flex items-center justify-between p-2.5 rounded-xl border transition-all text-left group cursor-pointer"
+              :class="activeBranchId === b.id && dropdownSelectedStoreId === vm.activeStoreId.value
+                ? 'border-primary bg-primary-container/20 ring-1 ring-primary'
+                : 'border-outline-variant/60 bg-surface-container-lowest hover:border-primary/50 hover:bg-surface-container'"
+            >
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div 
+                  class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                  :class="activeBranchId === b.id && dropdownSelectedStoreId === vm.activeStoreId.value 
+                    ? 'bg-primary text-on-primary' 
+                    : 'bg-primary/10 text-primary'"
+                >
+                  <Store class="w-3.5 h-3.5" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <h5 class="text-xs font-bold text-on-surface truncate group-hover:text-primary transition-colors">
+                    {{ b.name }}
+                  </h5>
+                  <span class="text-[10px] text-on-surface-variant truncate block font-medium">
+                    {{ b.location || $t('selectBranch.mainPremises') }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Active Badge or Switch Arrow -->
+              <div class="shrink-0 ml-2">
+                <Loader2 v-if="switchingBranchId === b.id" class="w-4 h-4 animate-spin text-primary" />
+                <span 
+                  v-else-if="activeBranchId === b.id && dropdownSelectedStoreId === vm.activeStoreId.value" 
+                  class="text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary text-on-primary"
+                >
+                  Active
+                </span>
+                <ArrowRight v-else class="w-3.5 h-3.5 text-on-surface-variant/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+              </div>
+            </button>
+          </div>
+
+          <!-- Footer Shortcut -->
+          <div class="pt-2 border-t border-outline-variant/60 flex items-center justify-between text-xs">
+            <button 
+              @click="openFullScreenBranchSelector"
+              class="font-bold text-primary hover:underline cursor-pointer flex items-center gap-1"
+            >
+              <Building2 class="w-3.5 h-3.5" />
+              <span>{{ $t('selectBranch.title') }}</span>
+            </button>
+            <span class="text-[11px] text-outline font-mono">
+              {{ dropdownBranches.length }} {{ $t('selectBranch.storeBranchesCount', { count: dropdownBranches.length }) }}
+            </span>
+          </div>
+        </div>
+      </div>
 
       <!-- Download Desktop App (Web only) -->
       <button 
@@ -342,6 +458,7 @@ import LanguageSelector from '../common/LanguageSelector.vue';
 import { t } from '../../i18n';
 
 import { api } from '../../services/api';
+import { showToast } from '../../services/toastService';
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
 import { 
   Menu,
@@ -362,7 +479,10 @@ import {
   BarChart3,
   UserCog,
   Landmark,
-  ShoppingBag
+  ShoppingBag,
+  Store,
+  ArrowRight,
+  Loader2
 } from 'lucide-vue-next';
 
 defineProps<{
@@ -485,4 +605,81 @@ const isStoreAdminOrManager = computed(() => {
 const currentView = computed(() => {
   return route.path.substring(1) || 'dashboard';
 });
+
+// Context Switcher State & Handlers
+const contextMenuOpen = ref(false);
+const switchingBranchId = ref<string | null>(null);
+const dropdownSelectedStoreId = ref<string>(vm.activeStoreId.value || localStorage.getItem('storeId') || '');
+
+watch(() => vm.activeStoreId.value, (newStoreId) => {
+  if (newStoreId) {
+    dropdownSelectedStoreId.value = newStoreId;
+  }
+}, { immediate: true });
+
+const currentStoreName = computed(() => {
+  return vm.activeStoreName.value 
+    || vm.userStores.value.find(s => s.id === vm.activeStoreId.value)?.name 
+    || vm.settings.value?.name 
+    || localStorage.getItem('storeName') 
+    || '';
+});
+
+const currentBranchName = computed(() => {
+  return vm.activeBranchName.value 
+    || localStorage.getItem('branchName') 
+    || 'Main Branch';
+});
+
+const canSwitchContext = computed(() => {
+  if (isAdmin.value) return true;
+  if (vm.userStores.value && vm.userStores.value.length > 1) return true;
+  if (vm.userBranches.value && vm.userBranches.value.length > 1) return true;
+  const currentStore = vm.userStores.value?.find(s => s.id === vm.activeStoreId.value);
+  if (currentStore && currentStore.branches && currentStore.branches.length > 1) return true;
+  return false;
+});
+
+const dropdownBranches = computed(() => {
+  const targetId = dropdownSelectedStoreId.value || vm.activeStoreId.value;
+  const store = vm.userStores.value.find(s => s.id === targetId);
+  if (store && store.branches && store.branches.length > 0) {
+    return store.branches;
+  }
+  return vm.userBranches.value || [];
+});
+
+const onNavSelectStore = (storeId: string) => {
+  dropdownSelectedStoreId.value = storeId;
+};
+
+const onSwitchBranch = async (b: any) => {
+  if (switchingBranchId.value) return;
+  switchingBranchId.value = b.id;
+
+  try {
+    const targetStoreId = dropdownSelectedStoreId.value || b.storeId || vm.activeStoreId.value || '';
+    await vm.switchContext(targetStoreId, b.id);
+    showToast(t('selectBranch.switchContextSuccess', { 
+      branch: b.name, 
+      store: currentStoreName.value || 'Store' 
+    }), 'success');
+    contextMenuOpen.value = false;
+
+    // If role changed to CASHIER and user is not on checkout/shift-sales, navigate to checkout
+    const updatedRole = (vm.userRole.value || localStorage.getItem('cashierRole') || '').toUpperCase();
+    if (updatedRole === 'CASHIER' && !route.path.startsWith('/checkout') && !route.path.startsWith('/shift-sales')) {
+      router.push('/checkout');
+    }
+  } catch (err: any) {
+    showToast(err.message || 'Failed to switch context', 'error');
+  } finally {
+    switchingBranchId.value = null;
+  }
+};
+
+const openFullScreenBranchSelector = () => {
+  contextMenuOpen.value = false;
+  router.push('/select-branch');
+};
 </script>

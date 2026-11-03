@@ -14,10 +14,18 @@
           </div>
 
           <!-- Store name (line 1) & Branch name (line 2) -->
-          <div class="min-w-0 flex-1">
-            <h2 class="text-xs font-black text-on-surface truncate leading-tight uppercase tracking-wider" :title="displayStoreName">
-              {{ displayStoreName }}
-            </h2>
+          <div 
+            class="min-w-0 flex-1 py-1 px-1 -mx-1 rounded-lg transition-colors"
+            :class="canSwitchContext ? 'cursor-pointer hover:bg-surface-container-high/60 group/store' : ''"
+            @click="canSwitchContext ? router.push('/select-branch') : null"
+            :title="canSwitchContext ? ($t('topNav.switchBranchTooltip') || 'Switch Store or Branch') : displayStoreName"
+          >
+            <div class="flex items-center gap-1 min-w-0">
+              <h2 class="text-xs font-black text-on-surface truncate leading-tight uppercase tracking-wider group-hover/store:text-primary transition-colors" :title="displayStoreName">
+                {{ displayStoreName }}
+              </h2>
+              <ChevronsUpDown v-if="canSwitchContext" class="w-3 h-3 text-outline group-hover/store:text-primary shrink-0 transition-colors" />
+            </div>
             <p class="text-xs font-bold text-primary truncate leading-tight mt-0.5" :title="displayBranchName">
               {{ displayBranchName }}
             </p>
@@ -204,7 +212,8 @@ import {
   Warehouse,
   ArrowLeftRight,
   ScrollText,
-  UtensilsCrossed
+  UtensilsCrossed,
+  ChevronsUpDown
 } from 'lucide-vue-next';
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
 import { t } from '../../i18n';
@@ -228,6 +237,16 @@ const displayStoreName = computed(() => {
 
 const displayBranchName = computed(() => {
   return props.branchName || vm.activeBranchName?.value || localStorage.getItem('branchName') || 'Main Branch';
+});
+
+const canSwitchContext = computed(() => {
+  const role = vm.userRole.value || localStorage.getItem('cashierRole');
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') return true;
+  if (vm.userStores.value && vm.userStores.value.length > 1) return true;
+  if (vm.userBranches.value && vm.userBranches.value.length > 1) return true;
+  const currentStore = vm.userStores.value?.find(s => s.id === vm.activeStoreId.value);
+  if (currentStore && currentStore.branches && currentStore.branches.length > 1) return true;
+  return false;
 });
 
 const isElectronApp = ref(typeof window !== 'undefined' && (window as any).ipcRenderer !== undefined);

@@ -115,7 +115,7 @@
       <div class="bg-surface-container-low w-full rounded-2xl p-3.5 border border-outline-variant/60 text-left font-mono text-xs space-y-2">
         <div class="flex justify-between items-center">
           <span class="text-on-surface-variant font-bold text-[11px] uppercase tracking-wider">{{ $t('topNav.currentVersion') }}</span>
-          <span class="text-primary font-bold">v3.0.0 ({{ $t('topNav.latestRelease') }})</span>
+          <span class="text-primary font-bold">{{ appVersion }} ({{ $t('topNav.latestRelease') }})</span>
         </div>
         <div class="flex justify-between items-center pt-2 border-t border-outline-variant/40">
           <span class="text-on-surface-variant font-bold text-[11px] uppercase tracking-wider">{{ $t('topNav.platform') }}</span>
@@ -163,6 +163,9 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import Modal from './Modal.vue';
 import { Download, Monitor, Apple, Check, Laptop } from 'lucide-vue-next';
+
+declare const __APP_VERSION__: string;
+const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v4.0.1';
 
 const props = defineProps<{
   isOpen: boolean;

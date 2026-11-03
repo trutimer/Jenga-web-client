@@ -1,5 +1,15 @@
 import { ref, computed, watch, nextTick } from 'vue';
-import type { Product, StoreSettings, Transaction, Supplier, CashierShift } from '../models/types';
+import type { 
+  Product, 
+  StoreSettings, 
+  Transaction, 
+  Supplier, 
+  CashierShift,
+  StoreResponse,
+  StoreBranchResponse,
+  ContextSwitchRequest,
+  ContextSwitchResponse
+} from '../models/types';
 import { INITIAL_PRODUCTS, INITIAL_STORE_SETTINGS, INITIAL_SUPPLIERS } from '../models/mockData';
 import { api } from '../services/api';
 import { showToast } from '../services/toastService';
@@ -79,6 +89,24 @@ const getInitialUserPermissions = (): string[] => {
   return [];
 };
 
+export function getStoredUserStores(): StoreResponse[] {
+  try {
+    const raw = localStorage.getItem('userStores');
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function getStoredUserBranches(): StoreBranchResponse[] {
+  try {
+    const raw = localStorage.getItem('userBranches');
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
 // Global shared reactive states
 const user = ref<string | null>(
   isInitialAuthValid()
@@ -87,8 +115,12 @@ const user = ref<string | null>(
 );
 const userRole = ref<string | null>(getInitialUserRole());
 const userId = ref<string | null>(localStorage.getItem('cashierId'));
+const activeStoreId = ref<string | null>(localStorage.getItem('storeId'));
+const activeStoreName = ref<string>(localStorage.getItem('storeName') || '');
 const activeBranchId = ref<string | null>(localStorage.getItem('branchId'));
 const activeBranchName = ref<string>(localStorage.getItem('branchName') || '');
+const userStores = ref<StoreResponse[]>(getStoredUserStores());
+const userBranches = ref<StoreBranchResponse[]>(getStoredUserBranches());
 const mobileMenuOpen = ref(false);
 const sidebarCollapsed = ref(false);
 const products = ref<Product[]>(INITIAL_PRODUCTS);
@@ -182,7 +214,12 @@ registerSessionExpireCallback(() => {
   user.value = null;
   userRole.value = null;
   userId.value = null;
+  activeStoreId.value = null;
+  activeStoreName.value = '';
   activeBranchId.value = null;
+  activeBranchName.value = '';
+  userStores.value = [];
+  userBranches.value = [];
   userPermissions.value = [];
   mobileMenuOpen.value = false;
   currentShift.value = null;
@@ -201,7 +238,12 @@ export const lockScreen = () => {
   user.value = null;
   userRole.value = null;
   userId.value = null;
+  activeStoreId.value = null;
+  activeStoreName.value = '';
   activeBranchId.value = null;
+  activeBranchName.value = '';
+  userStores.value = [];
+  userBranches.value = [];
   userPermissions.value = [];
   mobileMenuOpen.value = false;
   websocketService.disconnect();
@@ -610,7 +652,106 @@ export function useAppViewModel() {
     }
   };
 
+  const switchContext = async (targetStoreId: string, targetBranchId?: string): Promise<boolean> => {
+    try {
+      const isDesktop = isElectron();
+      const deviceFingerprint = isDesktop ? localStorage.getItem('deviceId') : null;
+      const body: ContextSwitchRequest = {
+        storeId: targetStoreId,
+        branchId: targetBranchId,
+        deviceId: deviceFingerprint || undefined
+      };
+
+      const res = await api.post<ContextSwitchResponse>('/api/auth/switch-context', body);
+      if (!res || !res.accessToken) {
+        throw new Error('Failed to switch context: Invalid response');
+      }
+
+      // 1. Update JWT Token
+      localStorage.setItem('accessToken', res.accessToken);
+      if (isElectron()) {
+        try {
+          (window as any).ipcRenderer?.invoke('sync:set-config', { token: res.accessToken });
+        } catch (err) {
+          console.warn('Failed to update sync token on context switch:', err);
+        }
+      }
+
+      // 2. Resolve target names & store data
+      const updatedUser = res.user;
+      if (updatedUser) {
+        if (updatedUser.storeId) {
+          activeStoreId.value = updatedUser.storeId;
+          localStorage.setItem('storeId', updatedUser.storeId);
+        }
+        if (updatedUser.branchId) {
+          activeBranchId.value = updatedUser.branchId;
+          localStorage.setItem('branchId', updatedUser.branchId);
+        }
+        if (updatedUser.role) {
+          userRole.value = updatedUser.role;
+          localStorage.setItem('cashierRole', updatedUser.role);
+        }
+        if (updatedUser.fullName) {
+          user.value = updatedUser.fullName;
+          localStorage.setItem('cashierName', updatedUser.fullName);
+        }
+        if (updatedUser.stores) {
+          userStores.value = updatedUser.stores;
+          localStorage.setItem('userStores', JSON.stringify(updatedUser.stores));
+        }
+        if (updatedUser.branches) {
+          userBranches.value = updatedUser.branches;
+          localStorage.setItem('userBranches', JSON.stringify(updatedUser.branches));
+        }
+        if (updatedUser.permissions) {
+          const perms: string[] = Array.isArray(updatedUser.permissions)
+            ? (updatedUser.permissions as string[])
+            : Array.from(updatedUser.permissions as Iterable<string>);
+          userPermissions.value = perms;
+          localStorage.setItem('userPermissions', JSON.stringify(perms));
+        }
+
+        // Resolve branch name
+        const matchedBranch = (updatedUser.branches || []).find(b => b.id === updatedUser.branchId)
+          || (userStores.value.flatMap(s => s.branches || [])).find(b => b.id === updatedUser.branchId);
+        if (matchedBranch?.name) {
+          activeBranchName.value = matchedBranch.name;
+          localStorage.setItem('branchName', matchedBranch.name);
+        }
+
+        // Resolve store name
+        const matchedStore = (userStores.value || []).find(s => s.id === updatedUser.storeId);
+        if (matchedStore?.name) {
+          activeStoreName.value = matchedStore.name;
+          localStorage.setItem('storeName', matchedStore.name);
+        }
+      }
+
+      // 3. Reload settings, products, and shifts for the new context
+      await fetchSettings();
+      await fetchProducts();
+      if (userRole.value === 'CASHIER') {
+        await fetchCurrentShift();
+      }
+
+      return true;
+    } catch (err: any) {
+      console.error('Context switch error:', err);
+      throw err;
+    }
+  };
+
   const setActiveBranch = async (branchId: string, branchName?: string) => {
+    const currentStoreId = activeStoreId.value || localStorage.getItem('storeId');
+    if (currentStoreId) {
+      try {
+        await switchContext(currentStoreId, branchId);
+        return;
+      } catch (e) {
+        console.warn('switchContext failed, falling back to local branch update:', e);
+      }
+    }
     localStorage.setItem('branchId', branchId);
     activeBranchId.value = branchId;
     if (branchName) {
@@ -673,17 +814,75 @@ export function useAppViewModel() {
     return perms.some((p) => p.toLowerCase().startsWith(cat + ':'));
   };
 
+  const refreshUserStores = async (): Promise<StoreResponse[]> => {
+    // 1. Re-read from localStorage
+    userStores.value = getStoredUserStores();
+    userBranches.value = getStoredUserBranches();
+
+    // 2. Fetch fresh user profile from API if userStores is still missing or has 1 store
+    const currentUserId = userId.value || localStorage.getItem('cashierId') || localStorage.getItem('userId');
+    if (currentUserId && userStores.value.length <= 1) {
+      try {
+        const profile = await api.get<any>(`/api/users/${currentUserId}`, { suppressToast: true });
+        if (profile && Array.isArray(profile.stores) && profile.stores.length > 0) {
+          userStores.value = profile.stores;
+          localStorage.setItem('userStores', JSON.stringify(profile.stores));
+        }
+        if (profile && Array.isArray(profile.branches) && profile.branches.length > 0) {
+          userBranches.value = profile.branches;
+          localStorage.setItem('userBranches', JSON.stringify(profile.branches));
+        }
+      } catch (_) {
+        // Silently continue with existing cached stores
+      }
+    }
+
+    // Auto-resolve store name if missing
+    if (!activeStoreName.value && activeStoreId.value && userStores.value.length > 0) {
+      const match = userStores.value.find(s => s.id === activeStoreId.value);
+      if (match?.name) {
+        activeStoreName.value = match.name;
+        localStorage.setItem('storeName', match.name);
+      }
+    }
+
+    return userStores.value;
+  };
+
   const handleLogin = (name: string, resolvedBranchId: string | null) => {
     activeBranchId.value = resolvedBranchId;
     user.value = name;
     userRole.value = localStorage.getItem('cashierRole') || 'CASHIER';
     userId.value = localStorage.getItem('cashierId');
+    activeStoreId.value = localStorage.getItem('storeId');
+    activeStoreName.value = localStorage.getItem('storeName') || '';
+    activeBranchName.value = localStorage.getItem('branchName') || '';
+    userStores.value = getStoredUserStores();
+    userBranches.value = getStoredUserBranches();
+
+    if (!activeStoreId.value && userStores.value.length > 0 && userStores.value[0]?.id) {
+      activeStoreId.value = userStores.value[0].id;
+      localStorage.setItem('storeId', userStores.value[0].id);
+    }
+    if (!activeStoreName.value && activeStoreId.value && userStores.value.length > 0) {
+      const match = userStores.value.find(s => s.id === activeStoreId.value);
+      if (match?.name) {
+        activeStoreName.value = match.name;
+        localStorage.setItem('storeName', match.name);
+      }
+    }
+
     fetchCurrentUserPermissions(true);
     if (userRole.value === 'CASHIER') {
       fetchCurrentShift();
     }
     nextTick(() => {
-      if (userRole.value === 'ADMIN' && (!resolvedBranchId || resolvedBranchId === '')) {
+      const hasMultiStores = userStores.value && userStores.value.length > 1;
+      const currentStore = userStores.value.find(s => s.id === activeStoreId.value);
+      const branchesCount = (userBranches.value && userBranches.value.length) || (currentStore?.branches?.length || 0);
+      const hasMultiBranches = branchesCount > 1;
+
+      if (hasMultiStores || hasMultiBranches || (userRole.value === 'ADMIN' && (!resolvedBranchId || resolvedBranchId === ''))) {
         router.push('/select-branch');
       } else if (userRole.value === 'CASHIER') {
         router.push('/checkout');
@@ -705,8 +904,12 @@ export function useAppViewModel() {
     user.value = null;
     userRole.value = null;
     userId.value = null;
+    activeStoreId.value = null;
+    activeStoreName.value = '';
     activeBranchId.value = null;
     activeBranchName.value = '';
+    userStores.value = [];
+    userBranches.value = [];
     mobileMenuOpen.value = false;
     currentShift.value = null;
     userPermissions.value = [];
@@ -827,8 +1030,14 @@ export function useAppViewModel() {
     user,
     userRole,
     userId,
+    activeStoreId,
+    activeStoreName,
     activeBranchId,
     activeBranchName,
+    userStores,
+    userBranches,
+    refreshUserStores,
+    switchContext,
     mobileMenuOpen,
     sidebarCollapsed,
     products,
