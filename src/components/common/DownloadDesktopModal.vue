@@ -165,7 +165,7 @@ import Modal from './Modal.vue';
 import { Download, Monitor, Apple, Check, Laptop } from 'lucide-vue-next';
 
 declare const __APP_VERSION__: string;
-const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v4.0.1';
+const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v4.1.0';
 
 const props = defineProps<{
   isOpen: boolean;

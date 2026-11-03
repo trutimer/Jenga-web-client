@@ -527,7 +527,7 @@ import { isZoomActive, triggerLoginZoom } from '../services/loginAnimation';
 
 const vm = useAppViewModel();
 
-const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v4.0.1';
+const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v4.1.0';
 const isElectronApp = ref(isElectron());
 const showDownloadModal = ref(false);
 
