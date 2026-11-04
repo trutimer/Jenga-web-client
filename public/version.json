@@ -1,8 +1,8 @@
 {
-  "version": "4.1.0",
+  "version": "4.2.0",
   "downloadUrl": "/Jenga-Setup-Latest.exe",
   "windowsDownloadUrl": "/Jenga-Setup-Latest.exe",
   "macDownloadUrl": "/Jenga-Latest.dmg",
-  "releaseNotes": "Jenga POS v4.1.0: Multi-store and multi-branch user accessibility, offline sales, and automated desktop background updates.",
-  "releaseDate": "2026-11-03"
+  "releaseNotes": "Jenga POS v4.2.0: Branch bug fix, store/branch info updates, multi-store and multi-branch accessibility, offline sales, and automated desktop background updates.",
+  "releaseDate": "2026-11-05"
 }
