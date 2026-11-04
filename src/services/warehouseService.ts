@@ -25,7 +25,8 @@ export const warehouseService = {
    * Fetch all inventory locations (warehouses & branch stock locations) for current store
    */
   async getLocations(storeId?: string): Promise<InventoryLocation[]> {
-    const query = storeId ? `?storeId=${encodeURIComponent(storeId)}` : '';
+    const resolvedStoreId = storeId || localStorage.getItem('storeId') || '';
+    const query = resolvedStoreId ? `?storeId=${encodeURIComponent(resolvedStoreId)}` : '';
     return api.get<InventoryLocation[]>(`/api/inventory-locations${query}`);
   },
 
@@ -50,7 +51,8 @@ export const warehouseService = {
     payload: InventoryLocationCreateRequest,
     storeId?: string
   ): Promise<InventoryLocation> {
-    const query = storeId ? `?storeId=${encodeURIComponent(storeId)}` : '';
+    const resolvedStoreId = storeId || localStorage.getItem('storeId') || '';
+    const query = resolvedStoreId ? `?storeId=${encodeURIComponent(resolvedStoreId)}` : '';
     return api.post<InventoryLocation>(`/api/inventory-locations${query}`, payload);
   },
 
@@ -112,7 +114,8 @@ export const warehouseService = {
     size?: number;
   } = {}): Promise<PageResponse<StockTransfer>> {
     const query = new URLSearchParams();
-    if (params.storeId) query.append('storeId', params.storeId);
+    const resolvedStoreId = params.storeId || localStorage.getItem('storeId') || '';
+    if (resolvedStoreId) query.append('storeId', resolvedStoreId);
     if (params.locationId) query.append('locationId', params.locationId);
     if (params.status) query.append('status', params.status);
     query.append('page', String(params.page ?? 0));
@@ -191,7 +194,8 @@ export const warehouseService = {
     size?: number;
   } = {}): Promise<PageResponse<StockMovement>> {
     const query = new URLSearchParams();
-    if (params.storeId) query.append('storeId', params.storeId);
+    const resolvedStoreId = params.storeId || localStorage.getItem('storeId') || '';
+    if (resolvedStoreId) query.append('storeId', resolvedStoreId);
     if (params.branchId) query.append('branchId', params.branchId);
     if (params.locationId) query.append('locationId', params.locationId);
     if (params.productId) query.append('productId', params.productId);
@@ -215,7 +219,8 @@ export const warehouseService = {
    */
   async getBranches(storeId?: string, status?: string): Promise<StoreBranchInfo[]> {
     const query = new URLSearchParams();
-    if (storeId) query.append('storeId', storeId);
+    const resolvedStoreId = storeId || localStorage.getItem('storeId') || '';
+    if (resolvedStoreId) query.append('storeId', resolvedStoreId);
     if (status) query.append('status', status);
     const qs = query.toString() ? `?${query.toString()}` : '';
     return api.get<StoreBranchInfo[]>(`/api/branches${qs}`);

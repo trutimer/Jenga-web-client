@@ -8,10 +8,14 @@ export function useUserViewModel() {
   const branches = ref<StoreBranch[]>([]);
   const isLoading = ref(false);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (storeId?: string, branchId?: string) => {
     isLoading.value = true;
     try {
-      const response = await api.get<any>('/api/users');
+      const params = new URLSearchParams();
+      if (storeId) params.append('storeId', storeId);
+      if (branchId) params.append('branchId', branchId);
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      const response = await api.get<any>(`/api/users${queryString}`);
       // The backend returns a Page<UserViewModel>, so users are in response.content
       users.value = response?.content || [];
     } catch (err: any) {

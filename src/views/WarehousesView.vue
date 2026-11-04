@@ -8,6 +8,15 @@
       :onClose="() => toastMessage = null" 
     />
 
+    <!-- Loading Overlay -->
+    <JengaLoader 
+      v-if="isLoading && locations.length === 0" 
+      overlay 
+      size="lg" 
+      :label="$t('common.loading')" 
+      sublabel="Synchronizing storage locations, branch stocks, and transfers..." 
+    />
+
     <!-- MODULE HEADER -->
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
       <div>
@@ -71,6 +80,66 @@
           <span>{{ $t('warehouses.addLocationBtn') }}</span>
         </button>
       </div>
+    </div>
+
+    <!-- MODULE NAVIGATION TABS -->
+    <div class="flex items-center gap-1.5 p-1.5 bg-surface-container-low border border-outline-variant rounded-2xl overflow-x-auto shadow-xs">
+      <button 
+        @click="switchTab('locations')"
+        class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border-0 shrink-0"
+        :class="activeTab === 'locations' 
+          ? 'bg-primary text-white shadow-sm' 
+          : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high bg-transparent'"
+      >
+        <Warehouse class="w-4 h-4" />
+        <span>{{ $t('warehouses.tabLocations') }}</span>
+        <span 
+          class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold leading-none"
+          :class="activeTab === 'locations' ? 'bg-white/20 text-white' : 'bg-surface-container-highest text-on-surface-variant'"
+        >
+          {{ locations.length }}
+        </span>
+      </button>
+
+      <button 
+        @click="switchTab('transfers')"
+        class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border-0 shrink-0"
+        :class="activeTab === 'transfers' 
+          ? 'bg-primary text-white shadow-sm' 
+          : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high bg-transparent'"
+      >
+        <ArrowLeftRight class="w-4 h-4" />
+        <span>{{ $t('warehouses.tabTransfers') }}</span>
+        <span 
+          v-if="inTransitTransfersCount > 0"
+          class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold leading-none"
+          :class="activeTab === 'transfers' ? 'bg-amber-400 text-stone-900' : 'bg-amber-500/20 text-amber-700'"
+        >
+          {{ inTransitTransfersCount }}
+        </span>
+      </button>
+
+      <button 
+        @click="switchTab('ledger')"
+        class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border-0 shrink-0"
+        :class="activeTab === 'ledger' 
+          ? 'bg-primary text-white shadow-sm' 
+          : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high bg-transparent'"
+      >
+        <ScrollText class="w-4 h-4" />
+        <span>{{ $t('warehouses.tabLedger') }}</span>
+      </button>
+
+      <button 
+        @click="switchTab('consumption')"
+        class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border-0 shrink-0"
+        :class="activeTab === 'consumption' 
+          ? 'bg-primary text-white shadow-sm' 
+          : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high bg-transparent'"
+      >
+        <UtensilsCrossed class="w-4 h-4" />
+        <span>{{ $t('warehouses.tabConsumption') }}</span>
+      </button>
     </div>
 
     <!-- ============================================================= -->
@@ -673,6 +742,7 @@ import {
   Download 
 } from 'lucide-vue-next';
 import Toast from '../components/common/Toast.vue';
+import JengaLoader from '../components/common/JengaLoader.vue';
 import LocationFormModal from '../components/warehouse/LocationFormModal.vue';
 import LocationStockModal from '../components/warehouse/LocationStockModal.vue';
 import StockTransferModal from '../components/warehouse/StockTransferModal.vue';
@@ -780,12 +850,15 @@ const switchTab = (tabId: string) => {
 };
 
 // Data Loading
+const getResolvedStoreId = () => vm.activeStoreId.value || localStorage.getItem('storeId') || undefined;
+
 const loadAllData = async () => {
   isLoading.value = true;
   try {
+    const storeId = getResolvedStoreId();
     const [locs, brs] = await Promise.all([
-      warehouseService.getLocations(),
-      warehouseService.getBranches()
+      warehouseService.getLocations(storeId),
+      warehouseService.getBranches(storeId)
     ]);
     locations.value = locs;
     branches.value = brs;
@@ -805,7 +878,8 @@ const loadAllData = async () => {
 
 const fetchTransfers = async () => {
   try {
-    const res = await warehouseService.getTransfers({ size: 50 });
+    const storeId = getResolvedStoreId();
+    const res = await warehouseService.getTransfers({ storeId, size: 50 });
     transfers.value = res.content || [];
   } catch (err) {
     console.error('Failed to fetch transfers:', err);
@@ -832,7 +906,9 @@ const fetchLedger = async () => {
       startDate = d.toISOString().slice(0, 10);
     }
 
+    const storeId = getResolvedStoreId();
     const res = await warehouseService.getInventoryLedger({
+      storeId,
       locationId: ledgerLocationFilter.value || undefined,
       type: ledgerTypeFilter.value || undefined,
       startDate,
@@ -843,6 +919,13 @@ const fetchLedger = async () => {
     console.error('Failed to fetch ledger:', err);
   }
 };
+
+// Re-load when active store changes in top-bar
+watch(() => vm.activeStoreId.value, (newStoreId) => {
+  if (newStoreId) {
+    loadAllData();
+  }
+});
 
 onMounted(() => {
   loadAllData();
@@ -971,7 +1054,7 @@ const onTransferUpdated = (updated: StockTransfer) => {
   showTransferDetailsModal.value = false;
   selectedTransfer.value = null;
   fetchLedger();
-  warehouseService.getLocations().then(locs => { locations.value = locs; }).catch(() => {});
+  warehouseService.getLocations(getResolvedStoreId()).then(locs => { locations.value = locs; }).catch(() => {});
   vm.fetchProducts().catch(() => {});
 
   if (updated.status === 'COMPLETED' || updated.status === 'PARTIALLY_RECEIVED') {

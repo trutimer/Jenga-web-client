@@ -66,13 +66,26 @@ export async function apiRequest<T = any>(
   }
 
   let finalEndpoint = endpoint;
+  const isAuthRoute = finalEndpoint.startsWith('/api/auth');
+  const storeId = localStorage.getItem('storeId');
   const branchId = localStorage.getItem('branchId');
-  if (branchId && branchId !== 'null' && branchId !== 'undefined' && branchId.trim() !== '') {
-    if (!finalEndpoint.includes('storeBranchId=')) {
-      // Exclude auth routes and store list endpoints
-      if (!finalEndpoint.startsWith('/api/auth') && !finalEndpoint.endsWith('/branches')) {
-        const separator = finalEndpoint.includes('?') ? '&' : '?';
-        finalEndpoint += `${separator}storeBranchId=${encodeURIComponent(branchId)}`;
+
+  if (!isAuthRoute) {
+    if (storeId && storeId !== 'null' && storeId !== 'undefined' && storeId.trim() !== '') {
+      if (!headers.has('X-Store-Id')) {
+        headers.set('X-Store-Id', storeId);
+      }
+    }
+
+    if (branchId && branchId !== 'null' && branchId !== 'undefined' && branchId.trim() !== '') {
+      headers.set('X-Branch-Id', branchId);
+      headers.set('X-Store-Branch-Id', branchId);
+      if (!finalEndpoint.includes('storeBranchId=') && !finalEndpoint.includes('branchId=')) {
+        // Exclude store list endpoints
+        if (!finalEndpoint.endsWith('/branches')) {
+          const separator = finalEndpoint.includes('?') ? '&' : '?';
+          finalEndpoint += `${separator}storeBranchId=${encodeURIComponent(branchId)}&branchId=${encodeURIComponent(branchId)}`;
+        }
       }
     }
   }

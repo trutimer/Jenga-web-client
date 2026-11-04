@@ -1,18 +1,60 @@
 <template>
   <div class="flex flex-col gap-6 font-sans">
-    <div class="flex items-center justify-between">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h1 class="text-2xl font-black text-on-surface tracking-tight">{{ $t('users.title') }}</h1>
         <p class="text-sm text-on-surface-variant mt-1">{{ $t('users.subtitle') }}</p>
       </div>
       <button 
         v-if="vm.hasPermission('users:create')"
-        @click="showCreateModal = true"
-        class="h-10 px-4 bg-primary text-on-primary rounded-xl flex items-center justify-center font-bold text-sm hover:bg-opacity-90 transition-all cursor-pointer shadow-sm border-0 gap-2"
+        @click="openCreateModal"
+        class="h-10 px-4 bg-primary text-on-primary rounded-xl flex items-center justify-center font-bold text-sm hover:bg-opacity-90 transition-all cursor-pointer shadow-sm border-0 gap-2 shrink-0"
       >
         <PlusCircle class="w-4 h-4" />
         <span>{{ $t('users.addUser') }}</span>
       </button>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-surface p-3 rounded-2xl border border-outline-variant shadow-xs">
+      <!-- Search Input -->
+      <div class="relative flex-1 max-w-md">
+        <Search class="w-4 h-4 text-on-surface-variant absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <input 
+          v-model="searchQuery"
+          type="text"
+          :placeholder="$t('common.search') || 'Search users by name, phone...'"
+          class="w-full h-10 pl-10 pr-4 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs sm:text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all font-medium placeholder:text-outline"
+        />
+      </div>
+
+      <!-- Branch Filter Dropdown -->
+      <div class="flex items-center gap-2">
+        <div class="relative min-w-[200px]">
+          <Building2 class="w-4 h-4 text-primary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <select
+            v-model="selectedBranchFilter"
+            @change="onBranchFilterChange"
+            class="w-full h-10 pl-10 pr-8 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs sm:text-sm font-bold text-on-surface outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all appearance-none cursor-pointer"
+          >
+            <option value="">{{ $t('users.allBranches') || 'All Branches' }}</option>
+            <option v-for="branch in branches" :key="branch.id" :value="branch.id">
+              {{ branch.name }}
+            </option>
+          </select>
+          <ChevronDown class="w-4 h-4 text-on-surface-variant absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+        </div>
+
+        <button 
+          v-if="selectedBranchFilter || searchQuery"
+          @click="resetFilters"
+          class="h-10 px-3 text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-xl transition-all border border-outline-variant/60 cursor-pointer shrink-0"
+          title="Reset filters"
+        >
+          Reset
+        </button>
+      </div>
     </div>
 
     <!-- Loading State -->
@@ -28,16 +70,17 @@
             <tr class="bg-surface-container-lowest border-b border-outline-variant text-xs uppercase tracking-wider text-on-surface-variant font-bold">
               <th class="p-4 px-5">{{ $t('users.tableNameRole') }}</th>
               <th class="p-4 px-5">{{ $t('users.tablePhone') }}</th>
+              <th class="p-4 px-5">{{ $t('users.tableBranch') || 'Branch' }}</th>
               <th class="p-4 px-5">{{ $t('users.tableStatus') }}</th>
               <th class="p-4 px-5 text-right">{{ $t('users.tableActions') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-outline-variant/50">
-            <tr v-if="users.length === 0">
-              <td colspan="4" class="p-8 text-center text-on-surface-variant">{{ $t('users.noUsersFound') }}</td>
+            <tr v-if="filteredUsers.length === 0">
+              <td colspan="5" class="p-8 text-center text-on-surface-variant">{{ $t('users.noUsersFound') }}</td>
             </tr>
             <tr 
-              v-for="user in users" 
+              v-for="user in filteredUsers" 
               :key="user.id"
               class="hover:bg-surface-container-lowest/50 transition-colors"
             >
@@ -54,6 +97,31 @@
               </td>
               <td class="p-4 px-5">
                 <span class="text-sm text-on-surface">{{ user.phone }}</span>
+              </td>
+              <td class="p-4 px-5">
+                <div class="flex items-center gap-1.5">
+                  <span 
+                    v-if="user.branchName"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-primary/10 text-primary border border-primary/20"
+                  >
+                    <Building2 class="w-3.5 h-3.5 shrink-0" />
+                    <span class="truncate max-w-[170px]">{{ user.branchName }}</span>
+                  </span>
+                  <span 
+                    v-else-if="user.role === 'ADMIN' || user.role === 'SUPER_ADMIN'"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
+                  >
+                    <ShieldCheck class="w-3.5 h-3.5 shrink-0" />
+                    <span>{{ $t('users.storeWideAdmin') || 'All Branches (Store Admin)' }}</span>
+                  </span>
+                  <span 
+                    v-else
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-surface-container text-on-surface-variant"
+                  >
+                    <Building2 class="w-3.5 h-3.5 shrink-0 opacity-40" />
+                    <span>{{ $t('users.unassigned') || 'Unassigned' }}</span>
+                  </span>
+                </div>
               </td>
               <td class="p-4 px-5">
                 <span 
@@ -119,7 +187,7 @@
           <input 
             v-model="newUser.phone"
             type="text" 
-            placeholder="+255..."
+            placeholder="07... or 255..."
             class="w-full h-11 px-4 bg-surface-container-lowest border border-outline-variant rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
           />
         </div>
@@ -236,9 +304,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
+import { ref, computed, onMounted, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { PlusCircle, User as UserIcon, Eye, Trash2, Power } from 'lucide-vue-next';
+import { 
+  PlusCircle, 
+  User as UserIcon, 
+  Eye, 
+  Trash2, 
+  Power, 
+  Building2, 
+  ShieldCheck, 
+  Search, 
+  ChevronDown 
+} from 'lucide-vue-next';
 import Modal from '../components/common/Modal.vue';
 import { useUserViewModel } from '../viewmodels/useUserViewModel';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
@@ -246,8 +324,18 @@ import type { AppUser, UserCreateRequest, UserRole } from '../models/types';
 
 const router = useRouter();
 const vm = useAppViewModel();
-const { users, branches, isLoading, fetchUsers, fetchBranches, createUser, blockUser, unblockUser, deleteUser } = useUserViewModel();
-const { userRole, userId } = vm;
+const { 
+  users, 
+  branches, 
+  isLoading, 
+  fetchUsers, 
+  fetchBranches, 
+  createUser, 
+  blockUser, 
+  unblockUser, 
+  deleteUser 
+} = useUserViewModel();
+const { userRole, userId, activeStoreId, activeBranchId } = vm;
 
 const showCreateModal = ref(false);
 const showToggleModal = ref(false);
@@ -255,19 +343,71 @@ const showDeleteModal = ref(false);
 const isSubmitting = ref(false);
 const selectedUser = ref<AppUser | null>(null);
 
+const searchQuery = ref('');
+const selectedBranchFilter = ref<string>(activeBranchId.value || '');
+
 const newUser = reactive<UserCreateRequest>({
   fullName: '',
   phone: '',
   email: '',
   role: 'CASHIER' as UserRole,
   branchId: '',
-  storeId: localStorage.getItem('storeId') || undefined
+  storeId: activeStoreId.value || localStorage.getItem('storeId') || undefined
 });
 
-onMounted(async () => {
-  await fetchUsers();
-  await fetchBranches();
+const filteredUsers = computed(() => {
+  if (!searchQuery.value.trim()) return users.value;
+  const q = searchQuery.value.toLowerCase();
+  return users.value.filter(u => 
+    u.fullName?.toLowerCase().includes(q) ||
+    u.phone?.toLowerCase().includes(q) ||
+    u.email?.toLowerCase().includes(q) ||
+    u.branchName?.toLowerCase().includes(q)
+  );
 });
+
+const loadData = async () => {
+  await fetchBranches();
+  await fetchUsers(activeStoreId.value || undefined, selectedBranchFilter.value || undefined);
+};
+
+onMounted(async () => {
+  await loadData();
+});
+
+watch(() => activeStoreId.value, async (newStoreId) => {
+  if (newStoreId) {
+    selectedBranchFilter.value = '';
+    await loadData();
+  }
+});
+
+watch(() => activeBranchId.value, async (newBranchId) => {
+  if (newBranchId && newBranchId !== selectedBranchFilter.value) {
+    selectedBranchFilter.value = newBranchId;
+    await fetchUsers(activeStoreId.value || undefined, selectedBranchFilter.value || undefined);
+  }
+});
+
+const onBranchFilterChange = async () => {
+  await fetchUsers(activeStoreId.value || undefined, selectedBranchFilter.value || undefined);
+};
+
+const resetFilters = async () => {
+  searchQuery.value = '';
+  selectedBranchFilter.value = '';
+  await fetchUsers(activeStoreId.value || undefined, undefined);
+};
+
+const openCreateModal = () => {
+  newUser.fullName = '';
+  newUser.phone = '';
+  newUser.email = '';
+  newUser.role = 'CASHIER';
+  newUser.storeId = activeStoreId.value || localStorage.getItem('storeId') || undefined;
+  newUser.branchId = selectedBranchFilter.value || activeBranchId.value || (branches.value[0]?.id || '');
+  showCreateModal.value = true;
+};
 
 const handleCreateUser = async () => {
   if (!newUser.fullName || !newUser.phone || !newUser.branchId) return;
@@ -278,6 +418,8 @@ const handleCreateUser = async () => {
   const success = await createUser(requestPayload);
   if (success) {
     showCreateModal.value = false;
+    // Refresh user list with current branch filter
+    await fetchUsers(activeStoreId.value || undefined, selectedBranchFilter.value || undefined);
     // reset form
     newUser.fullName = '';
     newUser.phone = '';
@@ -301,6 +443,7 @@ const handleToggleStatus = async () => {
   
   if (success) {
     showToggleModal.value = false;
+    await fetchUsers(activeStoreId.value || undefined, selectedBranchFilter.value || undefined);
   }
 };
 
@@ -314,6 +457,7 @@ const handleDeleteUser = async () => {
   const success = await deleteUser(selectedUser.value.id);
   if (success) {
     showDeleteModal.value = false;
+    await fetchUsers(activeStoreId.value || undefined, selectedBranchFilter.value || undefined);
   }
 };
 </script>

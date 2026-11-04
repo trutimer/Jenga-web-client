@@ -113,6 +113,7 @@ export interface StoreSettings {
   currency: 'TZS' | 'USD' | 'EUR';
   timezone: string;
   enablePerpetualCogs?: boolean;
+  branches?: StoreBranchResponse[];
 }
 
 export type ViewType = 'login' | 'select-branch' | 'dashboard' | 'checkout' | 'inventory' | 'reports' | 'settings' | 'receipt' | 'stock-in' | 'suppliers' | 'users' | 'profile' | 'customers' | 'finance';
@@ -313,6 +314,7 @@ export interface AppUser {
   id: string;
   storeId?: string;
   branchId?: string;
+  branchName?: string;
   assignedLocationId?: string;
   assignedLocationName?: string;
   fullName: string;

@@ -6,6 +6,7 @@ import type {
   Supplier, 
   CashierShift,
   StoreResponse,
+  StoreBranch,
   StoreBranchResponse,
   ContextSwitchRequest,
   ContextSwitchResponse
@@ -306,6 +307,7 @@ export function useAppViewModel() {
           currency: (settingsData.currency || 'TZS') as 'TZS' | 'USD' | 'EUR',
           timezone: settingsData.timezone || 'Africa/Dar_es_Salaam',
           enablePerpetualCogs: true,
+          branches: settingsData.branches || [],
         };
 
         if (settingsData.branches && Array.isArray(settingsData.branches)) {
@@ -728,11 +730,15 @@ export function useAppViewModel() {
         }
       }
 
-      // 3. Reload settings, products, and shifts for the new context
-      await fetchSettings();
-      await fetchProducts();
-      if (userRole.value === 'CASHIER') {
-        await fetchCurrentShift();
+      // 3. Reload settings, products, and shifts for the new context (background resilient)
+      try {
+        await Promise.allSettled([
+          fetchSettings(),
+          fetchProducts(),
+          userRole.value === 'CASHIER' ? fetchCurrentShift() : Promise.resolve()
+        ]);
+      } catch (prefetchErr) {
+        console.warn('Post-switch prefetch non-critical warning:', prefetchErr);
       }
 
       return true;
@@ -938,10 +944,43 @@ export function useAppViewModel() {
         timezone: newSettings.timezone,
         enablePerpetualCogs: true,
       });
+      activeStoreName.value = newSettings.name;
+      localStorage.setItem('storeName', newSettings.name);
     } catch (err) {
       console.error('Failed to update store settings in backend:', err);
       throw err;
     }
+  };
+
+  const updateBranchDetails = async (branchId: string, branchData: Partial<StoreBranch>): Promise<StoreBranchResponse> => {
+    const updated = await api.put<StoreBranchResponse>(`/api/branches/${branchId}`, branchData);
+    
+    // If updating current active branch
+    if (branchId === activeBranchId.value || branchId === localStorage.getItem('branchId')) {
+      if (updated.name) {
+        activeBranchName.value = updated.name;
+        localStorage.setItem('branchName', updated.name);
+      }
+    }
+
+    // Update in userBranches
+    if (Array.isArray(userBranches.value)) {
+      const idx = userBranches.value.findIndex(b => b.id === branchId);
+      if (idx !== -1) {
+        userBranches.value[idx] = { ...userBranches.value[idx], ...updated };
+        localStorage.setItem('userBranches', JSON.stringify(userBranches.value));
+      }
+    }
+
+    // Update in settings.branches
+    if (settings.value && (settings.value as any).branches) {
+      const bIdx = (settings.value as any).branches.findIndex((b: any) => b.id === branchId);
+      if (bIdx !== -1) {
+        (settings.value as any).branches[bIdx] = { ...(settings.value as any).branches[bIdx], ...updated };
+      }
+    }
+
+    return updated;
   };
 
   const toggleCogs = async (_enabled?: boolean) => {
@@ -1056,6 +1095,7 @@ export function useAppViewModel() {
     handleLogout,
     lockScreen,
     updateSettings: handleUpdateSettings,
+    updateBranchDetails,
     toggleCogs,
     handleTransactionCompleted,
     fetchSettings,

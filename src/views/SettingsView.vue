@@ -26,14 +26,18 @@
         <!-- Header titles of section -->
         <div class="pb-4 border-b border-outline-variant/60">
           <h3 class="text-lg font-bold text-on-surface uppercase tracking-tight">
-            <span v-if="activeSection === 'profile'">{{ $t('settings.storeProfile') }}</span>
+            <span v-if="activeSection === 'profile'">
+              {{ profileTab === 'branch' ? ($t('settings.branchProfileTab') || 'Branch Profile') : ($t('settings.storeDetailsTab') || 'Store / Enterprise Details') }}
+            </span>
             <span v-else-if="activeSection === 'maker-checker'">{{ $t('settings.makerCheckerConfig') }}</span>
             <span v-else-if="activeSection === 'hardware'">{{ $t('settings.hardwareBarcode') }}</span>
             <span v-else-if="activeSection === 'account'">{{ $t('settings.accountProfile') }}</span>
             <span v-else-if="activeSection === 'updates'">{{ $t('settings.appUpdates') }}</span>
           </h3>
           <p class="text-xs text-on-surface-variant font-semibold mt-1">
-            <span v-if="activeSection === 'profile'">{{ $t('settings.storeProfileDesc') }}</span>
+            <span v-if="activeSection === 'profile'">
+              {{ profileTab === 'branch' ? ($t('settings.branchConfigSubtitle') || 'Configure storefront address, contact details, and location coordinates for this branch.') : ($t('settings.storeDetailsBannerDesc') || 'Configure legal business name, tax identification, base currency, and timezones.') }}
+            </span>
             <span v-else-if="activeSection === 'maker-checker'">{{ $t('settings.makerCheckerDesc') }}</span>
             <span v-else-if="activeSection === 'hardware'">{{ $t('settings.hardwareDesc') }}</span>
             <span v-else-if="activeSection === 'account'">{{ $t('settings.accountProfileDesc') }}</span>
@@ -42,81 +46,460 @@
         </div>
 
           <!-- SECTION 1: PROFILE SETUP -->
-          <div v-if="activeSection === 'profile'" class="space-y-4">
-            <!-- Store Name & registration TIN -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">{{ $t('settings.storeName') }}</label>
-                <div class="relative flex items-center">
-                  <Store class="w-4 h-4 text-on-surface-variant absolute left-3.5 pointer-events-none" />
-                  <input 
-                    type="text" 
-                    required
-                    v-model="storeName"
-                    placeholder="Ex. Main Branch Nairobi"
-                    class="w-full bg-surface-container border border-outline-variant text-sm font-semibold rounded-lg pl-10 pr-3.5 py-2.5 outline-none focus:border-primary text-on-surface"
-                  />
+          <div v-if="activeSection === 'profile'" class="space-y-6">
+
+            <!-- Sub-tab Navigation: Branch Profile (Selected Branch) vs Store / Enterprise Details -->
+            <div class="flex items-center justify-between border-b border-outline-variant/60 pb-3 flex-wrap gap-3">
+              <div class="flex items-center gap-2 p-1 bg-surface-container rounded-xl border border-outline-variant/40">
+                <button
+                  type="button"
+                  @click="profileTab = 'branch'"
+                  class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border-0"
+                  :class="profileTab === 'branch' 
+                    ? 'bg-surface-container-lowest text-primary shadow-xs font-black' 
+                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/50'"
+                >
+                  <Building2 class="w-4 h-4" />
+                  <span>{{ $t('settings.branchProfileTab') || 'Branch Profile' }}</span>
+                  <span v-if="activeBranchName" class="px-2 py-0.5 text-[10px] rounded-full bg-primary/10 text-primary font-mono font-bold">
+                    {{ activeBranchName }}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  @click="profileTab = 'store'"
+                  class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border-0"
+                  :class="profileTab === 'store' 
+                    ? 'bg-surface-container-lowest text-primary shadow-xs font-black' 
+                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/50'"
+                >
+                  <Store class="w-4 h-4" />
+                  <span>{{ $t('settings.storeDetailsTab') || 'Store / Enterprise Details' }}</span>
+                </button>
+              </div>
+
+              <!-- Quick switch help / context -->
+              <div class="text-xs text-on-surface-variant font-medium flex items-center gap-1.5">
+                <template v-if="profileTab === 'branch'">
+                  <span>{{ $t('settings.needStoreConfig') || 'Need company-wide TIN or currency settings?' }}</span>
+                  <button 
+                    type="button" 
+                    @click="profileTab = 'store'"
+                    class="text-primary hover:underline font-bold inline-flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0 text-xs"
+                  >
+                    {{ $t('settings.viewStoreDetails') || 'View Store Details' }} &rarr;
+                  </button>
+                </template>
+                <template v-else>
+                  <span>{{ $t('settings.backToBranchHelp') || 'Configuring parent organization.' }}</span>
+                  <button 
+                    type="button" 
+                    @click="profileTab = 'branch'"
+                    class="text-primary hover:underline font-bold inline-flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0 text-xs"
+                  >
+                    &larr; {{ $t('settings.viewBranchDetails') || 'Back to Branch Profile' }}
+                  </button>
+                </template>
+              </div>
+            </div>
+
+            <!-- TAB 1: BRANCH PROFILE (SELECTED / ACTIVE BRANCH) -->
+            <div v-if="profileTab === 'branch'" class="space-y-5">
+              
+              <!-- Branch Selection Bar & Status Card -->
+              <div class="p-4 bg-surface-container-low border border-outline-variant/60 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-start md:items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                    <Building2 class="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <h4 class="text-sm font-bold text-on-surface">
+                        {{ branchName || $t('settings.unnamedBranch') || 'Selected Branch' }}
+                      </h4>
+                      <span 
+                        class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full uppercase"
+                        :class="branchStatus === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'"
+                      >
+                        {{ branchStatus === 'ACTIVE' ? ($t('settings.branchStatusActive') || 'ACTIVE') : ($t('settings.branchStatusInactive') || 'INACTIVE') }}
+                      </span>
+                      <span 
+                        v-if="selectedBranchId === (vm.activeBranchId.value || currentBranchId)"
+                        class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1"
+                      >
+                        <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                        {{ $t('settings.currentActiveBranch') || 'Current Active Branch' }}
+                      </span>
+                    </div>
+                    <p class="text-xs text-on-surface-variant font-medium mt-0.5">
+                      {{ $t('settings.branchConfigSubtitle') || 'Physical storefront address, contact details, and location coordinates for this branch.' }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Branch Picker if multiple branches exist -->
+                <div v-if="availableBranches.length > 1" class="flex items-center gap-2 self-start md:self-auto">
+                  <label class="text-xs font-mono font-bold text-on-surface-variant shrink-0">{{ $t('settings.switchBranch') || 'Branch:' }}</label>
+                  <select
+                    v-model="selectedBranchId"
+                    @change="onBranchSelected"
+                    class="bg-surface-container border border-outline-variant text-xs font-semibold rounded-lg px-3 py-2 outline-none focus:border-primary text-on-surface cursor-pointer"
+                  >
+                    <option v-for="b in availableBranches" :key="b.id" :value="b.id">
+                      {{ b.name }} {{ b.id === (vm.activeBranchId.value || currentBranchId) ? ' (Active)' : '' }}
+                    </option>
+                  </select>
+                  <button
+                    v-if="selectedBranchId !== (vm.activeBranchId.value || currentBranchId)"
+                    type="button"
+                    @click="makeBranchActive(selectedBranchId)"
+                    class="px-3 py-2 rounded-lg bg-surface-container border border-outline-variant hover:border-primary text-primary text-xs font-bold transition-all cursor-pointer whitespace-nowrap"
+                    :title="$t('settings.makeActiveBranch') || 'Set as Active Workspace Branch'"
+                  >
+                    {{ $t('settings.makeActive') || 'Set Active' }}
+                  </button>
                 </div>
               </div>
 
+              <!-- Branch Edit Form Fields -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Branch Name -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">
+                    {{ $t('settings.branchName') || 'Branch Name' }} <span class="text-error">*</span>
+                  </label>
+                  <div class="relative flex items-center">
+                    <Building2 class="w-4 h-4 text-on-surface-variant absolute left-3.5 pointer-events-none" />
+                    <input 
+                      type="text" 
+                      required
+                      v-model="branchName"
+                      :placeholder="$t('settings.branchNamePlaceholder') || 'Ex. Main Branch Kariakoo'"
+                      :disabled="!isOwnerOrAdmin"
+                      class="w-full bg-surface-container border border-outline-variant text-sm font-semibold rounded-lg pl-10 pr-3.5 py-2.5 outline-none focus:border-primary text-on-surface disabled:opacity-60"
+                    />
+                  </div>
+                </div>
+
+                <!-- Branch Status -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">
+                    {{ $t('settings.branchStatus') || 'Operational Status' }}
+                  </label>
+                  <div class="relative flex items-center">
+                    <Activity class="w-4 h-4 text-on-surface-variant absolute left-3.5 pointer-events-none" />
+                    <select 
+                      v-model="branchStatus"
+                      :disabled="!isOwnerOrAdmin"
+                      class="w-full bg-surface-container border border-outline-variant text-sm font-semibold rounded-lg pl-10 pr-3.5 py-2.5 outline-none focus:border-primary text-on-surface disabled:opacity-60 cursor-pointer"
+                    >
+                      <option value="ACTIVE">{{ $t('settings.branchStatusActive') || 'ACTIVE (Operational)' }}</option>
+                      <option value="NOT ACTIVE">{{ $t('settings.branchStatusInactive') || 'NOT ACTIVE (Suspended)' }}</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Branch Phone & Email -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">
+                    {{ $t('settings.branchPhone') || 'Branch Phone Number' }}
+                  </label>
+                  <div class="relative flex items-center">
+                    <Phone class="w-4 h-4 text-on-surface-variant absolute left-3.5 pointer-events-none" />
+                    <input 
+                      type="tel" 
+                      v-model="branchPhone"
+                      placeholder="+255 700 000 000"
+                      :disabled="!isOwnerOrAdmin"
+                      class="w-full bg-surface-container pl-10 pr-3.5 py-2.5 border border-outline-variant text-sm font-semibold rounded-lg outline-none focus:border-primary text-on-surface disabled:opacity-60"
+                    />
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">
+                    {{ $t('settings.branchEmail') || 'Branch Contact Email' }}
+                  </label>
+                  <div class="relative flex items-center">
+                    <Mail class="w-4 h-4 text-on-surface-variant absolute left-3.5 pointer-events-none" />
+                    <input 
+                      type="email" 
+                      v-model="branchEmail"
+                      placeholder="branch@dukapor.co"
+                      :disabled="!isOwnerOrAdmin"
+                      class="w-full bg-surface-container pl-10 pr-3.5 py-2.5 border border-outline-variant text-sm font-semibold rounded-lg outline-none focus:border-primary text-on-surface disabled:opacity-60"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Branch Physical Location / Address -->
               <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">{{ $t('settings.tinCode') }}</label>
-                <div class="relative flex items-center">
-                  <FileText class="w-4 h-4 text-on-surface-variant absolute left-3.5 pointer-events-none" />
-                  <input 
-                    type="text" 
-                    required
-                    v-model="storeTin"
-                    placeholder="Ex. P0001234567X"
-                    class="w-full bg-surface-container border border-outline-variant text-sm font-mono rounded-lg pl-10 pr-3.5 py-2.5 outline-none focus:border-primary text-on-surface"
+                <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">
+                  {{ $t('settings.branchAddress') || 'Branch Physical Address & Location' }}
+                </label>
+                <div class="relative">
+                  <MapPin class="w-4 h-4 text-on-surface-variant absolute left-3.5 top-3 pointer-events-none" />
+                  <textarea 
+                    rows="3"
+                    v-model="branchLocation"
+                    :placeholder="$t('settings.branchAddressPlaceholder') || 'Plot 42, Uhuru Street, Kariakoo, Dar es Salaam'"
+                    :disabled="!isOwnerOrAdmin"
+                    class="w-full bg-surface-container pl-10 pr-3.5 py-2.5 border border-outline-variant text-sm font-semibold rounded-lg outline-none focus:border-primary text-on-surface resize-none disabled:opacity-60"
                   />
+                </div>
+                <p class="text-[11px] text-on-surface-variant">
+                  {{ $t('settings.branchAddressReceiptHelp') || 'This physical location prints on all thermal POS receipts and invoices issued from this branch.' }}
+                </p>
+              </div>
+
+              <!-- GPS Coordinates (Optional) -->
+              <div class="p-4 bg-surface-container/60 border border-outline-variant/40 rounded-xl space-y-3">
+                <div class="flex items-center gap-2">
+                  <Globe class="w-4 h-4 text-primary" />
+                  <h5 class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface">
+                    {{ $t('settings.branchCoordinates') || 'GPS Location Coordinates (Optional)' }}
+                  </h5>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[11px] font-mono text-on-surface-variant">{{ $t('settings.branchLatitude') || 'Latitude' }}</label>
+                    <input 
+                      type="number" 
+                      step="any"
+                      v-model.number="branchLatitude"
+                      placeholder="-6.816083"
+                      :disabled="!isOwnerOrAdmin"
+                      class="w-full bg-surface-container border border-outline-variant text-xs font-mono rounded-lg px-3 py-2 outline-none focus:border-primary text-on-surface disabled:opacity-60"
+                    />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[11px] font-mono text-on-surface-variant">{{ $t('settings.branchLongitude') || 'Longitude' }}</label>
+                    <input 
+                      type="number" 
+                      step="any"
+                      v-model.number="branchLongitude"
+                      placeholder="39.280358"
+                      :disabled="!isOwnerOrAdmin"
+                      class="w-full bg-surface-container border border-outline-variant text-xs font-mono rounded-lg px-3 py-2 outline-none focus:border-primary text-on-surface disabled:opacity-60"
+                    />
+                  </div>
+                </div>
+                <p class="text-[10px] text-on-surface-variant">
+                  {{ $t('settings.branchCoordinatesDesc') || 'Optional latitude and longitude coordinates for map view and delivery dispatch.' }}
+                </p>
+              </div>
+
+              <!-- Metadata footer for branch -->
+              <div v-if="selectedBranchId" class="flex items-center justify-between text-[11px] font-mono text-on-surface-variant/80 pt-2 border-t border-outline-variant/30 flex-wrap gap-2">
+                <div class="flex items-center gap-2">
+                  <span>Branch ID: <strong class="text-on-surface select-all">{{ selectedBranchId }}</strong></span>
+                  <button 
+                    type="button" 
+                    @click="copyBranchId(selectedBranchId)"
+                    class="p-1 hover:text-primary transition-colors cursor-pointer border-0 bg-transparent"
+                    title="Copy Branch ID"
+                  >
+                    <Copy class="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div v-if="branchCreatedAt" class="flex items-center gap-3">
+                  <span>Registered: {{ formatDate(branchCreatedAt) }}</span>
                 </div>
               </div>
             </div>
 
-            <!-- Contact email & phone -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">{{ $t('settings.supportPhone') }}</label>
-                <div class="relative flex items-center">
-                  <Phone class="w-4 h-4 text-on-surface-variant absolute left-3.5 pointer-events-none" />
-                  <input 
-                    type="tel" 
-                    required
-                    v-model="storePhone"
-                    placeholder="+254 700 000 000"
-                    class="w-full bg-surface-container pl-10 pr-3.5 py-2.5 border border-outline-variant text-sm font-semibold rounded-lg outline-none focus:border-primary text-on-surface"
-                  />
+            <!-- TAB 2: STORE / ENTERPRISE DETAILS -->
+            <div v-else-if="profileTab === 'store'" class="space-y-6">
+              
+              <!-- Store Banner Card -->
+              <div class="p-4 bg-surface-container-low border border-outline-variant/60 rounded-xl flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                  <Store class="w-5 h-5" />
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <h4 class="text-sm font-bold text-on-surface">
+                      {{ storeName || $t('settings.unnamedStore') || 'Store / Enterprise Organization' }}
+                    </h4>
+                    <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-primary/10 text-primary border border-primary/20 uppercase">
+                      {{ $t('settings.parentOrganization') || 'PARENT STORE' }}
+                    </span>
+                  </div>
+                  <p class="text-xs text-on-surface-variant font-medium mt-0.5">
+                    {{ $t('settings.storeDetailsBannerDesc') || 'These enterprise-wide settings (Legal Business Name, Tax PIN/TIN, Base Currency, Timezone) govern accounting and reporting across all branches.' }}
+                  </p>
                 </div>
               </div>
 
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">{{ $t('settings.storeEmail') }}</label>
-                <div class="relative flex items-center">
-                  <Mail class="w-4 h-4 text-on-surface-variant absolute left-3.5 pointer-events-none" />
-                  <input 
-                    type="email" 
-                    required
-                    v-model="storeEmail"
-                    placeholder="billing@dukapor.co"
-                    class="w-full bg-surface-container pl-10 pr-3.5 py-2.5 border border-outline-variant text-sm font-semibold rounded-lg outline-none focus:border-primary text-on-surface"
-                  />
+              <!-- Store Legal Name & TIN -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">
+                    {{ $t('settings.storeLegalName') || 'Store / Business Legal Name' }} <span class="text-error">*</span>
+                  </label>
+                  <div class="relative flex items-center">
+                    <Store class="w-4 h-4 text-on-surface-variant absolute left-3.5 pointer-events-none" />
+                    <input 
+                      type="text" 
+                      required
+                      v-model="storeName"
+                      :placeholder="$t('settings.storeLegalNamePlaceholder') || 'Ex. DukaPro Supermarkets Ltd'"
+                      :disabled="!isOwnerOrAdmin"
+                      class="w-full bg-surface-container border border-outline-variant text-sm font-semibold rounded-lg pl-10 pr-3.5 py-2.5 outline-none focus:border-primary text-on-surface disabled:opacity-60"
+                    />
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">
+                    {{ $t('settings.tinCode') || 'VAT KRA / TIN Registration Code' }}
+                  </label>
+                  <div class="relative flex items-center">
+                    <FileText class="w-4 h-4 text-on-surface-variant absolute left-3.5 pointer-events-none" />
+                    <input 
+                      type="text" 
+                      v-model="storeTin"
+                      placeholder="Ex. P0001234567X"
+                      :disabled="!isOwnerOrAdmin"
+                      class="w-full bg-surface-container border border-outline-variant text-sm font-mono rounded-lg pl-10 pr-3.5 py-2.5 outline-none focus:border-primary text-on-surface disabled:opacity-60"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Store physical address -->
-            <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">{{ $t('settings.storeAddress') }}</label>
-              <div class="relative">
-                <MapPin class="w-4 h-4 text-on-surface-variant absolute left-3.5 top-3 pointer-events-none" />
-                <textarea 
-                  required
-                  rows="3"
-                  v-model="storeAddress"
-                  placeholder="123 Market Street, Nairobi, Kenya"
-                  class="w-full bg-surface-container pl-10 pr-3.5 py-2.5 border border-outline-variant text-sm font-semibold rounded-lg outline-none focus:border-primary text-on-surface resize-none"
-                />
+              <!-- Currency & Timezone -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">
+                    {{ $t('settings.baseCurrency') || 'Reference Base Currency' }}
+                  </label>
+                  <div class="relative flex items-center">
+                    <Coins class="w-4 h-4 text-on-surface-variant absolute left-3.5 pointer-events-none" />
+                    <select 
+                      v-model="storeCurrency"
+                      :disabled="!isOwnerOrAdmin"
+                      class="w-full bg-surface-container border border-outline-variant text-sm font-semibold rounded-lg pl-10 pr-3.5 py-2.5 outline-none focus:border-primary text-on-surface disabled:opacity-60 cursor-pointer"
+                    >
+                      <option value="TZS">TZS - Tanzanian Shilling (Default)</option>
+                      <option value="USD">USD - United States Dollar</option>
+                      <option value="EUR">EUR - Euro</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">
+                    {{ $t('settings.timezone') || 'Operational Timezone' }}
+                  </label>
+                  <div class="relative flex items-center">
+                    <Globe class="w-4 h-4 text-on-surface-variant absolute left-3.5 pointer-events-none" />
+                    <select 
+                      v-model="storeTimezone"
+                      :disabled="!isOwnerOrAdmin"
+                      class="w-full bg-surface-container border border-outline-variant text-sm font-semibold rounded-lg pl-10 pr-3.5 py-2.5 outline-none focus:border-primary text-on-surface disabled:opacity-60 cursor-pointer"
+                    >
+                      <option value="Africa/Dar_es_Salaam">Africa/Dar_es_Salaam (EAT, UTC+3)</option>
+                      <option value="Africa/Nairobi">Africa/Nairobi (EAT, UTC+3)</option>
+                      <option value="Africa/Kampala">Africa/Kampala (EAT, UTC+3)</option>
+                      <option value="Africa/Kigali">Africa/Kigali (CAT, UTC+2)</option>
+                      <option value="UTC">UTC (Coordinated Universal Time)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Perpetual COGS Info Card -->
+              <div class="p-4 rounded-xl bg-surface-container/60 border border-outline-variant/40 flex items-start gap-3">
+                <CheckCircle2 class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <h5 class="text-xs font-bold text-on-surface">
+                    {{ $t('settings.perpetualCogsEnabled') || 'Perpetual Inventory & Real-Time COGS Active' }}
+                  </h5>
+                  <p class="text-xs text-on-surface-variant mt-0.5">
+                    {{ $t('settings.perpetualCogsExplanation') || 'Every sales checkout automatically computes weighted cost of goods sold (COGS) and updates inventory asset valuations across all registered store branches.' }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Registered Branches Overview Table -->
+              <div class="space-y-3 pt-2">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface">
+                      {{ $t('settings.registeredBranches') || 'Registered Store Branches' }} ({{ availableBranches.length }})
+                    </h4>
+                    <p class="text-xs text-on-surface-variant">
+                      {{ $t('settings.registeredBranchesDesc') || 'Overview of physical branches operating under this enterprise store account.' }}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="border border-outline-variant/60 rounded-xl overflow-hidden bg-surface-container-lowest">
+                  <table class="w-full text-left text-xs">
+                    <thead class="bg-surface-container font-mono text-[11px] text-on-surface-variant uppercase tracking-wider border-b border-outline-variant/60">
+                      <tr>
+                        <th class="py-2.5 px-3.5">{{ $t('settings.tableBranchName') || 'Branch Name' }}</th>
+                        <th class="py-2.5 px-3.5">{{ $t('settings.tableLocation') || 'Location' }}</th>
+                        <th class="py-2.5 px-3.5">{{ $t('settings.tableContact') || 'Contact' }}</th>
+                        <th class="py-2.5 px-3.5">{{ $t('settings.tableStatus') || 'Status' }}</th>
+                        <th class="py-2.5 px-3.5 text-right">{{ $t('settings.tableAction') || 'Action' }}</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-outline-variant/40">
+                      <tr v-if="availableBranches.length === 0">
+                        <td colspan="5" class="py-6 text-center text-on-surface-variant">
+                          {{ $t('settings.noBranchesFound') || 'No branches found for this store' }}
+                        </td>
+                      </tr>
+                      <tr 
+                        v-for="branch in availableBranches" 
+                        :key="branch.id"
+                        class="hover:bg-surface-container-low/50 transition-colors"
+                      >
+                        <td class="py-3 px-3.5 font-bold text-on-surface">
+                          <div class="flex items-center gap-2">
+                            <span>{{ branch.name }}</span>
+                            <span 
+                              v-if="branch.id === (vm.activeBranchId.value || currentBranchId)"
+                              class="px-1.5 py-0.5 text-[9px] font-bold rounded bg-primary/10 text-primary border border-primary/20"
+                            >
+                              Active
+                            </span>
+                          </div>
+                        </td>
+                        <td class="py-3 px-3.5 text-on-surface-variant truncate max-w-xs">
+                          {{ branch.location || '-' }}
+                        </td>
+                        <td class="py-3 px-3.5 text-on-surface-variant">
+                          <div>{{ branch.phone || '-' }}</div>
+                          <div class="text-[10px] text-on-surface-variant/70">{{ branch.email || '' }}</div>
+                        </td>
+                        <td class="py-3 px-3.5">
+                          <span 
+                            class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full uppercase"
+                            :class="branch.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'"
+                          >
+                            {{ branch.status || 'ACTIVE' }}
+                          </span>
+                        </td>
+                        <td class="py-3 px-3.5 text-right">
+                          <button
+                            type="button"
+                            @click="switchToEditBranch(branch.id)"
+                            class="px-2.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs inline-flex items-center gap-1 cursor-pointer border border-outline-variant/60"
+                          >
+                            <Building2 class="w-3.5 h-3.5" />
+                            <span>{{ $t('settings.editBranch') || 'Configure' }}</span>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -1521,10 +1904,14 @@
             <button 
               type="button"
               @click="handleSave"
-              class="px-6 py-3 bg-primary hover:bg-opacity-95 text-on-primary font-bold text-sm rounded-lg shadow-sm shadow-primary/10 transition-colors flex items-center justify-center gap-1.5 cursor-pointer border-0"
+              :disabled="!isOwnerOrAdmin || isSavingCurrent"
+              class="px-6 py-3 bg-primary hover:bg-opacity-95 text-on-primary font-bold text-sm rounded-lg shadow-sm shadow-primary/10 transition-colors flex items-center justify-center gap-1.5 cursor-pointer border-0 disabled:opacity-50"
             >
-              <CheckCircle class="w-4 h-4" />
-              <span>{{ $t('settings.saveChanges') }}</span>
+              <Loader2 v-if="isSavingCurrent" class="w-4 h-4 animate-spin" />
+              <CheckCircle v-else class="w-4 h-4" />
+              <span>
+                {{ profileTab === 'branch' ? ($t('settings.saveBranchChanges') || 'Save Branch Changes') : ($t('settings.saveStoreChanges') || 'Save Store Changes') }}
+              </span>
             </button>
           </div>
 
@@ -1591,17 +1978,18 @@ import {
   X
 } from 'lucide-vue-next';
 import { makerCheckerService } from '../services/makerCheckerService';
-import type { StoreApprovalPolicy, MakerCheckerRequest, MakerCheckerAction, UserRole } from '../models/types';
+import type { StoreApprovalPolicy, MakerCheckerRequest, MakerCheckerAction, UserRole, StoreBranchResponse } from '../models/types';
 
 const router = useRouter();
 const route = useRoute();
 const { isStoreAdminOrManager, startTour, checkAndAutoStart } = useAppTour();
 const vm = useAppViewModel();
-const { userRole, userId, activeBranchId } = vm;
+const { userRole, userId, activeBranchId, activeBranchName } = vm;
 
 const isElectronApp = ref(typeof window !== 'undefined' && (window as any).ipcRenderer !== undefined);
 const activeSection = ref<'profile' | 'maker-checker' | 'hardware' | 'account' | 'updates'>('profile');
 const makerCheckerTab = ref<'policies' | 'pending'>('policies');
+const profileTab = ref<'branch' | 'store'>('branch');
 const appVersion = ref(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '2.6.0');
 
 // Permission Controls
@@ -1621,7 +2009,9 @@ const syncSectionFromRoute = () => {
     }
   }
   const tab = route.query.tab as string;
-  if (tab === 'pending' || tab === 'policies') {
+  if (activeSection.value === 'profile' && (tab === 'branch' || tab === 'store')) {
+    profileTab.value = tab;
+  } else if (tab === 'pending' || tab === 'policies') {
     if (tab === 'policies' && !canManagePolicies.value) {
       makerCheckerTab.value = 'pending';
     } else {
@@ -1635,6 +2025,12 @@ const syncSectionFromRoute = () => {
 watch(() => [route.query.section, route.query.tab], () => {
   syncSectionFromRoute();
 }, { immediate: true });
+
+watch(profileTab, (newTab) => {
+  if (activeSection.value === 'profile' && route.query.tab !== newTab) {
+    router.replace({ query: { ...route.query, tab: newTab } });
+  }
+});
 
 // Desktop Updates state
 const updateInfo = ref<{
@@ -2072,15 +2468,95 @@ const { lastScannedBarcode, scanHistory, scanStats } = useBarcodeScanner({
   enableAudioFeedback: true,
 });
 
-// Input states
+// Store input states
 const storeName = ref('');
 const storeTin = ref('');
-const storeAddress = ref('');
-const storePhone = ref('');
-const storeEmail = ref('');
 const storeCurrency = ref<'TZS' | 'USD' | 'EUR'>('TZS');
-const storeTimezone = ref('');
-const enablePerpetualCogs = ref(false);
+const storeTimezone = ref('Africa/Dar_es_Salaam');
+const enablePerpetualCogs = ref(true);
+
+// Branch Profile states
+const availableBranches = ref<StoreBranchResponse[]>([]);
+const selectedBranchId = ref<string>('');
+const branchName = ref('');
+const branchLocation = ref('');
+const branchPhone = ref('');
+const branchEmail = ref('');
+const branchStatus = ref<'ACTIVE' | 'NOT ACTIVE'>('ACTIVE');
+const branchLatitude = ref<number | null>(null);
+const branchLongitude = ref<number | null>(null);
+const branchCreatedAt = ref('');
+const branchUpdatedAt = ref('');
+
+const isSavingBranch = ref(false);
+const isSavingStore = ref(false);
+const isSavingCurrent = computed(() => isSavingBranch.value || isSavingStore.value);
+const currentBranchId = computed(() => vm.activeBranchId.value || localStorage.getItem('branchId') || '');
+
+const populateBranchFields = (branch: StoreBranchResponse) => {
+  branchName.value = branch.name || '';
+  branchLocation.value = branch.location || '';
+  branchPhone.value = branch.phone || '';
+  branchEmail.value = branch.email || '';
+  branchStatus.value = (branch.status as any) || 'ACTIVE';
+  branchLatitude.value = branch.latitude ?? null;
+  branchLongitude.value = branch.longitude ?? null;
+  branchCreatedAt.value = branch.createdAt ? String(branch.createdAt) : '';
+  branchUpdatedAt.value = branch.updatedAt ? String(branch.updatedAt) : '';
+};
+
+const onBranchSelected = async () => {
+  const found = availableBranches.value.find(b => b.id === selectedBranchId.value);
+  if (found) {
+    populateBranchFields(found);
+  } else if (selectedBranchId.value) {
+    try {
+      const branchData = await api.get<StoreBranchResponse>(`/api/branches/${selectedBranchId.value}`);
+      if (branchData) {
+        populateBranchFields(branchData);
+      }
+    } catch (err) {
+      console.error('Failed to fetch branch details:', err);
+    }
+  }
+};
+
+const makeBranchActive = async (branchId: string) => {
+  try {
+    const target = availableBranches.value.find(b => b.id === branchId);
+    await vm.setActiveBranch(branchId, target?.name);
+    showToast(`Switched active workspace branch to ${target?.name || 'selected branch'}`, 'success');
+  } catch (err: any) {
+    showToast(err.message || 'Failed to switch active branch', 'error');
+  }
+};
+
+const switchToEditBranch = (branchId: string) => {
+  selectedBranchId.value = branchId;
+  onBranchSelected();
+  profileTab.value = 'branch';
+};
+
+const copyBranchId = (id: string) => {
+  if (!id) return;
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(id);
+    showToast('Branch ID copied to clipboard', 'info');
+  }
+};
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  try {
+    return new Date(dateStr).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch {
+    return dateStr;
+  }
+};
 
 // Lazy-loaded section cache flags
 const isStoreLoaded = ref(false);
@@ -2092,14 +2568,41 @@ const loadStoreSettings = async (force = false) => {
   if (isStoreLoaded.value && !force) return;
   try {
     await vm.fetchSettings();
-    storeName.value = vm.settings.value.name;
-    storeTin.value = vm.settings.value.tin;
-    storeAddress.value = vm.settings.value.physicalAddress;
-    storePhone.value = vm.settings.value.phone;
-    storeEmail.value = vm.settings.value.email;
-    storeCurrency.value = vm.settings.value.currency;
-    storeTimezone.value = vm.settings.value.timezone;
+    storeName.value = vm.settings.value.name || '';
+    storeTin.value = vm.settings.value.tin || '';
+    storeCurrency.value = vm.settings.value.currency || 'TZS';
+    storeTimezone.value = vm.settings.value.timezone || 'Africa/Dar_es_Salaam';
     enablePerpetualCogs.value = !!vm.settings.value.enablePerpetualCogs;
+
+    // Load branches from API or fallback
+    let branches: StoreBranchResponse[] = [];
+    try {
+      const branchesData = await api.get<StoreBranchResponse[]>('/api/branches');
+      if (Array.isArray(branchesData) && branchesData.length > 0) {
+        branches = branchesData;
+      }
+    } catch (e) {
+      console.warn('Could not fetch branches from /api/branches, falling back to cache:', e);
+    }
+
+    if (branches.length === 0) {
+      if (vm.settings.value.branches && vm.settings.value.branches.length > 0) {
+        branches = vm.settings.value.branches;
+      } else if (vm.userBranches.value && vm.userBranches.value.length > 0) {
+        branches = vm.userBranches.value;
+      }
+    }
+
+    availableBranches.value = branches;
+
+    // Pick active branch or first available branch
+    const activeId = currentBranchId.value;
+    const targetBranch = branches.find(b => b.id === activeId) || branches[0];
+    if (targetBranch) {
+      selectedBranchId.value = targetBranch.id;
+      populateBranchFields(targetBranch);
+    }
+
     isStoreLoaded.value = true;
   } catch (err) {
     console.error('Failed to load store settings:', err);
@@ -2391,26 +2894,83 @@ watch(makerCheckerTab, async (newTab) => {
   }
 });
 
-const handleSave = async () => {
+const handleSaveBranch = async () => {
+  if (!selectedBranchId.value) {
+    showToast('No branch selected to update', 'error');
+    return;
+  }
+  if (!branchName.value.trim()) {
+    showToast('Branch name is required', 'error');
+    return;
+  }
+  isSavingBranch.value = true;
   try {
-    if (activeSection.value === 'maker-checker') {
-      return;
+    const payload = {
+      name: branchName.value.trim(),
+      location: branchLocation.value.trim(),
+      phone: branchPhone.value.trim(),
+      email: branchEmail.value.trim(),
+      status: branchStatus.value,
+      latitude: branchLatitude.value !== null && !isNaN(Number(branchLatitude.value)) ? Number(branchLatitude.value) : undefined,
+      longitude: branchLongitude.value !== null && !isNaN(Number(branchLongitude.value)) ? Number(branchLongitude.value) : undefined,
+    };
+    
+    const updated = await vm.updateBranchDetails(selectedBranchId.value, payload);
+
+    // Update in availableBranches
+    const idx = availableBranches.value.findIndex(b => b.id === selectedBranchId.value);
+    if (idx !== -1) {
+      availableBranches.value[idx] = { ...availableBranches.value[idx], ...updated };
     }
 
+    showToast(t('settings.branchUpdateSuccess') || 'Branch profile updated successfully', 'success');
+  } catch (err: any) {
+    console.error('Failed to update branch:', err);
+    showToast(err.message || 'Failed to update branch profile', 'error');
+  } finally {
+    isSavingBranch.value = false;
+  }
+};
+
+const handleSaveStore = async () => {
+  if (!storeName.value.trim()) {
+    showToast('Store name is required', 'error');
+    return;
+  }
+  isSavingStore.value = true;
+  try {
     await vm.updateSettings({
-      name: storeName.value,
-      tin: storeTin.value,
-      physicalAddress: storeAddress.value,
-      phone: storePhone.value,
-      email: storeEmail.value,
+      name: storeName.value.trim(),
+      tin: storeTin.value.trim(),
+      physicalAddress: branchLocation.value || '',
+      phone: branchPhone.value || '',
+      email: branchEmail.value || '',
       currency: storeCurrency.value,
       timezone: storeTimezone.value,
       enablePerpetualCogs: true
     });
 
-    showToast('Store settings updated and applied successfully', 'success');
+    showToast(t('settings.storeUpdateSuccess') || 'Store settings updated successfully', 'success');
   } catch (err: any) {
+    console.error('Failed to update store settings:', err);
     showToast(err.message || 'Failed to update store settings', 'error');
+  } finally {
+    isSavingStore.value = false;
+  }
+};
+
+const handleSave = async () => {
+  try {
+    if (activeSection.value === 'maker-checker') {
+      return;
+    }
+    if (profileTab.value === 'branch') {
+      await handleSaveBranch();
+    } else {
+      await handleSaveStore();
+    }
+  } catch (err: any) {
+    showToast(err.message || 'Failed to save changes', 'error');
   }
 };
 </script>

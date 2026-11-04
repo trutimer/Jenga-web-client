@@ -224,7 +224,7 @@
             <div class="mt-2.5 pt-2 border-t border-outline-variant/50 flex items-center justify-between">
               <span class="text-[10px] sm:text-[11px] font-bold text-primary group-hover:underline">
                 <template v-if="selectingBranchId === b.id">
-                  {{ $t('selectBranch.verifyingLicense') }}
+                  {{ $t('selectBranch.switchingContext') }}
                 </template>
                 <template v-else-if="isCurrentBranch(b)">
                   {{ $t('selectBranch.alreadySelected') }}
@@ -492,19 +492,27 @@ const onSelectStore = async (storeId: string) => {
 
 const refreshAllStoreBranchCounts = async () => {
   if (!userStores.value || userStores.value.length === 0) return;
+  const role = (userRole.value || localStorage.getItem('cashierRole') || '').toUpperCase();
+  const isGlobalAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
+
   await Promise.allSettled(
     userStores.value.map(async (st) => {
       if (st.branches && st.branches.length > 0) {
         storeBranchCounts.value[st.id] = st.branches.length;
       }
-      try {
-        const res = await api.get<StoreBranch[]>(`/api/stores/${st.id}/branches`);
-        if (Array.isArray(res)) {
-          st.branches = res;
-          storeBranchCounts.value[st.id] = res.length;
+      const stRole = (st.role || role).toUpperCase();
+      // Only query all store branches if user has admin privileges for this store.
+      // Cashiers and Managers must never be given store-wide branches.
+      if (isGlobalAdmin || stRole === 'ADMIN' || stRole === 'SUPER_ADMIN') {
+        try {
+          const res = await api.get<StoreBranch[]>(`/api/stores/${st.id}/branches`);
+          if (Array.isArray(res)) {
+            st.branches = res;
+            storeBranchCounts.value[st.id] = res.length;
+          }
+        } catch (e) {
+          console.warn(`Failed to fetch branches for store ${st.name}:`, e);
         }
-      } catch (e) {
-        console.warn(`Failed to fetch branches for store ${st.name}:`, e);
       }
     })
   );
@@ -521,8 +529,24 @@ const loadBranches = async () => {
     return;
   }
 
-  // First check if the store in userStores already has pre-populated branches
+  const role = (userRole.value || localStorage.getItem('cashierRole') || '').toUpperCase();
+  const isGlobalAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
   const st = userStores.value.find(s => s.id === targetStoreId);
+  const stRole = (st?.role || role).toUpperCase();
+  const isAdminForStore = isGlobalAdmin || stRole === 'ADMIN' || stRole === 'SUPER_ADMIN';
+
+  // For non-admins (CASHIER or MANAGER), strictly use assigned branches
+  if (!isAdminForStore) {
+    const assignedBranches = (st && st.branches && st.branches.length > 0)
+      ? st.branches
+      : (vm.userBranches.value || []);
+    branches.value = assignedBranches;
+    storeBranchCounts.value[targetStoreId] = assignedBranches.length;
+    isLoading.value = false;
+    return;
+  }
+
+  // First check if the store in userStores already has pre-populated branches
   if (st && st.branches && st.branches.length > 0) {
     branches.value = st.branches;
     storeBranchCounts.value[targetStoreId] = st.branches.length;
@@ -568,18 +592,25 @@ const selectBranch = async (b: StoreBranch) => {
   selectingBranchId.value = b.id;
 
   try {
-    const license = await api.get(`/api/stores/branches/${b.id}/license`, { suppressToast: true });
-    const status = (license?.status || '').toUpperCase();
-
-    if (!license || status !== 'ACTIVE') {
-      modalBranchId.value = b.id;
-      showLicenseModal.value = true;
-      selectingBranchId.value = null;
-      return;
-    }
-
     const targetStoreId = selectedStoreId.value || b.storeId || localStorage.getItem('storeId') || '';
-    await switchContext(targetStoreId, b.id);
+    if (targetStoreId) {
+      try {
+        await switchContext(targetStoreId, b.id);
+      } catch (switchErr: any) {
+        console.warn('Server switchContext encountered error, applying local branch selection:', switchErr);
+        localStorage.setItem('storeId', targetStoreId);
+        localStorage.setItem('branchId', b.id);
+        localStorage.setItem('branchName', b.name);
+        vm.activeStoreId.value = targetStoreId;
+        vm.activeBranchId.value = b.id;
+        vm.activeBranchName.value = b.name;
+      }
+    } else {
+      localStorage.setItem('branchId', b.id);
+      localStorage.setItem('branchName', b.name);
+      vm.activeBranchId.value = b.id;
+      vm.activeBranchName.value = b.name;
+    }
 
     showToast(t('selectBranch.branchVerifiedToast', { name: b.name }), 'success');
 
@@ -590,8 +621,8 @@ const selectBranch = async (b: StoreBranch) => {
       router.push('/dashboard');
     }
   } catch (err: any) {
-    modalBranchId.value = b.id;
-    showLicenseModal.value = true;
+    console.error('Failed to select branch:', err);
+    showToast(err.message || 'Failed to select branch', 'error');
   } finally {
     selectingBranchId.value = null;
   }

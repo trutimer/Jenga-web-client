@@ -619,7 +619,7 @@ const getDeviceFingerprint = async () => {
 };
 
 const processSuccessfulLogin = async (res: any) => {
-  if (isElectron() && (res.user?.role === 'SUPER_ADMIN' || res.user?.role === 'ADMIN')) {
+  if (isElectron() && res.user?.role === 'SUPER_ADMIN') {
     isLoggingIn.value = false;
     clearAuthStorage();
     error.value = t('auth.desktopSuperAdminError');
