@@ -71,6 +71,16 @@
           <Pencil class="w-4 h-4" />
           <span>{{ $t('productDetail.editProduct') }}</span>
         </button>
+
+        <button 
+          v-if="product?.isActive !== false && vm.hasPermission('inventory:delete')"
+          @click="confirmDeleteProduct"
+          class="h-10 px-4 rounded-xl font-bold text-xs text-error border border-error/30 bg-error/10 hover:bg-error/15 flex items-center gap-2 transition-all cursor-pointer shadow-xs"
+          :title="$t('productDetail.deleteProduct')"
+        >
+          <Trash2 class="w-4 h-4" />
+          <span>{{ $t('common.delete') }}</span>
+        </button>
       </div>
     </div>
 
@@ -1139,6 +1149,52 @@
       </template>
     </Modal>
 
+    <!-- 7. DELETE PRODUCT CONFIRMATION MODAL -->
+    <Modal
+      :isOpen="showDeleteModal"
+      :onClose="() => showDeleteModal = false"
+      :title="$t('inventory.deleteProductModalTitle')"
+      :subtitle="$t('inventory.deleteProductModalSubtitle')"
+      maxWidth="max-w-md"
+    >
+      <div class="space-y-4">
+        <div class="p-4 rounded-xl bg-error-container/20 border border-error/30 flex items-start gap-3">
+          <AlertTriangle class="w-6 h-6 text-error shrink-0 mt-0.5" />
+          <div>
+            <h4 class="text-sm font-bold text-error">{{ $t('common.warning') }}</h4>
+            <p class="text-xs text-on-surface-variant mt-1">
+              {{ $t('inventory.deleteWarningText', { name: product?.name || '', barcode: product?.barcode || 'N/A' }) }}
+            </p>
+          </div>
+        </div>
+
+        <p class="text-xs text-on-surface-variant leading-relaxed">
+          {{ $t('inventory.deleteWarningDesc') }}
+        </p>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-outline-variant/50">
+          <button 
+            type="button"
+            @click="showDeleteModal = false"
+            :disabled="isDeleting"
+            class="px-4.5 py-2.5 rounded-lg border border-outline font-bold hover:bg-surface-container-low text-xs cursor-pointer text-on-surface-variant bg-surface-container-lowest"
+          >
+            {{ $t('common.cancel') }}
+          </button>
+          <button 
+            type="button"
+            @click="handleDeleteProduct"
+            :disabled="isDeleting"
+            class="px-5 py-2.5 rounded-lg font-bold text-xs text-white transition-all cursor-pointer border-0 shadow-sm bg-error hover:bg-error/90 disabled:opacity-50 flex items-center gap-1.5"
+          >
+            <Trash2 v-if="!isDeleting" class="w-4 h-4" />
+            <RotateCw v-else class="w-4 h-4 animate-spin" />
+            <span>{{ isDeleting ? $t('inventory.deletingBtn') : $t('inventory.deleteProductBtn') }}</span>
+          </button>
+        </div>
+      </div>
+    </Modal>
+
   </div>
 </template>
 
@@ -1173,6 +1229,7 @@ import {
   CheckCircle2, 
   Package, 
   PackageOpen, 
+  Trash2,
   History, 
   Receipt, 
   Search, 
@@ -1233,6 +1290,8 @@ const salesItemsPerPage = 12;
 // Modals
 const showEditModal = ref(false);
 const showRestockModal = ref(false);
+const showDeleteModal = ref(false);
+const isDeleting = ref(false);
 
 const editForm = ref({
   name: '',
@@ -1673,6 +1732,27 @@ const handleSaveRestock = async () => {
     showToast('Failed to record stock movement: ' + (err.message || err), 'error');
   } finally {
     isSubmitting.value = false;
+  }
+};
+
+const confirmDeleteProduct = () => {
+  showDeleteModal.value = true;
+};
+
+const handleDeleteProduct = async () => {
+  if (!product.value || !product.value.id || isDeleting.value) return;
+  isDeleting.value = true;
+  try {
+    await api.delete(`/api/products/${product.value.id}`);
+    showToast(t('toasts.productDeletedSuccess'), 'success');
+    showDeleteModal.value = false;
+    await vm.fetchProducts();
+    router.push('/inventory');
+  } catch (err: any) {
+    console.error('Failed to delete product:', err);
+    showToast(err.message || 'Failed to delete product', 'error');
+  } finally {
+    isDeleting.value = false;
   }
 };
 

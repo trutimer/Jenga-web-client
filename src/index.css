@@ -79,6 +79,21 @@ textarea {
   animation: zoomPulse 2.2s infinite ease-in-out;
 }
 
+/* Sleek minimal custom scrollbar for sidebar & compact panels */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
 /* Jenga Loader Animations */
 @keyframes jengaFloatTop {
   0%, 100% {

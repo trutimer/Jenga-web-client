@@ -222,6 +222,9 @@ export const en = {
 
   // Sidebar Menu
   sidebar: {
+    sectionMain: 'Overview',
+    sectionOperations: 'Operations',
+    sectionManagement: 'Administration',
     activeSession: 'Active Session',
     dashboard: 'Dashboard',
     dashboards: 'Dashboards',
@@ -770,6 +773,7 @@ export const en = {
     assignedSupplier: 'Assigned Supplier',
     selectSupplierOptional: 'Select Supplier (Optional)',
     saveProductRecord: 'Save Product Record',
+    savingProductRecord: 'Saving Product Record...',
     bulkImportTitle: 'Bulk Import Products Database',
     bulkImportGuideHeader: 'CSV/Data Layout Format Guide:',
     bulkImportGuideDesc: 'Paste comma-separated items. Format sequence must follow:',
@@ -2288,6 +2292,7 @@ export const en = {
     // Actions
     editProduct: 'Edit Product',
     restockProduct: 'Restock / Adjust Stock',
+    deleteProduct: 'Delete Product',
     printBarcodeLabel: 'Print Barcode / QR Tag',
     refresh: 'Refresh',
 

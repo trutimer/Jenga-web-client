@@ -742,7 +742,8 @@
           <h2 class="text-[17px] font-bold text-on-surface">{{ $t('inventory.addProductModalTitle') }}</h2>
           <button 
             @click="showAddModal = false"
-            class="text-outline hover:text-on-surface-variant cursor-pointer bg-transparent border-0"
+            :disabled="isAddingProduct"
+            class="text-outline hover:text-on-surface-variant cursor-pointer bg-transparent border-0 disabled:opacity-50"
           >
             <X class="w-5 h-5" />
           </button>
@@ -963,15 +964,18 @@
             <button 
               type="button"
               @click="showAddModal = false"
-              class="px-4.5 py-2.5 rounded-lg border border-outline font-bold hover:bg-surface-container-low text-xs cursor-pointer text-on-surface-variant text-center bg-surface-container-lowest"
+              :disabled="isAddingProduct"
+              class="px-4.5 py-2.5 rounded-lg border border-outline font-bold hover:bg-surface-container-low text-xs cursor-pointer text-on-surface-variant text-center bg-surface-container-lowest disabled:opacity-50"
             >
               {{ $t('common.cancel') }}
             </button>
             <button 
               type="submit"
-              class="px-5 py-2.5 rounded-lg font-bold text-xs text-white transition-all cursor-pointer text-center border-0 shadow-sm bg-primary text-on-primary"
+              :disabled="isAddingProduct"
+              class="px-5 py-2.5 rounded-lg font-bold text-xs text-white transition-all cursor-pointer text-center border-0 shadow-sm bg-primary text-on-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[150px]"
             >
-              {{ $t('inventory.saveProductRecord') }}
+              <RotateCw v-if="isAddingProduct" class="w-3.5 h-3.5 animate-spin text-white" />
+              <span>{{ isAddingProduct ? $t('inventory.savingProductRecord') : $t('inventory.saveProductRecord') }}</span>
             </button>
           </div>
         </form>
@@ -1513,6 +1517,7 @@ watch(() => vm.activeBranchId.value, async () => {
 
 // Add Modal States
 const showAddModal = ref(false);
+const isAddingProduct = ref(false);
 const newProdName = ref('');
 const newProdBarcode = ref('');
 const newProdCategory = ref('Snacks');
@@ -1895,6 +1900,8 @@ const paginatedProducts = computed(() => {
 });
 
 const handleAddProduct = async () => {
+  if (isAddingProduct.value) return;
+
   if (!newProdName.value || !newProdCost.value || (newProdPurpose.value !== 'INTERNAL_USE' && !newProdPrice.value) || !newProdStock.value || !newProdMinStock.value) {
     showToast('Please fill out all required fields', 'error');
     return;
@@ -1929,6 +1936,7 @@ const handleAddProduct = async () => {
     return;
   }
 
+  isAddingProduct.value = true;
   try {
     const branchId = localStorage.getItem('branchId');
     if (!branchId) {
@@ -2018,6 +2026,8 @@ const handleAddProduct = async () => {
     newProdExpiryDate.value = '';
   } catch (err: any) {
     showToast('Failed to add product: ' + (err.message || err), 'error');
+  } finally {
+    isAddingProduct.value = false;
   }
 };
 

@@ -213,9 +213,6 @@
 
     <!-- Trailing Actions -->
     <div class="flex items-center gap-3 ml-auto">
-      <!-- Language Selector Dropdown -->
-      <LanguageSelector variant="dropdown" />
-
       <!-- Notifications (Admins & Managers only) -->
       <NotificationDropdown v-if="isStoreAdminOrManager" />
 
@@ -401,24 +398,99 @@
         <!-- Cloud Sync & Offline Status -->
         <SyncStatusBadge />
 
-        <!-- Quick Lock Screen Button -->
-        <button 
-          @click="$emit('lock')"
-          class="p-2 hover:bg-surface-container-high rounded-full transition-colors flex items-center justify-center cursor-pointer text-on-surface-variant hover:text-primary"
-          :title="$t('auth.lockScreenTooltip')"
-        >
-          <Lock class="w-5 h-5 stroke-[2px]" />
-        </button>
+        <!-- User Profile Avatar & Dropdown -->
+        <div class="relative ml-1.5">
+          <button 
+            type="button"
+            @click="userMenuOpen = !userMenuOpen"
+            class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary text-white font-black text-xs sm:text-sm flex items-center justify-center shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer select-none shrink-0"
+            :class="userMenuOpen ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : ''"
+            :title="userFullName"
+            aria-label="User Profile Menu"
+          >
+            <span>{{ userInitials }}</span>
+          </button>
 
-        <!-- Logout for Cashier (since they don't have sidebar) -->
-        <button 
-          v-if="userRole === 'CASHIER'"
-          @click="$emit('logout')"
-          class="p-2 hover:bg-error-container rounded-full transition-colors flex items-center justify-center cursor-pointer text-error"
-          :title="$t('topNav.logout')"
-        >
-          <LogOut class="w-5 h-5 stroke-[2px]" />
-        </button>
+          <!-- Dropdown Backdrop -->
+          <div v-if="userMenuOpen" @click="userMenuOpen = false" class="fixed inset-0 z-40"></div>
+
+          <!-- Expanded User Profile Dropdown Menu -->
+          <div 
+            v-if="userMenuOpen"
+            class="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-surface rounded-2xl border border-outline-variant shadow-2xl p-2.5 z-50 flex flex-col gap-1.5 animate-fade-down font-sans"
+          >
+            <!-- User Header Card -->
+            <div 
+              @click="navigateToProfile"
+              class="p-3 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer border border-outline-variant/50 flex items-center gap-3 group"
+              :title="$t('sidebar.profile') || 'View Profile'"
+            >
+              <div class="w-10 h-10 rounded-full bg-primary text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
+                {{ userInitials }}
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-1">
+                  <h4 class="text-xs font-bold text-on-surface truncate group-hover:text-primary transition-colors">
+                    {{ userFullName }}
+                  </h4>
+                  <span class="text-[9px] font-mono font-black uppercase px-1.5 py-0.5 rounded bg-primary-container/30 text-primary shrink-0">
+                    {{ userRole || 'USER' }}
+                  </span>
+                </div>
+                <p class="text-[11px] text-on-surface-variant truncate mt-0.5 font-medium">
+                  {{ currentBranchName }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Language Switcher Section -->
+            <div class="px-3 py-2 flex items-center justify-between gap-2 border-b border-outline-variant/50 text-xs">
+              <div class="flex items-center gap-2 text-on-surface-variant font-medium">
+                <Globe class="w-4 h-4 text-primary shrink-0" />
+                <span>{{ $t('language.selectLanguage') || 'Language' }}</span>
+              </div>
+              <LanguageSelector variant="buttons" />
+            </div>
+
+            <!-- Action Menu Links -->
+            <div class="flex flex-col gap-0.5 py-0.5">
+              <!-- Help & Documentation -->
+              <button 
+                type="button"
+                @click="handleHelpClick"
+                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-on-surface hover:bg-surface-container-high transition-colors text-left cursor-pointer"
+              >
+                <HelpCircle class="w-4 h-4 text-primary shrink-0" />
+                <span class="flex-1 truncate">{{ $t('sidebar.help') || 'Help & Support' }}</span>
+              </button>
+
+              <!-- Lock Screen -->
+              <button 
+                type="button"
+                @click="handleLockClick"
+                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-on-surface hover:bg-surface-container-high transition-colors text-left cursor-pointer"
+              >
+                <Lock class="w-4 h-4 text-primary shrink-0" />
+                <div class="flex-1 min-w-0">
+                  <span class="block truncate">{{ $t('auth.lockScreen') || 'Lock Screen' }}</span>
+                  <span class="text-[10px] text-on-surface-variant/70 block truncate">{{ $t('auth.lockScreenDesc') || 'Keep shift active' }}</span>
+                </div>
+              </button>
+            </div>
+
+            <div class="h-px bg-outline-variant/60 my-0.5"></div>
+
+            <!-- Logout Button -->
+            <button 
+              type="button"
+              @click="handleLogoutClick"
+              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-error hover:bg-error-container/30 transition-colors text-left cursor-pointer"
+            >
+              <LogOut class="w-4 h-4 text-error shrink-0" />
+              <span class="flex-1 truncate">{{ $t('sidebar.logout') || 'Logout' }}</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -482,7 +554,9 @@ import {
   ShoppingBag,
   Store,
   ArrowRight,
-  Loader2
+  Loader2,
+  HelpCircle,
+  Globe
 } from 'lucide-vue-next';
 
 defineProps<{
@@ -492,7 +566,7 @@ defineProps<{
   userRole?: string | null;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'update:searchQuery', val: string): void;
   (e: 'mobileMenuToggle'): void;
   (e: 'logout'): void;
@@ -503,6 +577,49 @@ const router = useRouter();
 const route = useRoute();
 const vm = useAppViewModel();
 const { activeBranchId } = vm;
+
+const userMenuOpen = ref(false);
+
+const userFullName = computed(() => {
+  return (vm.user.value || localStorage.getItem('cashierName') || 'User').trim();
+});
+
+const userInitials = computed(() => {
+  const name = userFullName.value;
+  const parts = name.split(/\s+/).filter(Boolean);
+  const first = parts[0];
+  const second = parts[1];
+  if (first && second) {
+    return (first.charAt(0) + second.charAt(0)).toUpperCase();
+  }
+  if (first && first.length >= 2) {
+    return first.substring(0, 2).toUpperCase();
+  }
+  if (first && first.length === 1) {
+    return first.toUpperCase();
+  }
+  return 'U';
+});
+
+const navigateToProfile = () => {
+  userMenuOpen.value = false;
+  router.push('/profile');
+};
+
+const handleHelpClick = () => {
+  userMenuOpen.value = false;
+  router.push('/help');
+};
+
+const handleLockClick = () => {
+  userMenuOpen.value = false;
+  emit('lock');
+};
+
+const handleLogoutClick = () => {
+  userMenuOpen.value = false;
+  emit('logout');
+};
 
 const modulesMenuOpen = ref(false);
 const showDownloadModal = ref(false);

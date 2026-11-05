@@ -1,21 +1,24 @@
 <template>
-  <nav class="hidden md:flex flex-col h-full bg-surface-container-low border-r border-outline-variant shrink-0 relative z-10 font-sans transition-all duration-300" :class="sidebarCollapsed ? 'w-20' : 'w-64'">
-    <!-- Branch Header -->
+  <nav 
+    class="hidden md:flex flex-col h-full bg-surface-container-low border-r border-outline-variant/60 shrink-0 relative z-20 font-sans transition-all duration-300 ease-in-out select-none" 
+    :class="sidebarCollapsed ? 'w-20' : 'w-64'"
+  >
+    <!-- Branch & Store Header -->
     <div 
-      class="h-16 px-3.5 border-b border-outline-variant flex items-center relative bg-surface-container-low shrink-0 transition-all duration-300"
+      class="h-16 px-3.5 border-b border-outline-variant/60 flex items-center relative bg-surface-container-low shrink-0 transition-all duration-300"
       :class="sidebarCollapsed ? 'justify-center' : 'justify-between gap-2.5'"
     >
       <!-- When Expanded -->
       <template v-if="!sidebarCollapsed">
         <div class="flex items-center gap-2.5 min-w-0 flex-1">
-          <!-- Jenga Logo replacing the shop icon -->
+          <!-- Jenga Brand Logo -->
           <div class="w-9 h-9 rounded-xl bg-white border border-outline-variant/60 flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
             <img src="/logo.svg" alt="Jenga Logo" class="w-full h-full object-contain" />
           </div>
 
           <!-- Store name (line 1) & Branch name (line 2) -->
           <div 
-            class="min-w-0 flex-1 py-1 px-1 -mx-1 rounded-lg transition-colors"
+            class="min-w-0 flex-1 py-1 px-1.5 -mx-1 rounded-lg transition-colors"
             :class="canSwitchContext ? 'cursor-pointer hover:bg-surface-container-high/60 group/store' : ''"
             @click="canSwitchContext ? router.push('/select-branch') : null"
             :title="canSwitchContext ? ($t('topNav.switchBranchTooltip') || 'Switch Store or Branch') : displayStoreName"
@@ -26,156 +29,197 @@
               </h2>
               <ChevronsUpDown v-if="canSwitchContext" class="w-3 h-3 text-outline group-hover/store:text-primary shrink-0 transition-colors" />
             </div>
-            <p class="text-xs font-bold text-primary truncate leading-tight mt-0.5" :title="displayBranchName">
+            <p class="text-[11px] font-bold text-primary truncate leading-tight mt-0.5" :title="displayBranchName">
               {{ displayBranchName }}
             </p>
           </div>
         </div>
 
-        <!-- Breadcrumb / Collapse Button -->
+        <!-- Collapse Toggle Button -->
         <button 
           @click="sidebarCollapsed = !sidebarCollapsed"
-          class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors cursor-pointer shrink-0"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-outline hover:text-primary hover:bg-surface-container-high transition-colors cursor-pointer shrink-0"
           :title="$t('sidebar.collapse') || 'Collapse sidebar'"
+          aria-label="Collapse sidebar"
         >
-          <Menu class="w-5 h-5 stroke-[2.2px]" />
+          <PanelLeftClose class="w-4.5 h-4.5" />
         </button>
       </template>
 
       <!-- When Collapsed -->
       <template v-else>
-        <!-- Breadcrumb / Expand Button -->
         <button 
           @click="sidebarCollapsed = !sidebarCollapsed"
-          class="w-10 h-10 rounded-xl bg-surface-container-high hover:bg-primary/10 hover:text-primary text-on-surface-variant flex items-center justify-center transition-all cursor-pointer shadow-2xs group"
+          class="w-9 h-9 rounded-xl bg-surface-container-high/80 hover:bg-primary/10 hover:text-primary text-on-surface-variant flex items-center justify-center transition-all cursor-pointer shadow-2xs group"
           :title="`${displayBranchName} (${$t('sidebar.expand') || 'Expand sidebar'})`"
+          aria-label="Expand sidebar"
         >
-          <Menu class="w-5 h-5 stroke-[2.2px] group-hover:scale-110 transition-transform" />
+          <PanelLeftOpen class="w-4.5 h-4.5 group-hover:scale-110 transition-transform" />
         </button>
       </template>
     </div>
 
-    <!-- Main Nav Links -->
-    <div class="flex-1 overflow-y-auto py-4 flex flex-col gap-1.5" :class="sidebarCollapsed ? 'px-2' : 'px-3'">
-      <template v-for="item in menuItems" :key="item.id">
-        <div 
-          v-if="item.disabled"
-          class="py-3 flex items-center rounded-xl cursor-not-allowed select-none transition-all duration-200"
-          :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3.5 px-3 text-on-surface-variant/40'"
-          :title="`${item.label} (Simulated feature)`"
-        >
-          <component :is="item.icon" class="w-5 h-5 shrink-0 text-on-surface-variant/40" />
-          <span v-if="!sidebarCollapsed" class="text-sm font-medium text-on-surface-variant/40">{{ item.label }}</span>
-          <span v-if="!sidebarCollapsed" class="ml-auto text-[10px] font-mono border border-outline-variant/30 px-1.5 py-0.2 rounded text-outline bg-surface-container-high scale-[0.85] origin-right">MOCK</span>
+    <!-- Main Navigation Sections -->
+    <div 
+      class="flex-1 overflow-y-auto overflow-x-hidden py-3 flex flex-col custom-scrollbar" 
+      :class="sidebarCollapsed ? 'px-2 gap-3' : 'px-3 gap-3.5'"
+    >
+      <div 
+        v-for="(section, sIndex) in menuSections" 
+        :key="section.id" 
+        class="flex flex-col gap-1"
+      >
+        <!-- Section Title (Expanded) or Divider (Collapsed) -->
+        <div v-if="!sidebarCollapsed" class="px-2.5 mb-1" :class="sIndex > 0 ? 'pt-2.5 border-t border-outline-variant/30' : ''">
+          <p class="text-[10px] font-bold text-outline/75 uppercase tracking-widest select-none">
+            {{ section.label }}
+          </p>
         </div>
+        <div v-else-if="sIndex > 0" class="border-t border-outline-variant/30 mx-2 my-0.5"></div>
 
-        <!-- Expandable Parent Menu Item (with Children) -->
-        <div v-else-if="item.children && item.children.length > 0" class="flex flex-col">
+        <!-- Section Menu Items -->
+        <template v-for="item in section.items" :key="item.id">
+          <!-- Disabled / Mock Item -->
+          <div 
+            v-if="item.disabled"
+            class="h-10 flex items-center rounded-xl cursor-not-allowed select-none transition-all duration-150 relative"
+            :class="sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3 text-on-surface-variant/40'"
+            :title="`${item.label} (Simulated feature)`"
+          >
+            <component :is="item.icon" class="w-4.5 h-4.5 shrink-0 text-on-surface-variant/40" />
+            <span v-if="!sidebarCollapsed" class="text-xs font-medium text-on-surface-variant/40 truncate">{{ item.label }}</span>
+            <span v-if="!sidebarCollapsed" class="ml-auto text-[9px] font-mono border border-outline-variant/30 px-1 py-0.5 rounded text-outline bg-surface-container-high scale-90 origin-right">MOCK</span>
+          </div>
+
+          <!-- Expandable Parent Menu Item (with Children) -->
+          <div v-else-if="item.children && item.children.length > 0" class="flex flex-col">
+            <button
+              @click="handleParentClick(item)"
+              class="h-10 flex items-center justify-between rounded-xl transition-all duration-150 text-left cursor-pointer group relative"
+              :title="sidebarCollapsed ? item.label : ''"
+              :class="[
+                sidebarCollapsed ? 'justify-center px-0 w-full' : 'px-3',
+                isParentActive(item) 
+                  ? 'bg-primary/10 text-primary font-semibold shadow-2xs' 
+                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/60 font-medium'
+              ]"
+            >
+              <!-- Left active indicator pill -->
+              <span 
+                v-if="isParentActive(item)" 
+                class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-primary"
+              ></span>
+
+              <div class="flex items-center gap-3 min-w-0" :class="sidebarCollapsed ? 'justify-center' : ''">
+                <component 
+                  :is="item.icon" 
+                  class="w-4.5 h-4.5 shrink-0 transition-transform duration-200 group-hover:scale-105" 
+                  :class="isParentActive(item) ? 'stroke-[2.2px] text-primary' : 'text-on-surface-variant group-hover:text-on-surface'" 
+                />
+                <span v-if="!sidebarCollapsed" class="text-xs truncate">{{ item.label }}</span>
+              </div>
+
+              <!-- Chevron with smooth rotation -->
+              <ChevronDown 
+                v-if="!sidebarCollapsed" 
+                class="w-3.5 h-3.5 transition-transform duration-200 shrink-0"
+                :class="[
+                  expandedMenus[item.id] ? 'rotate-180 text-primary' : 'text-outline group-hover:text-on-surface'
+                ]"
+              />
+            </button>
+
+            <!-- Nested Submenu Items (Expanded Only) -->
+            <div 
+              v-if="!sidebarCollapsed && expandedMenus[item.id]" 
+              class="flex flex-col gap-0.5 ml-4.5 pl-2.5 my-1 border-l border-outline-variant/50 transition-all duration-200 animate-fade-in"
+            >
+              <button
+                v-for="sub in item.children"
+                :key="sub.path || sub.tab || sub.section"
+                @click="navigateToSubmenu(item, sub)"
+                class="h-8.5 px-2.5 flex items-center justify-between gap-2 rounded-lg text-xs transition-all text-left cursor-pointer group"
+                :class="isSubmenuActive(item, sub)
+                  ? 'bg-primary/15 text-primary font-bold shadow-2xs'
+                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/60 font-medium'"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <span 
+                    class="w-1.5 h-1.5 rounded-full shrink-0 transition-all"
+                    :class="isSubmenuActive(item, sub) ? 'bg-primary scale-110' : 'bg-outline-variant/80 group-hover:bg-outline'"
+                  ></span>
+                  <component 
+                    :is="sub.icon" 
+                    class="w-3.5 h-3.5 shrink-0 transition-colors" 
+                    :class="isSubmenuActive(item, sub) ? 'text-primary' : 'text-outline group-hover:text-on-surface'" 
+                  />
+                  <span class="truncate">{{ sub.label }}</span>
+                </div>
+                <span 
+                  v-if="sub.badge" 
+                  class="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded leading-none shrink-0 tracking-wider"
+                  :class="isSubmenuActive(item, sub) ? 'bg-primary/20 text-primary' : 'bg-surface-container-highest text-outline border border-outline-variant/40'"
+                >
+                  {{ sub.badge }}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Normal Single Menu Item -->
           <button
-            @click="handleParentClick(item)"
-            class="py-3 flex items-center justify-between rounded-xl transition-all duration-200 text-left font-sans cursor-pointer group"
+            v-else
+            @click="router.push('/' + item.id)"
+            class="h-10 flex items-center rounded-xl transition-all duration-150 text-left cursor-pointer group relative"
             :title="sidebarCollapsed ? item.label : ''"
             :class="[
-              sidebarCollapsed ? 'justify-center px-0' : 'px-3',
-              isParentActive(item) 
-                ? 'bg-primary-container text-on-primary-container font-bold shadow-xs' 
-                : 'text-on-surface-variant hover:bg-surface-variant/40'
+              sidebarCollapsed ? 'justify-center px-0 w-full' : 'gap-3 px-3',
+              isActive(item.id) 
+                ? 'bg-primary/10 text-primary font-semibold shadow-2xs' 
+                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/60 font-medium'
             ]"
           >
-            <div class="flex items-center gap-3.5 min-w-0">
-              <component :is="item.icon" class="w-5 h-5 shrink-0" :class="isParentActive(item) ? 'stroke-[2.5px]' : ''" />
-              <span v-if="!sidebarCollapsed" class="text-sm font-semibold truncate">{{ item.label }}</span>
-            </div>
-            <ChevronDown 
-              v-if="!sidebarCollapsed" 
-              class="w-4 h-4 text-on-surface-variant transition-transform duration-200 shrink-0"
-              :class="expandedMenus[item.id] ? 'rotate-180 text-primary' : ''"
+            <!-- Left active indicator pill -->
+            <span 
+              v-if="isActive(item.id)" 
+              class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-primary"
+            ></span>
+
+            <component 
+              :is="item.icon" 
+              class="w-4.5 h-4.5 shrink-0 transition-transform duration-200 group-hover:scale-105" 
+              :class="isActive(item.id) ? 'stroke-[2.2px] text-primary' : 'text-on-surface-variant group-hover:text-on-surface'" 
             />
+            <span v-if="!sidebarCollapsed" class="text-xs truncate">{{ item.label }}</span>
           </button>
-
-          <!-- Nested Submenu Items -->
-          <div 
-            v-if="!sidebarCollapsed && expandedMenus[item.id]" 
-            class="flex flex-col gap-1 pl-3 mt-1.5 mb-1 ml-4 border-l-2 border-outline-variant/60 animate-fade-in"
-          >
-            <button
-              v-for="sub in item.children"
-              :key="sub.path || sub.tab || sub.section"
-              @click="navigateToSubmenu(item, sub)"
-              class="py-2 px-2.5 flex items-center justify-between gap-2 rounded-lg text-xs font-semibold transition-all text-left cursor-pointer"
-              :class="isSubmenuActive(item, sub)
-                ? 'bg-primary text-on-primary font-bold shadow-xs'
-                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'"
-            >
-              <div class="flex items-center gap-2.5 min-w-0">
-                <component :is="sub.icon" class="w-3.5 h-3.5 shrink-0" :class="isSubmenuActive(item, sub) ? 'text-on-primary' : 'text-on-surface-variant'" />
-                <span class="truncate">{{ sub.label }}</span>
-              </div>
-              <span 
-                v-if="sub.badge" 
-                class="text-[9px] font-mono font-black uppercase px-1.5 py-0.5 rounded leading-none shrink-0 tracking-wider"
-                :class="isSubmenuActive(item, sub) ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary border border-primary/20'"
-              >
-                {{ sub.badge }}
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Normal Single Menu Item -->
-        <button
-          v-else
-          @click="router.push('/' + item.id)"
-          class="py-3 flex items-center rounded-xl transition-all duration-200 text-left font-sans cursor-pointer"
-          :title="sidebarCollapsed ? item.label : ''"
-          :class="[
-            sidebarCollapsed ? 'justify-center px-0' : 'gap-3.5 px-3',
-            isActive(item.id) 
-              ? 'bg-primary-container text-on-primary-container font-bold translate-x-1 shadow-xs' 
-              : 'text-on-surface-variant hover:bg-surface-variant/40'
-          ]"
-        >
-          <component :is="item.icon" class="w-5 h-5 shrink-0" :class="isActive(item.id) ? 'stroke-[2.5px]' : ''" />
-          <span v-if="!sidebarCollapsed" class="text-sm font-semibold whitespace-nowrap">{{ item.label }}</span>
-        </button>
-      </template>
+        </template>
+      </div>
     </div>
 
-    <!-- Footer Nav Links -->
-    <div class="mt-auto border-t border-outline-variant p-3.5 flex flex-col gap-2">
-      <button 
-        @click="router.push('/help')"
-        class="py-3 flex items-center rounded-xl transition-all duration-200 text-left font-sans cursor-pointer"
-        :class="[
-          sidebarCollapsed ? 'justify-center mx-1.5 px-0' : 'gap-3.5 px-4.5 mx-1.5',
-          isActive('help')
-            ? 'bg-primary-container text-on-primary-container font-bold shadow-xs'
-            : 'text-on-surface-variant hover:bg-surface-variant/50'
-        ]"
-        :title="sidebarCollapsed ? $t('sidebar.help') : ''"
-      >
-        <HelpCircle class="w-5 h-5 shrink-0" :class="isActive('help') ? 'text-on-primary-container stroke-[2.5px]' : 'text-on-surface-variant'" />
-        <span v-if="!sidebarCollapsed" class="text-sm font-semibold">{{ $t('sidebar.help') }}</span>
-      </button>
-      <button 
-        v-if="onLock"
-        @click="onLock"
-        class="py-3 flex items-center text-on-surface-variant hover:bg-surface-variant/50 rounded-xl transition-all duration-200 cursor-pointer text-left"
-        :class="sidebarCollapsed ? 'justify-center mx-1.5 px-0' : 'gap-3.5 px-4.5 mx-1.5'"
-        :title="sidebarCollapsed ? $t('auth.lockScreen') : ''"
-      >
-        <Lock class="w-5 h-5 stroke-[2px]" />
-        <span v-if="!sidebarCollapsed" class="text-sm font-semibold">{{ $t('auth.lockScreen') }}</span>
-      </button>
-      <button 
-        @click="onLogout"
-        class="py-3 flex items-center text-error hover:bg-error-container/50 rounded-xl transition-all duration-200 cursor-pointer text-left"
-        :class="sidebarCollapsed ? 'justify-center mx-1.5 px-0' : 'gap-3.5 px-4.5 mx-1.5'"
-        :title="sidebarCollapsed ? $t('sidebar.logout') : ''"
-      >
-        <LogOut class="w-5 h-5 stroke-[2px]" />
-        <span v-if="!sidebarCollapsed" class="text-sm font-semibold">{{ $t('sidebar.logout') }}</span>
-      </button>
+    <!-- Grounded Minimal Status Footer -->
+    <div 
+      class="border-t border-outline-variant/60 shrink-0 bg-surface-container-low transition-all"
+      :class="sidebarCollapsed ? 'p-3 flex justify-center' : 'px-4 py-3'"
+    >
+      <div v-if="!sidebarCollapsed" class="flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="relative flex h-2 w-2 shrink-0">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span class="text-[11px] font-medium text-on-surface-variant truncate" :title="displayBranchName">
+            {{ displayBranchName }}
+          </span>
+        </div>
+        <span class="text-[10px] font-mono text-outline shrink-0 ml-2">v4.2</span>
+      </div>
+
+      <div v-else class="relative group cursor-pointer" :title="`Online • ${displayBranchName}`">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+      </div>
     </div>
   </nav>
 </template>
@@ -198,28 +242,26 @@ import {
   Search, 
   CalendarCheck, 
   Settings, 
-  HelpCircle, 
-  LogOut, 
-  Lock,
   Store, 
-  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   ChevronDown, 
-  ShoppingBag,
-  ShieldCheck,
-  QrCode,
-  User,
-  RefreshCw,
-  Warehouse,
-  ArrowLeftRight,
-  ScrollText,
-  UtensilsCrossed,
-  ChevronsUpDown
+  ShoppingBag, 
+  ShieldCheck, 
+  QrCode, 
+  User, 
+  RefreshCw, 
+  Warehouse, 
+  ArrowLeftRight, 
+  ScrollText, 
+  UtensilsCrossed, 
+  ChevronsUpDown 
 } from 'lucide-vue-next';
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
 import { t } from '../../i18n';
 
 const props = withDefaults(defineProps<{
-  onLogout: () => void;
+  onLogout?: () => void;
   onLock?: () => void;
   branchName?: string;
   storeName?: string;
@@ -270,6 +312,12 @@ interface MenuItem {
   disabled?: boolean;
   adminOnly?: boolean;
   children?: SubMenuItem[];
+}
+
+interface MenuSection {
+  id: string;
+  label: string;
+  items: MenuItem[];
 }
 
 const expandedMenus = ref<Record<string, boolean>>({
@@ -402,6 +450,53 @@ const menuItems = computed<MenuItem[]>(() => {
   });
 });
 
+const menuSections = computed<MenuSection[]>(() => {
+  const all = menuItems.value;
+  const mainIds = ['dashboard', 'checkout'];
+  const opIds = ['inventory_group', 'warehouses', 'suppliers', 'customers'];
+  const mgmtIds = ['users', 'reports', 'finance', 'settings'];
+
+  const sections: MenuSection[] = [];
+
+  const mainItems = all.filter(i => mainIds.includes(i.id));
+  if (mainItems.length > 0) {
+    sections.push({
+      id: 'main',
+      label: t('sidebar.sectionMain') || 'Overview',
+      items: mainItems
+    });
+  }
+
+  const opItems = all.filter(i => opIds.includes(i.id));
+  if (opItems.length > 0) {
+    sections.push({
+      id: 'operations',
+      label: t('sidebar.sectionOperations') || 'Operations',
+      items: opItems
+    });
+  }
+
+  const mgmtItems = all.filter(i => mgmtIds.includes(i.id));
+  if (mgmtItems.length > 0) {
+    sections.push({
+      id: 'management',
+      label: t('sidebar.sectionManagement') || 'Administration',
+      items: mgmtItems
+    });
+  }
+
+  const otherItems = all.filter(i => !mainIds.includes(i.id) && !opIds.includes(i.id) && !mgmtIds.includes(i.id));
+  if (otherItems.length > 0) {
+    sections.push({
+      id: 'other',
+      label: 'Other',
+      items: otherItems
+    });
+  }
+
+  return sections;
+});
+
 const isActive = (view: string) => {
   const currentView = route.path.substring(1) || 'dashboard';
   return currentView === view;
@@ -467,9 +562,5 @@ const navigateToSubmenu = (item: MenuItem, sub: SubMenuItem) => {
   } else {
     router.push({ path: '/' + item.id, query: { tab: sub.tab } });
   }
-};
-
-const alertHelp = () => {
-  alert(t('sidebar.helpAlert'));
 };
 </script>

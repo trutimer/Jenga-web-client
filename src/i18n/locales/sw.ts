@@ -222,6 +222,9 @@ export const sw = {
 
   // Menyu ya Pembeni (Sidebar)
   sidebar: {
+    sectionMain: 'Mtazamo wa Jumla',
+    sectionOperations: 'Uendeshaji',
+    sectionManagement: 'Utawala',
     activeSession: 'Kipindi Kinachoendelea',
     dashboard: 'Dashibodi',
     dashboards: 'Dashibodi',
@@ -770,6 +773,7 @@ export const sw = {
     assignedSupplier: 'Msambazaji wa Bidhaa Hii',
     selectSupplierOptional: 'Chagua Msambazaji (Hiari)',
     saveProductRecord: 'Hifadhi Bidhaa Kwenye Mfumo',
+    savingProductRecord: 'Inahifadhi Bidhaa...',
     bulkImportTitle: 'Ingiza Orodha ya Bidhaa kwa Wingi (CSV/Excel)',
     bulkImportGuideHeader: 'Mwongozo wa Mpangilio wa Data (CSV):',
     bulkImportGuideDesc: 'Bandika data ukitenganisha kwa mkato (koma). Mpangilio lazima uwe kama ifuatavyo:',
@@ -2288,6 +2292,7 @@ export const sw = {
     // Actions
     editProduct: 'Hariri Bidhaa',
     restockProduct: 'Ongeza / Rekebisha Stoo',
+    deleteProduct: 'Futa Bidhaa',
     printBarcodeLabel: 'Chapa Msimbo Pau / QR',
     refresh: 'Sasisha',
 
