@@ -264,6 +264,9 @@
     :onClose="clearToast"
   />
 
+  <!-- Web Version Update Notification Banner -->
+  <WebUpdatePrompt />
+
   <!-- Jenga Orange Login Button Zoom & Outro Reveal Overlay -->
   <div 
     v-if="isZoomActive"
@@ -316,6 +319,7 @@
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import Toast from './components/common/Toast.vue';
 import AppTourOverlay from './components/common/AppTourOverlay.vue';
+import WebUpdatePrompt from './components/common/WebUpdatePrompt.vue';
 import { toastMessage, toastType, clearToast, showToast } from './services/toastService';
 import { useAppViewModel } from './viewmodels/useAppViewModel';
 import { websocketService } from './services/websocketService';

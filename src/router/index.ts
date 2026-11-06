@@ -316,4 +316,20 @@ router.beforeEach((to, from, next) => {
   }
 });
 
+router.onError((error, to) => {
+  const isChunkError =
+    /Failed to fetch dynamically imported module/i.test(error?.message || '') ||
+    /Importing a module script failed/i.test(error?.message || '') ||
+    /Loading chunk .* failed/i.test(error?.message || '');
+
+  if (isChunkError) {
+    console.warn('[Router] Chunk loading failed due to new deployment. Reloading...');
+    if (to?.fullPath) {
+      window.location.href = to.fullPath;
+    } else {
+      window.location.reload();
+    }
+  }
+});
+
 export default router;

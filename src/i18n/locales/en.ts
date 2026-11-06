@@ -218,6 +218,10 @@ export const en = {
     purchases: 'Purchases',
     invoicesBadge: 'Invoices',
     managePurchasesDesc: 'Manage purchase orders, returns & reversals',
+    webUpdateTitle: 'Update Available',
+    webUpdateDesc: 'A new version of Jenga is ready.',
+    webUpdateReload: 'Reload',
+    webUpdateDismiss: 'Later',
   },
 
   // Sidebar Menu

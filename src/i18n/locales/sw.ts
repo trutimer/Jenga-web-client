@@ -218,6 +218,10 @@ export const sw = {
     purchases: 'Manunuzi',
     invoicesBadge: 'Ankara',
     managePurchasesDesc: 'Simamia oda za manunuzi, marejesho na kubatilisha',
+    webUpdateTitle: 'Sasisho Linapatikana',
+    webUpdateDesc: 'Toleo jipya la Jenga liko tayari.',
+    webUpdateReload: 'Pakia Upya',
+    webUpdateDismiss: 'Baadaye',
   },
 
   // Menyu ya Pembeni (Sidebar)
