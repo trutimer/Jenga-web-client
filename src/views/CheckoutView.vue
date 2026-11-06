@@ -35,17 +35,16 @@
           <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant">{{ $t('checkout.tapTilesToAdd') }}</h4>
           <span class="text-[10px] font-mono text-outline font-semibold">{{ $t('checkout.itemsFormatted', { count: filteredProducts.length }) }}</span>
         </div>
-        <div class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-8 gap-3">
+        <div v-if="filteredProducts.length === 0" class="py-8 flex items-center justify-center text-xs text-outline italic">
+          {{ searchQuery ? $t('checkout.noProductMatched', { query: searchQuery }) : 'No products with available stock' }}
+        </div>
+        <div v-else class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-8 gap-3">
           <button
             v-for="p in filteredProducts"
             :key="p.id"
             type="button"
-            :disabled="p.stock === 0"
             @click="addProductToCart(p)"
-            class="p-2.5 rounded-lg border text-left cursor-pointer transition-all flex flex-col justify-between h-14"
-            :class="p.stock === 0 
-              ? 'border-outline-variant/30 opacity-40 bg-surface-container cursor-not-allowed' 
-              : 'border-outline-variant hover:border-primary bg-surface-container-lowest hover:shadow-sm'"
+            class="p-2.5 rounded-lg border border-outline-variant hover:border-primary bg-surface-container-lowest hover:shadow-sm text-left cursor-pointer transition-all flex flex-col justify-between h-14"
           >
             <p class="text-xs font-bold text-on-surface truncate w-full leading-tight">{{ p.name }}</p>
             <div class="flex justify-between items-center w-full mt-1">
@@ -637,7 +636,8 @@ const handleQuerySearch = () => {
   const query = searchQuery.value.trim().toLowerCase();
   if (!query) return;
 
-  const matched = products.value.find(
+  const inStockProducts = products.value.filter(p => p.isActive !== false && (Number(p.stock) || 0) > 0);
+  const matched = inStockProducts.find(
     p => p.barcode === query || p.id === query || p.name.toLowerCase().includes(query)
   );
 
@@ -645,7 +645,18 @@ const handleQuerySearch = () => {
     addProductToCart(matched);
     searchQuery.value = '';
   } else {
-    showToast(t('checkout.noProductMatched', { query: searchQuery.value }), 'error');
+    // Check if an out-of-stock product was queried
+    const outOfStockMatch = products.value.find(
+      p => p.barcode === query || p.id === query || p.name.toLowerCase().includes(query)
+    );
+    if (outOfStockMatch) {
+      triggerStockWarning(
+        t('checkout.productOutOfStock'),
+        t('checkout.productOutOfStockMsg', { name: outOfStockMatch.name })
+      );
+    } else {
+      showToast(t('checkout.noProductMatched', { query: searchQuery.value }), 'error');
+    }
   }
 };
 
@@ -826,10 +837,16 @@ const handleHold = () => {
 };
 
 const filteredProducts = computed(() => {
+  // Only display products with available stock (> 0) and active status
+  const inStockProducts = products.value.filter(p => p.isActive !== false && (Number(p.stock) || 0) > 0);
   const q = searchQuery.value.trim().toLowerCase();
   const list = !q 
-    ? [...products.value] 
-    : products.value.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+    ? inStockProducts 
+    : inStockProducts.filter(p => 
+        p.name.toLowerCase().includes(q) || 
+        (p.category && p.category.toLowerCase().includes(q)) ||
+        (p.barcode && p.barcode.toLowerCase().includes(q))
+      );
 
   return list.sort((a, b) => {
     const aHasNoBarcode = !a.barcode || !a.barcode.trim();

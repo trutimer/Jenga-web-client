@@ -1149,7 +1149,7 @@
               </div>
 
               <!-- Profile Sections Quick Grid -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Personal Info Card -->
                 <div class="p-5 bg-surface-container-low border border-outline-variant rounded-xl flex flex-col justify-between space-y-4 hover:border-primary/50 transition-colors">
                   <div class="space-y-2">
@@ -1237,6 +1237,51 @@
                     <span>Configure 2FA</span>
                     <ArrowRight class="w-3.5 h-3.5" />
                   </button>
+                </div>
+
+                <!-- Desktop & OS Notifications Card -->
+                <div class="p-5 bg-surface-container-low border border-outline-variant rounded-xl flex flex-col justify-between space-y-4 hover:border-primary/50 transition-colors">
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2 text-on-surface">
+                        <div class="w-8 h-8 rounded-lg bg-primary-container/30 text-primary flex items-center justify-center">
+                          <BellRing class="w-4 h-4" />
+                        </div>
+                        <h5 class="text-sm font-bold">Desktop & Badges</h5>
+                      </div>
+                      <span 
+                        class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold"
+                        :class="isDesktopApp ? 'bg-primary-container/30 text-primary border border-primary/30' : (desktopPermState === 'granted' ? 'bg-emerald-500/20 text-emerald-700 border border-emerald-500/30' : 'bg-surface-container text-on-surface-variant border border-outline-variant')"
+                      >
+                        {{ isDesktopApp ? 'ELECTRON DESKTOP' : (desktopPermState === 'granted' ? 'ACTIVE' : 'OPTIONAL') }}
+                      </span>
+                    </div>
+                    <p class="text-xs text-on-surface-variant font-medium leading-relaxed">
+                      {{ isDesktopApp 
+                        ? 'Native OS notifications, taskbar overlay badge, and dock indicators are active.' 
+                        : 'Receive desktop notifications outside the app and an icon badge counter on your browser tab.' }}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <button
+                      v-if="!isDesktopApp && desktopPermState !== 'granted'"
+                      type="button"
+                      @click="requestDesktopNotifications"
+                      class="px-3 py-2 bg-primary text-on-primary text-xs font-bold rounded-lg hover:bg-primary/90 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Laptop class="w-3.5 h-3.5" />
+                      <span>Enable Alerts</span>
+                    </button>
+                    <button
+                      type="button"
+                      @click="sendTestDesktopNotification"
+                      class="px-3 py-2 bg-surface-container-high hover:bg-surface-container text-on-surface text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer border border-outline-variant"
+                      title="Send a sample desktop notification and badge counter"
+                    >
+                      <Bell class="w-3.5 h-3.5 text-primary" />
+                      <span>Test Alert</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1975,9 +2020,14 @@ import {
   ShoppingCart,
   RotateCcw,
   ExternalLink,
-  X
+  X,
+  Bell,
+  BellRing
 } from 'lucide-vue-next';
 import { makerCheckerService } from '../services/makerCheckerService';
+import { desktopNotificationService } from '../services/desktopNotificationService';
+import { isElectron } from '../services/offlineSalesService';
+import { useNotificationViewModel } from '../viewmodels/useNotificationViewModel';
 import type { StoreApprovalPolicy, MakerCheckerRequest, MakerCheckerAction, UserRole, StoreBranchResponse } from '../models/types';
 
 const router = useRouter();
@@ -2031,6 +2081,34 @@ watch(profileTab, (newTab) => {
     router.replace({ query: { ...route.query, tab: newTab } });
   }
 });
+
+// Desktop & OS Notifications
+const notifVm = useNotificationViewModel();
+const isDesktopApp = computed(() => isElectron());
+const desktopPermState = ref(desktopNotificationService.getPermissionState());
+
+const requestDesktopNotifications = async () => {
+  const granted = await desktopNotificationService.requestPermission();
+  desktopPermState.value = desktopNotificationService.getPermissionState();
+  if (granted) {
+    showToast('Desktop notifications enabled successfully!', 'success');
+  } else {
+    showToast('Desktop notifications were not enabled.', 'error');
+  }
+};
+
+const sendTestDesktopNotification = () => {
+  desktopNotificationService.showNotification({
+    title: 'DukaPro Test Notification',
+    message: 'Desktop notifications and badges are functioning properly on your system!',
+    actionUrl: '/settings'
+  });
+  desktopNotificationService.updateBadge(1);
+  setTimeout(() => {
+    desktopNotificationService.updateBadge(notifVm.unreadCount.value);
+  }, 5000);
+  showToast('Test notification dispatched!', 'success');
+};
 
 // Desktop Updates state
 const updateInfo = ref<{

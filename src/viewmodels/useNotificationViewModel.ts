@@ -4,6 +4,7 @@ import type { NotificationInboxItem } from '../models/types';
 import { showToast } from '../services/toastService';
 import { websocketService, type RealtimeNotificationEvent } from '../services/websocketService';
 import { isElectron } from '../services/offlineSalesService';
+import { desktopNotificationService } from '../services/desktopNotificationService';
 
 // Global shared state for real-time notification synchronization across views
 const unreadCount = ref<number>(0);
@@ -16,6 +17,13 @@ const totalPages = ref<number>(0);
 const totalElements = ref<number>(0);
 
 let pollTimer: any = null;
+let hasInitializedNotifiedCache = false;
+const notifiedRecipientIds = new Set<string>();
+
+// Keep external OS and browser badges in sync whenever unread count changes
+watch(unreadCount, (count) => {
+  desktopNotificationService.updateBadge(count);
+}, { immediate: true });
 
 export function useNotificationViewModel() {
   const badgeText = computed<string>(() => {
@@ -31,9 +39,47 @@ export function useNotificationViewModel() {
     if (!token) return;
 
     try {
+      const prevCount = unreadCount.value;
       const res = await notificationService.getUnreadCount();
       if (res && typeof res.unreadCount === 'number') {
-        unreadCount.value = res.unreadCount;
+        const newCount = res.unreadCount;
+        unreadCount.value = newCount;
+
+        // In Electron desktop: check for new unread notifications and trigger native OS notification
+        if (isElectron()) {
+          if (!hasInitializedNotifiedCache) {
+            hasInitializedNotifiedCache = true;
+            // Prime cache with already-existing unread IDs so we don't spam on startup
+            try {
+              const initialInbox = await notificationService.getInbox({ unreadOnly: true, page: 0, size: 20 });
+              if (initialInbox && initialInbox.content) {
+                initialInbox.content.forEach((n) => notifiedRecipientIds.add(n.recipientId));
+              }
+            } catch {
+              // Ignore initial priming error
+            }
+          } else if (newCount > prevCount) {
+            // New unread notification detected in Electron!
+            try {
+              const latestInbox = await notificationService.getInbox({ unreadOnly: true, page: 0, size: 5 });
+              if (latestInbox && latestInbox.content) {
+                for (const item of latestInbox.content) {
+                  if (!notifiedRecipientIds.has(item.recipientId)) {
+                    notifiedRecipientIds.add(item.recipientId);
+                    desktopNotificationService.showNotification({
+                      title: item.title,
+                      message: item.message,
+                      actionUrl: item.actionUrl,
+                      priority: item.priority
+                    });
+                  }
+                }
+              }
+            } catch {
+              // Ignore fetch error
+            }
+          }
+        }
       }
     } catch (err) {
       console.warn('Failed to fetch unread notification count:', err);
@@ -182,6 +228,14 @@ export function useNotificationViewModel() {
       notifications.value = [newNotif, ...notifications.value];
       totalElements.value++;
       showToast(`${event.title}: ${event.message}`, 'info');
+
+      // Trigger external Desktop / Web OS notification outside the app
+      desktopNotificationService.showNotification({
+        title: event.title,
+        message: event.message,
+        actionUrl: event.actionUrl,
+        priority: event.priority
+      });
     };
 
     const unsubUser = userId ? websocketService.onUserNotifications(userId, handleIncoming) : () => {};
@@ -224,10 +278,10 @@ export function useNotificationViewModel() {
     if (!isElectron()) {
       setupWebSocket();
     } else {
-      // Electron desktop fallback: poll at a relaxed interval (default: 60s)
+      // Electron desktop fallback: poll at a responsive interval (default: 30s)
       pollTimer = setInterval(() => {
         fetchUnreadCount();
-      }, Math.max(intervalMs, 60000));
+      }, Math.min(Math.max(intervalMs, 15000), 60000));
     }
   };
 

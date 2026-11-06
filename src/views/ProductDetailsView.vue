@@ -1004,11 +1004,18 @@
           <!-- Category -->
           <div class="space-y-1.5">
             <label class="font-bold text-on-surface">{{ $t('inventory.categorySegment') }}</label>
-            <input 
-              type="text"
+            <select 
               v-model="editForm.category"
-              class="w-full p-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-xs outline-none focus:border-primary"
-            />
+              class="w-full p-2.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-xs outline-none focus:border-primary cursor-pointer font-medium"
+            >
+              <option value="" disabled>{{ $t('inventory.selectCategory') || 'Select Category' }}</option>
+              <option v-for="cat in availableCategories" :key="cat.id" :value="cat.name">
+                {{ cat.name }}
+              </option>
+              <option v-if="editForm.category && !availableCategories.some(c => c.name === editForm.category)" :value="editForm.category">
+                {{ editForm.category }}
+              </option>
+            </select>
           </div>
 
           <!-- Unit of Measure -->
@@ -1204,6 +1211,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAppViewModel } from '../viewmodels/useAppViewModel';
 import { formatCurrency, formatCurrencyWithoutSymbol } from '../models/mockData';
 import { api } from '../services/api';
+import { productCategoryService, type ProductCategory } from '../services/productCategoryService';
 import { showToast } from '../services/toastService';
 import { t } from '../i18n';
 import type { Product, StockMovement, Supplier } from '../models/types';
@@ -1252,6 +1260,7 @@ const currency = computed(() => vm.settings.value.currency || 'TZS');
 const isLoading = ref(true);
 const isSubmitting = ref(false);
 const activeTab = ref<'movements' | 'sales' | 'purchases'>('movements');
+const availableCategories = ref<ProductCategory[]>([]);
 
 // Local Product & Records
 interface ProductSummary {
@@ -1858,6 +1867,9 @@ const getMovementTypeIcon = (type?: string) => {
 onMounted(() => {
   vm.fetchCurrentUserPermissions().catch(() => {});
   fetchData();
+  productCategoryService.getCategories({ activeOnly: true })
+    .then(cats => { availableCategories.value = cats || []; })
+    .catch(err => console.error('Failed to load categories:', err));
   if (vm.suppliers.value.length === 0) {
     vm.fetchSuppliers();
   }

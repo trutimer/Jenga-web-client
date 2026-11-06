@@ -57,6 +57,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/categories',
+    name: 'categories',
+    component: () => import('../views/CategoriesView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/warehouses',
     name: 'warehouses',
     component: () => import('../views/WarehousesView.vue'),
@@ -265,6 +271,11 @@ router.beforeEach((to, from, next) => {
           return next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
         }
       }
+      if (to.name === 'categories') {
+        if (!hasAnyUserPermission(userPermissions, 'inventory:view', 'inventory:create', 'inventory:edit')) {
+          return next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
+        }
+      }
       if (to.name === 'warehouses') {
         if (!hasAnyUserPermission(userPermissions, 'location:view', 'stock_transfer:view', 'inventory:view')) {
           return next({ name: role === 'CASHIER' ? 'checkout' : 'dashboard' });
@@ -288,6 +299,7 @@ router.beforeEach((to, from, next) => {
       } else {
         const routePermissions: Record<string, string> = {
           'inventory': 'inventory:view',
+          'categories': 'inventory:view',
           'product-details': 'inventory:view',
           'top-selling-products': 'inventory:view',
           'customers': 'customers:view',

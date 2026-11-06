@@ -64,6 +64,36 @@
         </button>
       </div>
 
+      <!-- Web Desktop Notification Permission Prompt Banner -->
+      <div
+        v-if="!isElectronApp && permissionState === 'default' && !hasDismissedPrompt"
+        class="px-4 py-2.5 bg-primary/10 border-b border-primary/20 flex items-center justify-between gap-3 text-xs animate-fade-in"
+      >
+        <div class="flex items-center gap-2 text-on-surface">
+          <Laptop class="w-4 h-4 text-primary shrink-0" />
+          <span class="leading-tight text-[11px] font-medium">
+            Enable desktop notifications & badge on your computer.
+          </span>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            @click="handleRequestPermission"
+            class="px-2.5 py-1 bg-primary text-on-primary font-bold text-[10px] rounded-lg hover:bg-primary/90 transition-all cursor-pointer shadow-xs"
+          >
+            Enable
+          </button>
+          <button
+            type="button"
+            @click="hasDismissedPrompt = true"
+            class="p-1 text-on-surface-variant hover:text-on-surface rounded transition-colors cursor-pointer"
+            title="Dismiss"
+          >
+            <X class="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
       <!-- Filter Tabs -->
       <div class="px-4 pt-2.5 pb-2 bg-surface-container-lowest border-b border-outline-variant/40 flex items-center gap-2 text-xs">
         <button
@@ -232,9 +262,26 @@
 
       <!-- Footer -->
       <div class="p-3 bg-surface-container-lowest border-t border-outline-variant/60 flex items-center justify-between text-xs text-on-surface-variant font-medium">
-        <span class="text-[11px] font-mono">
-          {{ $t('common.total') }}: <strong class="text-on-surface">{{ notifications.length }}</strong>
-        </span>
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] font-mono">
+            {{ $t('common.total') }}: <strong class="text-on-surface">{{ notifications.length }}</strong>
+          </span>
+          <span class="text-outline-variant/80">•</span>
+          <!-- Desktop / System badge status -->
+          <div class="flex items-center gap-1.5 text-[10px] font-medium">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            <span v-if="isElectronApp">Desktop App</span>
+            <span v-else-if="permissionState === 'granted'">Desktop Alerts On</span>
+            <button
+              v-else
+              type="button"
+              @click="handleRequestPermission"
+              class="text-primary hover:underline font-bold cursor-pointer"
+            >
+              Turn on alerts
+            </button>
+          </div>
+        </div>
         <button
           @click="isOpen = false"
           class="font-bold text-primary hover:underline cursor-pointer text-[11px]"
@@ -268,11 +315,24 @@ import {
   UserCheck,
   Sparkles,
   Megaphone,
-  Info
+  Info,
+  Laptop,
+  X
 } from 'lucide-vue-next';
+import { isElectron } from '../../services/offlineSalesService';
+import { desktopNotificationService } from '../../services/desktopNotificationService';
 
 const router = useRouter();
 const vm = useNotificationViewModel();
+
+const isElectronApp = computed(() => isElectron());
+const permissionState = ref(desktopNotificationService.getPermissionState());
+const hasDismissedPrompt = ref(false);
+
+const handleRequestPermission = async () => {
+  await desktopNotificationService.requestPermission();
+  permissionState.value = desktopNotificationService.getPermissionState();
+};
 
 const {
   unreadCount,

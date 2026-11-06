@@ -255,7 +255,8 @@ import {
   ArrowLeftRight, 
   ScrollText, 
   UtensilsCrossed, 
-  ChevronsUpDown 
+  ChevronsUpDown,
+  Tags 
 } from 'lucide-vue-next';
 import { useAppViewModel } from '../../viewmodels/useAppViewModel';
 import { t } from '../../i18n';
@@ -338,7 +339,7 @@ watch(() => route.path, (newPath) => {
   } else {
     expandedMenus.value.finance = false;
   }
-  if (newPath.startsWith('/inventory') || newPath.startsWith('/purchases')) {
+  if (newPath.startsWith('/inventory') || newPath.startsWith('/purchases') || newPath.startsWith('/categories')) {
     expandedMenus.value.inventory_group = true;
   } else {
     expandedMenus.value.inventory_group = false;
@@ -374,6 +375,7 @@ const menuItems = computed<MenuItem[]>(() => {
   const inventoryChildren: SubMenuItem[] = [];
   if (canAccessInventory.value) {
     inventoryChildren.push({ path: '/inventory', label: t('sidebar.inventory'), icon: Package });
+    inventoryChildren.push({ path: '/categories', label: t('sidebar.categories'), icon: Tags });
   }
   if (canAccessPurchases.value) {
     inventoryChildren.push({ path: '/purchases', label: t('sidebar.purchases'), icon: ShoppingBag });

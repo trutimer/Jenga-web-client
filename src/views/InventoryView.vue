@@ -937,12 +937,11 @@
                 v-model="newProdCategory"
                 class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
               >
-                <option value="Snacks">{{ $t('inventory.snacks') }}</option>
-                <option value="Beverages">{{ $t('inventory.beverages') }}</option>
-                <option value="Dairy Products">{{ $t('inventory.dairyFresh') }}</option>
-                <option value="Household">{{ $t('inventory.household') }}</option>
-                <option value="Grocery">Grocery</option>
-                <option value="Bakery">Bakery</option>
+                <option value="" disabled>{{ $t('inventory.selectCategory') || 'Select Category' }}</option>
+                <option v-for="cat in activeCategories" :key="cat.id" :value="cat.name">
+                  {{ cat.name }}
+                </option>
+                <option v-if="activeCategories.length === 0" value="General">General</option>
               </select>
             </div>
 
@@ -1171,12 +1170,13 @@
             v-model="editProdCategory"
             class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm font-medium outline-none text-on-surface cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary/20"
           >
-            <option value="Snacks">{{ $t('inventory.snacks') }}</option>
-            <option value="Beverages">{{ $t('inventory.beverages') }}</option>
-            <option value="Dairy Products">{{ $t('inventory.dairyFresh') }}</option>
-            <option value="Household">{{ $t('inventory.household') }}</option>
-            <option value="Grocery">Grocery</option>
-            <option value="Bakery">Bakery</option>
+            <option value="" disabled>{{ $t('inventory.selectCategory') || 'Select Category' }}</option>
+            <option v-for="cat in activeCategories" :key="cat.id" :value="cat.name">
+              {{ cat.name }}
+            </option>
+            <option v-if="editProdCategory && !activeCategories.some(c => c.name === editProdCategory)" :value="editProdCategory">
+              {{ editProdCategory }}
+            </option>
           </select>
         </div>
 
@@ -1385,6 +1385,7 @@ import { showToast } from '../services/toastService';
 import { useBarcodeScanner } from '../composables/useBarcodeScanner';
 import type { Product, InventoryLocation, ProductPurpose } from '../models/types';
 import { warehouseService } from '../services/warehouseService';
+import { productCategoryService, type ProductCategory } from '../services/productCategoryService';
 import { formatCurrency, formatCurrencyWithoutSymbol } from '../models/mockData';
 import { api } from '../services/api';
 import Modal from '../components/common/Modal.vue';
@@ -1442,7 +1443,13 @@ const openProductDetails = (p: Product) => {
   router.push({ name: 'product-details', params: { id: p.id } });
 };
 
-const categories = ref<any[]>([]);
+const categories = ref<ProductCategory[]>([]);
+const activeCategories = computed(() => {
+  if (categories.value && categories.value.length > 0) {
+    return categories.value.filter(c => c.isActive !== false);
+  }
+  return [];
+});
 
 // Filter States
 const productNameSearch = ref('');
@@ -1520,7 +1527,7 @@ const showAddModal = ref(false);
 const isAddingProduct = ref(false);
 const newProdName = ref('');
 const newProdBarcode = ref('');
-const newProdCategory = ref('Snacks');
+const newProdCategory = ref('');
 const newProdCost = ref('');
 const newProdPrice = ref('');
 const newProdWholesalePrice = ref('');
@@ -1654,8 +1661,11 @@ onMounted(async () => {
     stockStatus.value = route.query.status;
   }
   try {
-    const catsData = await api.get('/api/product-categories');
+    const catsData = await productCategoryService.getCategories({ activeOnly: true });
     categories.value = catsData || [];
+    if (!newProdCategory.value && catsData && catsData[0]) {
+      newProdCategory.value = catsData[0].name;
+    }
   } catch (err) {
     console.error('Failed to load categories:', err);
   }
@@ -1745,7 +1755,9 @@ const countByCategory = computed(() => {
 });
 
 const uniqueCategories = computed(() => {
-  return Array.from(new Set(products.value.map(p => p.category)));
+  const fromProds = products.value.map(p => p.category).filter(Boolean);
+  const fromCats = activeCategories.value.map(c => c.name).filter(Boolean);
+  return Array.from(new Set([...fromCats, ...fromProds]));
 });
 
 const extraCategories = computed(() => {
@@ -1832,7 +1844,7 @@ const getProductStatus = (p: Product): string => {
 
 const filteredProducts = computed(() => {
   const search = productNameSearch.value.trim().toLowerCase();
-  return products.value.filter(p => {
+  const list = products.value.filter(p => {
     const matchesName = !search || 
       p.name.toLowerCase().includes(search) ||
       (p.barcode && p.barcode.toLowerCase().includes(search)) ||
@@ -1857,6 +1869,16 @@ const filteredProducts = computed(() => {
     const matchesSupplier = selectedSuppliers.value.length === 0 || selectedSuppliers.value.includes(p.supplier || '');
 
     return matchesName && matchesCategory && matchesStock && matchesSupplier;
+  });
+
+  // Re-arrange products by QTY (Stock) descending (higher qty/stocks given priority)
+  return list.sort((a, b) => {
+    const stockA = Number(a.stock) || 0;
+    const stockB = Number(b.stock) || 0;
+    if (stockB !== stockA) {
+      return stockB - stockA;
+    }
+    return a.name.localeCompare(b.name);
   });
 });
 
@@ -1945,16 +1967,18 @@ const handleAddProduct = async () => {
     }
 
     let cat = categories.value.find(c => c.name.toLowerCase() === newProdCategory.value.toLowerCase());
-    if (!cat) {
-      cat = await api.post('/api/product-categories', { name: newProdCategory.value });
-      categories.value.push(cat);
+    if (!cat && newProdCategory.value.trim()) {
+      cat = await productCategoryService.createCategory({ name: newProdCategory.value.trim() });
+      if (cat) {
+        categories.value.push(cat);
+      }
     }
 
     const payload: any = {
       name: newProdName.value,
       barcode: newProdBarcode.value && newProdBarcode.value.trim() ? newProdBarcode.value.trim() : null,
       sku: `SKU-${Date.now().toString().slice(-6)}`,
-      categoryId: cat.id,
+      categoryId: cat?.id,
       storeBranchId: branchId,
       costPrice: costNum,
       sellingPrice: priceNum,
@@ -2155,9 +2179,11 @@ const handleEditProduct = async () => {
 
   try {
     let cat = categories.value.find(c => c.name.toLowerCase() === editProdCategory.value.toLowerCase());
-    if (!cat) {
-      cat = await api.post('/api/product-categories', { name: editProdCategory.value });
-      categories.value.push(cat);
+    if (!cat && editProdCategory.value.trim()) {
+      cat = await productCategoryService.createCategory({ name: editProdCategory.value.trim() });
+      if (cat) {
+        categories.value.push(cat);
+      }
     }
 
     const payload: any = {
@@ -2165,7 +2191,7 @@ const handleEditProduct = async () => {
       name: editProdName.value,
       barcode: editProdBarcode.value && editProdBarcode.value.trim() ? editProdBarcode.value.trim() : null,
       sku: editingProduct.value.sku || `SKU-${Date.now().toString().slice(-6)}`,
-      categoryId: cat.id,
+      categoryId: cat?.id,
       costPrice: costNum,
       sellingPrice: priceNum,
       reorderLevel: minStockNum,

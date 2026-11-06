@@ -22,12 +22,16 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   'updater:check-for-updates',
   'updater:get-status',
   'updater:restart-and-install',
+  'notification:get-supported',
+  'notification:show',
+  'badge:set-count',
 ])
 
 const ALLOWED_LISTEN_CHANNELS = new Set([
   'main-process-message',
   'sync:status-changed',
   'updater:status-changed',
+  'notification:navigate',
 ])
 
 // --------- Expose secure, allowlisted API to the Renderer process ---------

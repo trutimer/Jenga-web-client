@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, shell, Notification, nativeImage } from 'electron'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { exec } from 'node:child_process'
@@ -22,6 +22,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 process.env.APP_ROOT = join(__dirname, '..')
 
+if (process.platform === 'win32') {
+  app.setAppUserModelId('tz.sintax.jenga-app')
+}
+
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 export const MAIN_DIST = join(process.env.APP_ROOT, 'dist-electron')
 export const RENDERER_DIST = join(process.env.APP_ROOT, 'dist')
@@ -42,6 +46,10 @@ function createWindow() {
       sandbox: true,
       webSecurity: true
     },
+  })
+
+  win.on('focus', () => {
+    win?.flashFrame(false)
   })
 
   // Intercept child window creation and route external URLs to the default system browser
@@ -255,6 +263,83 @@ app.whenReady().then(() => {
 
   ipcMain.handle('updater:restart-and-install', () => {
     return restartAndInstall()
+  })
+
+  // ------------ Desktop OS Notifications & Taskbar Badges ------------ //
+
+  ipcMain.handle('notification:get-supported', () => {
+    return { supported: Notification.isSupported() }
+  })
+
+  ipcMain.handle('notification:show', (_, { title, body, icon, actionUrl }) => {
+    if (Notification.isSupported()) {
+      const notif = new Notification({
+        title: title || 'DukaPro Alert',
+        body: body || '',
+        icon: icon || join(process.env.VITE_PUBLIC || '', 'logo.png')
+      })
+
+      notif.on('click', () => {
+        if (win && !win.isDestroyed()) {
+          if (win.isMinimized()) win.restore()
+          win.show()
+          win.focus()
+          if (actionUrl) {
+            win.webContents.send('notification:navigate', actionUrl)
+          }
+        }
+      })
+
+      notif.show()
+
+      if (win && !win.isDestroyed() && !win.isFocused()) {
+        win.flashFrame(true)
+      }
+
+      return { success: true }
+    }
+    return { success: false, reason: 'unsupported' }
+  })
+
+  ipcMain.handle('badge:set-count', (_, { count, dataUrl }) => {
+    const numericCount = typeof count === 'number' ? count : 0
+
+    // 1. macOS Dock Badge
+    if (process.platform === 'darwin') {
+      if (app.dock) {
+        app.dock.setBadge(numericCount > 0 ? (numericCount > 99 ? '99+' : `${numericCount}`) : '')
+      }
+    } else if (process.platform === 'win32') {
+      // 2. Windows Taskbar Overlay Icon
+      if (win && !win.isDestroyed()) {
+        if (numericCount > 0 && dataUrl) {
+          try {
+            const img = nativeImage.createFromDataURL(dataUrl)
+            if (!img.isEmpty()) {
+              win.setOverlayIcon(img, `${numericCount} unread notifications`)
+            } else {
+              win.setOverlayIcon(null, '')
+            }
+          } catch (e) {
+            console.warn('[Badge] Failed to set Windows overlay icon:', e)
+          }
+        } else {
+          win.setOverlayIcon(null, '')
+        }
+      }
+    }
+
+    // 3. Linux Unity / macOS app-level badge count
+    if (typeof app.setBadgeCount === 'function') {
+      app.setBadgeCount(numericCount)
+    }
+
+    // 4. Flash frame if unread notifications exist and window is not focused
+    if (numericCount > 0 && win && !win.isDestroyed() && !win.isFocused()) {
+      win.flashFrame(true)
+    }
+
+    return { success: true }
   })
 
   createWindow()
