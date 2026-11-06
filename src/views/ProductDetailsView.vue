@@ -376,9 +376,14 @@
 
               <!-- Cost / Buying Price -->
               <div class="p-3 bg-surface-container-low rounded-xl border border-outline-variant/60 flex flex-col justify-between">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{{ $t('productDetail.costPrice') }}</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+                  {{ product.conversionFactor && product.conversionFactor > 1 ? `${$t('productDetail.costPrice')} (${product.conversionFactor}x pack)` : $t('productDetail.costPrice') }}
+                </span>
                 <span class="text-base sm:text-lg font-black font-mono text-on-surface mt-1.5 amount-compact">
                   {{ formatCurrency(product.cost, currency) }}
+                </span>
+                <span v-if="product.conversionFactor && product.conversionFactor > 1" class="text-[10px] text-outline font-mono mt-0.5">
+                  ≈ {{ formatCurrency(product.cost / product.conversionFactor, currency) }} / {{ product.unitOfMeasure || 'unit' }}
                 </span>
               </div>
             </div>
@@ -1368,29 +1373,52 @@ const stockRatioPct = computed(() => {
 
 // Collection & Financial Metrics Computed
 const collectionMetrics = computed(() => {
+  const p = product.value;
+  const rawCost = Number(p?.cost) || 0;
+  const factor = Number(p?.conversionFactor) && Number(p?.conversionFactor) > 1 ? Number(p?.conversionFactor) : 1;
+  // Effective cost per single retail unit (if product size/conversion factor > 1, buying price is per pack)
+  const effectiveCost = factor > 1 ? (rawCost / factor) : rawCost;
+  const price = Number(p?.price) || 0;
+  const currentStock = Number(p?.stock) || 0;
+
   // If dedicated summary API has arrived, use high-precision backend aggregates
   if (productSummary.value) {
+    const totalRev = Number(productSummary.value.totalRevenue) || 0;
+    const totalSold = Number(productSummary.value.totalSoldQuantity) || 0;
+
+    // Evaluate inventory asset value: if factor > 1, guarantee unit cost adjustment
+    const assetValue = factor > 1 
+      ? currentStock * effectiveCost 
+      : (Number(productSummary.value.inventoryAssetValue) || (currentStock * effectiveCost));
+
+    // Evaluate gross profit and margin with effective unit cost
+    let grossProfit = Number(productSummary.value.grossProfit) || 0;
+    let grossMarginPct = Number(productSummary.value.grossMarginPercent) || 0;
+    if (factor > 1 && totalSold > 0) {
+      const cogsSold = totalSold * effectiveCost;
+      grossProfit = totalRev - cogsSold;
+      grossMarginPct = totalRev > 0 ? (grossProfit / totalRev) * 100 : 0;
+    }
+
+    const damagedUnits = Number(productSummary.value.damagedUnits) || 0;
+    const damagedLossCost = factor > 1 ? (damagedUnits * effectiveCost) : (Number(productSummary.value.damagedLossCost) || (damagedUnits * effectiveCost));
+
     return {
-      totalRevenue: Number(productSummary.value.totalRevenue) || 0,
-      totalSoldQty: Number(productSummary.value.totalSoldQuantity) || 0,
+      totalRevenue: totalRev,
+      totalSoldQty: totalSold,
       salesCount: Number(productSummary.value.totalSalesCount) || 0,
       totalPurchasesCost: Number(productSummary.value.totalPurchasesCost) || 0,
       totalInboundQty: Number(productSummary.value.totalInboundQuantity) || 0,
-      grossProfit: Number(productSummary.value.grossProfit) || 0,
-      grossMarginPct: Number(productSummary.value.grossMarginPercent) || 0,
-      inventoryAssetValue: Number(productSummary.value.inventoryAssetValue) || 0,
-      potentialRetailValue: Number(productSummary.value.potentialRetailValue) || 0,
-      damagedUnits: Number(productSummary.value.damagedUnits) || 0,
-      damagedLossCost: Number(productSummary.value.damagedLossCost) || 0
+      grossProfit,
+      grossMarginPct,
+      inventoryAssetValue: assetValue,
+      potentialRetailValue: Number(productSummary.value.potentialRetailValue) || (currentStock * price),
+      damagedUnits,
+      damagedLossCost
     };
   }
 
   // Graceful fallback from local state
-  const p = product.value;
-  const cost = Number(p?.cost) || 0;
-  const price = Number(p?.price) || 0;
-  const currentStock = Number(p?.stock) || 0;
-
   // 1. Sales metrics
   let totalRevenue = 0;
   let totalSoldQty = 0;
@@ -1414,17 +1442,17 @@ const collectionMetrics = computed(() => {
     const purchaseMovements = stockMovements.value.filter(sm => (sm.type || '').toUpperCase() === 'PURCHASE');
     for (const sm of purchaseMovements) {
       totalInboundQty += Number(sm.quantity) || 0;
-      totalPurchasesCost += (Number(sm.quantity) || 0) * (Number(sm.costPrice) || cost);
+      totalPurchasesCost += (Number(sm.quantity) || 0) * (Number(sm.costPrice) || effectiveCost);
     }
   }
 
-  // 3. Gross Profit
-  const cogsSold = totalSoldQty * cost;
+  // 3. Gross Profit (using effective single unit cost)
+  const cogsSold = totalSoldQty * effectiveCost;
   const grossProfit = totalRevenue - cogsSold;
   const grossMarginPct = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
-  // 4. Asset Value
-  const inventoryAssetValue = currentStock * cost;
+  // 4. Asset Value (At Cost) & Potential Retail Value
+  const inventoryAssetValue = currentStock * effectiveCost;
   const potentialRetailValue = currentStock * price;
 
   // 5. Damaged loss
@@ -1433,7 +1461,7 @@ const collectionMetrics = computed(() => {
   for (const dm of damagedMovements) {
     damagedUnits += Math.abs(Number(dm.quantity) || 0);
   }
-  const damagedLossCost = damagedUnits * cost;
+  const damagedLossCost = damagedUnits * effectiveCost;
 
   return {
     totalRevenue,

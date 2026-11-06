@@ -174,17 +174,6 @@
             </label>
           </div>
 
-          <!-- Cloudflare Turnstile Bot Defense (Web Only) -->
-          <div v-if="!isElectron()" class="w-full my-1">
-            <TurnstileWidget 
-              ref="turnstileRef"
-              action="login"
-              @success="handleTurnstileSuccess"
-              @expire="handleTurnstileExpire"
-              @error="handleTurnstileError"
-            />
-          </div>
-
           <!-- Submit Action -->
           <button 
             ref="loginButtonRef"
@@ -196,6 +185,17 @@
             <span>{{ isLoggingIn ? $t('auth.authenticating') : $t('auth.signInButton') }}</span>
             <ArrowRight v-if="!isLoggingIn" class="w-5 h-5" />
           </button>
+
+          <!-- Cloudflare Turnstile Bot Defense (Web Only) -->
+          <div v-if="!isElectron()" class="w-full my-1">
+            <TurnstileWidget 
+              ref="turnstileRef"
+              action="login"
+              @success="handleTurnstileSuccess"
+              @expire="handleTurnstileExpire"
+              @error="handleTurnstileError"
+            />
+          </div>
         </form>
 
         <!-- Footer Status Indicators -->
